@@ -1,138 +1,133 @@
+"""
+Comando para cargar canciones ficticias creadas exclusivamente para pruebas de desarrollo (Fase 0.1).
+Reemplaza cualquier letra protegida por material de prueba libre y controlado.
+"""
+
 from django.core.management.base import BaseCommand
 from apps.canciones.models import Cancion
 from apps.fogatas.models import Fogata, FogataCancion
 
 
 class Command(BaseCommand):
-    help = 'Carga datos de ejemplo con canciones y una Fogata de demostración'
+    help = 'Carga datos de ejemplo con canciones ficticias creadas exclusivamente para pruebas'
 
     def handle(self, *args, **options):
-        self.stdout.write("Cargando canciones de ejemplo...")
+        self.stdout.write("Cargando canciones ficticias de prueba...")
 
-        c1, _ = Cancion.objects.get_or_create(
-            titulo="De Música Ligera",
+        c1, _ = Cancion.objects.update_or_create(
+            titulo="Atardecer en la Quebrada",
             defaults={
-                'artista': "Soda Stereo",
-                'tonalidad': "Bm",
-                'capo': 0,
-                'afinacion': "Estándar (E A D G B E)",
-                'notas_personales': "Intro: Bm - G - D - A con ritmo constante de 4 compases. Rasgueo enérgico.",
-                'contenido': (
-                    "Intro:\n"
-                    "Bm  G  D  A  (x2)\n\n"
-                    "Bm         G            D           A\n"
-                    "Ella durmió al calor de las masas\n"
-                    "Bm       G             D        A\n"
-                    "Y yo desperté queriendo soñarla\n"
-                    "Bm          G          D          A\n"
-                    "Algún tiempo atrás pensé en escribirle\n"
-                    "Bm         G           D            A\n"
-                    "Que nunca sorteé las trampas del amor\n\n"
-                    "Coro:\n"
-                    "Bm         G     D        A\n"
-                    "De aquel amor de música ligera\n"
-                    "Bm      G       D        A\n"
-                    "Nada nos libra, nada más queda\n\n"
-                    "Bm         G            D           A\n"
-                    "No le envié cenizas de rosas\n"
-                    "Bm          G         D        A\n"
-                    "Ni quise evitar un roce secreto\n\n"
-                    "Coro:\n"
-                    "Bm         G     D        A\n"
-                    "De aquel amor de música ligera\n"
-                    "Bm      G       D        A\n"
-                    "Nada nos libra, nada más queda\n\n"
-                    "Outro:\n"
-                    "Bm  G  D  A\n"
-                    "¡Gracias... totales!\n"
-                )
-            }
-        )
-
-        c2, _ = Cancion.objects.get_or_create(
-            titulo="Muchacha (Ojos de Papel)",
-            defaults={
-                'artista': "Almendra",
+                'artista': "Los Ecos del Valle (Ficticio)",
                 'tonalidad': "G",
                 'capo': 0,
                 'afinacion': "Estándar (E A D G B E)",
-                'notas_personales': "Arpegio suave en guitarra acústica. Tiempo lento y expresivo.",
-                'contenido': (
-                    "G              D/F#  Em          C\n"
-                    "Muchacha ojos de papel, ¿a dónde vas?\n"
-                    "G/B          Am7    D7\n"
-                    "Quédate hasta el alba\n"
-                    "G              D/F#  Em          C\n"
-                    "Muchacha pequeños pies, no corras más\n"
-                    "G/B          Am7    D7\n"
-                    "Quédate hasta el alba\n\n"
-                    "Em             Em/D       C\n"
-                    "Sueña un sueño despacito entre mis manos\n"
-                    "G/B           Am7       D7\n"
-                    "Hasta que todo el día ilumine\n"
-                    "G              D/F#   Em          C\n"
-                    "Muchacha corteza de mi corazón\n"
-                    "G/B            Am7    D7       G\n"
-                    "Ven a mí, para siempre en esta noche\n"
-                )
-            }
-        )
-
-        c3, _ = Cancion.objects.get_or_create(
-            titulo="Seguir Viviendo Sin Tu Amor",
-            defaults={
-                'artista': "Luis Alberto Spinetta",
-                'tonalidad': "F",
-                'capo': 0,
-                'afinacion': "Estándar (E A D G B E)",
-                'notas_personales': "Balada acústica con rasgueo sincopado. Cuidar transiciones en puentes.",
+                'notas_personales': "Intro con arpegio suave en G y Cadd9. Rasgueo constante en estrofas.",
                 'contenido': (
                     "Intro:\n"
-                    "F  Bbmaj7  Gm7  C7\n\n"
-                    "F          Bbmaj7\n"
-                    "Si algo callé\n"
-                    "Gm7           C7\n"
-                    "Es porque entendí todo\n"
-                    "F           Bbmaj7\n"
-                    "Menos la distancia\n\n"
-                    "Dm            Am7\n"
-                    "Desfiguré el corazón\n"
-                    "Bbmaj7        Gm7          C7\n"
-                    "De tanto esperar un nuevo día\n\n"
+                    "G  Cadd9  G  Cadd9\n\n"
+                    "G                Cadd9        G            D\n"
+                    "Baja la tarde dorada sobre el cerro y el sauzal\n"
+                    "G                  Cadd9          Em7          D\n"
+                    "Vuelve el rumor de la leña que en el fuego va a brillar\n"
+                    "Cadd9              G          Em7          D\n"
+                    "Trae tu voz de horizonte y sentémonos a cantar\n\n"
                     "Coro:\n"
-                    "F          Bbmaj7\n"
-                    "Y hoy que enloquecí\n"
-                    "Gm7           C7\n"
-                    "Siento el vacío en mi voz\n"
-                    "Dm        Am7       Bbmaj7    C7\n"
-                    "¿Y cómo hacer para seguir viviendo sin tu amor?\n"
+                    "G          Cadd9     Em7        D\n"
+                    "Fuego de la noche, chispa de canción\n"
+                    "G            Cadd9      D          G\n"
+                    "Vibra en la guitarra todo el corazón\n\n"
+                    "G               Cadd9         G            D\n"
+                    "Pasan las horas serenas bajo un cielo de cristal\n"
+                    "G                  Cadd9       Em7          D\n"
+                    "Queda el rescoldo caliente y un acorde al final\n\n"
+                    "Coro:\n"
+                    "G          Cadd9     Em7        D\n"
+                    "Fuego de la noche, chispa de canción\n"
+                    "G            Cadd9      D          G\n"
+                    "Vibra en la guitarra todo el corazón\n"
                 )
             }
         )
 
-        self.stdout.write("Creando Fogata de ejemplo...")
-        fogata, _ = Fogata.objects.get_or_create(
-            nombre="🔥 Acústicos Clásicos de Fogata",
+        c2, _ = Cancion.objects.update_or_create(
+            titulo="Río de Arena",
             defaults={
-                'descripcion': "Setlist probado para tocar al aire libre o en fogata nocturna. Clásicos que todos cantan."
+                'artista': "Banda Primitiva (Ficticio)",
+                'tonalidad': "Am",
+                'capo': 2,
+                'afinacion': "Estándar (E A D G B E)",
+                'notas_personales': "Capo al 2. Rasgueo lento de huayno o balada andina.",
+                'contenido': (
+                    "Am               Dm            G              C\n"
+                    "Corre un río silencioso por la falda del volcán\n"
+                    "F                 Dm             E7          Am\n"
+                    "Lleva huellas del invierno que temprano pasará\n\n"
+                    "Am             Dm           G               C\n"
+                    "Sopla viento de la cumbre, no te canses de remar\n"
+                    "F                Dm            E7            Am\n"
+                    "Que una lumbre en la ribera ya comienza a despertar\n\n"
+                    "Puente (Línea larga de prueba de scroll horizontal):\n"
+                    "F                           G                           Em7                         Am\n"
+                    "Y cuando llegue la medianoche fría sobre las colinas andinas cantaremos el verso que viaja con la corriente hasta el mar azul\n\n"
+                    "Coro:\n"
+                    "Dm        G       C       F\n"
+                    "Río de arena, memoria y cantar\n"
+                    "Dm        E7            Am\n"
+                    "La noche empieza a clarear\n"
+                )
             }
         )
 
-        # Asociar canciones con orden
-        FogataCancion.objects.get_or_create(
-            fogata=fogata,
-            cancion=c1,
-            defaults={'orden': 1, 'nota_sesion': "Arrancar con fuerza para animar la ronda"}
-        )
-        FogataCancion.objects.get_or_create(
-            fogata=fogata,
-            cancion=c2,
-            defaults={'orden': 2, 'nota_sesion': "Bajar volumen, arpegio íntimo"}
-        )
-        FogataCancion.objects.get_or_create(
-            fogata=fogata,
-            cancion=c3,
-            defaults={'orden': 3, 'nota_sesion': "Cierre emotivo para cantar todos"}
+        c3, _ = Cancion.objects.update_or_create(
+            titulo="Noche de Viento Sur",
+            defaults={
+                'artista': "Solsticio Andino (Ficticio)",
+                'tonalidad': "D",
+                'capo': 0,
+                'afinacion': "Estándar (E A D G B E)",
+                'notas_personales': "Tiempo rápido 6/8. Acentuar el primer pulso con pulgar.",
+                'contenido': (
+                    "Intro:\n"
+                    "D  A  Bm  G  (x2)\n\n"
+                    "D             A            Bm          G\n"
+                    "Cruza la ráfaga helada sacudiendo el ventanal\n"
+                    "D               A             G          D\n"
+                    "Arden las ramas de pino al compás del maderal\n\n"
+                    "Bm          F#m           G            A\n"
+                    "Nadie precisa de relojes para saber esperar\n"
+                    "Bm         F#m           G           A\n"
+                    "Solo una ronda sencilla dispuesta a festejar\n\n"
+                    "Coro:\n"
+                    "D         A        Bm        G\n"
+                    "Gira la rueda del tiempo y la paz\n"
+                    "D           A        G     D\n"
+                    "Canta con fuerza y serenidad\n"
+                )
+            }
         )
 
-        self.stdout.write(self.style.SUCCESS("✓ Datos de ejemplo cargados correctamente."))
+        # Limpiar canciones protegidas anteriores si existían
+        Cancion.objects.filter(titulo__in=[
+            "De Música Ligera",
+            "Muchacha (Ojos de Papel)",
+            "Seguir Viviendo Sin Tu Amor",
+            "De música ligera",
+            "Muchacha (Ojos de papel)",
+            "Seguir viviendo sin tu amor",
+            "Spinetta - Seguir viviendo sin tu amor"
+        ]).delete()
+
+        self.stdout.write("Actualizando Fogata de prueba...")
+        fogata, _ = Fogata.objects.get_or_create(
+            nombre="🔥 Fogata Acústica de Prueba",
+            defaults={
+                'descripcion': "Setlist de prueba con canciones ficticias para verificar Modo Músico y Sesión Compartida."
+            }
+        )
+
+        FogataCancion.objects.filter(fogata=fogata).delete()
+        FogataCancion.objects.create(fogata=fogata, cancion=c1, orden=1, nota_sesion="Tema de apertura, arpegio suave")
+        FogataCancion.objects.create(fogata=fogata, cancion=c2, orden=2, nota_sesion="Poner capo en traste 2")
+        FogataCancion.objects.create(fogata=fogata, cancion=c3, orden=3, nota_sesion="Ritmo rápido, cierre festivo")
+
+        self.stdout.write(self.style.SUCCESS("✓ Canciones ficticias de prueba cargadas correctamente."))

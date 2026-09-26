@@ -17,7 +17,7 @@
 
     <div class="atril-toolbar-right">
       <!-- Indicador / Activador de Wake Lock -->
-      <button type="button" id="btn-wakeLock" class="wakelock-btn" title="Evitar que la pantalla se apague mientras tocas">
+      <button type="button" id="btn-wakelock" class="wakelock-btn" title="Evitar que la pantalla se apague mientras tocas">
         <span>💡 Mantener activa</span>
       </button>
 
@@ -100,15 +100,18 @@
 
   <!-- Lista desplegable rápida de canciones de la sesión -->
   <div style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #222222; text-align: center;">
-    <form method="GET" action="{% url 'fogatas:tocar_sesion' fogata.pk %}" style="display: inline-flex; align-items: center; gap: 8px;">
-      <label for="select-pos" style="font-size: 0.85rem; color: var(--text-muted);">Saltar a tema:</label>
-      <select id="select-pos" name="pos" class="form-select" style="min-height: 40px; padding: 4px 10px; width: auto;" onchange="this.form.submit()">
+    <form method="GET" action="{% url 'fogatas:tocar_sesion' fogata.pk %}" style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
+      <label for="select-pos" style="font-size: 0.9rem; color: var(--text-muted);">Saltar a tema:</label>
+      <select id="select-pos" name="pos" class="form-select" style="min-height: 48px; padding: 6px 12px; width: auto;" onchange="this.form.submit()">
         {% for item in items %}
           <option value="{{ forloop.counter }}" {% if forloop.counter == pos %}selected{% endif %}>
             #{{ forloop.counter }}. {{ item.cancion.titulo }}
           </option>
         {% endfor %}
       </select>
+      <noscript>
+        <button type="submit" class="btn btn-secondary btn-sm">Ir al tema</button>
+      </noscript>
     </form>
   </div>
 </div>

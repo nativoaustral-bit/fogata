@@ -2,6 +2,10 @@
 
 {% block title %}{{ cancion.titulo }} — Letra — {{ fogata.nombre }}{% endblock %}
 
+{% block extra_head %}
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
 {% block content %}
 <div class="atril-container" style="max-width: 720px;">
   <!-- Barra de Herramientas de Invitado -->

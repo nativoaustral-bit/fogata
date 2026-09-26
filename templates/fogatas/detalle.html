@@ -75,12 +75,12 @@
               <span style="color: var(--text-muted); margin-left: 8px;">(Vence {{ sesion.expira_el|date:"H:i" }} hrs)</span>
             </div>
             <div class="btn-group">
-              <a href="{% url 'fogatas:compartir_exito' fogata.pk sesion.pk %}" class="btn btn-secondary btn-sm" style="min-height: 32px; padding: 4px 8px;">
+              <a href="{% url 'fogatas:compartir_exito' fogata.pk sesion.pk %}" class="btn btn-secondary btn-sm">
                 Ver / Copiar
               </a>
               <form method="POST" action="{% url 'fogatas:compartir_revocar' fogata.pk sesion.pk %}" style="display: inline;">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger btn-sm" style="min-height: 32px; padding: 4px 8px;" onclick="return confirm('¿Revocar este enlace inmediatamente?');">
+                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Revocar este enlace inmediatamente?');">
                   Revocar
                 </button>
               </form>
@@ -138,7 +138,7 @@
             {% if not forloop.first %}
             <form method="POST" action="{% url 'fogatas:mover_cancion' fogata.pk item.cancion.pk 'subir' %}" style="display: inline;">
               {% csrf_token %}
-              <button type="submit" class="btn btn-secondary btn-sm" title="Subir de posición" style="min-height: 38px; padding: 6px 10px;">▲</button>
+              <button type="submit" class="btn btn-secondary btn-sm" title="Subir de posición" style="min-height: 48px; min-width: 48px; padding: 10px;">▲</button>
             </form>
             {% endif %}
 
@@ -146,14 +146,14 @@
             {% if not forloop.last %}
             <form method="POST" action="{% url 'fogatas:mover_cancion' fogata.pk item.cancion.pk 'bajar' %}" style="display: inline;">
               {% csrf_token %}
-              <button type="submit" class="btn btn-secondary btn-sm" title="Bajar de posición" style="min-height: 38px; padding: 6px 10px;">▼</button>
+              <button type="submit" class="btn btn-secondary btn-sm" title="Bajar de posición" style="min-height: 48px; min-width: 48px; padding: 10px;">▼</button>
             </form>
             {% endif %}
 
             <!-- Quitar del setlist -->
             <form method="POST" action="{% url 'fogatas:quitar_cancion' fogata.pk item.cancion.pk %}" style="display: inline;" onsubmit="return confirm('¿Quitar {{ item.cancion.titulo }} de esta Fogata?');">
               {% csrf_token %}
-              <button type="submit" class="btn btn-danger btn-sm" title="Quitar de este setlist" style="min-height: 38px; padding: 6px 10px;">✕</button>
+              <button type="submit" class="btn btn-danger btn-sm" title="Quitar de este setlist" style="min-height: 48px; min-width: 48px; padding: 10px;">✕</button>
             </form>
           </div>
         </div>

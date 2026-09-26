@@ -329,11 +329,13 @@ def sesion_compartida_cancion(request, token, cancion_id):
     if not sesion.esta_vigente():
         return respuesta_sesion_expirada(request)
 
-    item = get_object_or_404(
-        FogataCancion.objects.select_related('cancion'),
-        fogata=sesion.fogata,
-        cancion_id=cancion_id
-    )
+    try:
+        item = FogataCancion.objects.select_related('cancion').get(
+            fogata=sesion.fogata,
+            cancion_id=cancion_id
+        )
+    except FogataCancion.DoesNotExist:
+        return respuesta_sesion_expirada(request)
 
     # Preparado para extraer letra con helper tolerante
     letra = obtener_solo_letra(item.cancion.contenido)

@@ -109,7 +109,7 @@ body {
 }
 
 .site-nav a {
-  padding: 8px 12px;
+  padding: 8px 14px;
   border-radius: 6px;
   font-size: 0.95rem;
   font-weight: 500;
@@ -117,7 +117,8 @@ body {
   color: var(--text-main);
   background-color: transparent;
   transition: background-color 0.15s ease;
-  min-height: 40px;
+  min-height: 48px;
+  min-height: var(--touch-min-height);
   display: inline-flex;
   align-items: center;
 }
@@ -231,9 +232,10 @@ body {
 }
 
 .btn-sm {
-  min-height: 38px;
-  padding: 6px 12px;
-  font-size: 0.88rem;
+  min-height: 48px;
+  min-height: var(--touch-min-height);
+  padding: 8px 14px;
+  font-size: 0.92rem;
 }
 
 .btn-block {
@@ -474,6 +476,8 @@ body {
 /* Caja de Letra y Acordes en Modo Músico */
 .letra-acordes-wrapper {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   background-color: #121212;
@@ -509,7 +513,7 @@ body {
   overflow-wrap: break-word;
 }
 
-/* Controles de Zoom en Atril */
+/* Controles de Zoom en Atril (Min 48px para accesibilidad táctil en atril) */
 .zoom-controls {
   display: inline-flex;
   border: 1px solid #383838;
@@ -522,12 +526,13 @@ body {
   background: transparent;
   border: none;
   color: #f5f5f5;
-  padding: 8px 14px;
-  font-size: 0.95rem;
+  padding: 8px 16px;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  min-height: 44px;
-  min-width: 44px;
+  min-height: 48px;
+  min-height: var(--touch-min-height);
+  min-width: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -548,11 +553,12 @@ body {
   border-left: 1px solid #333333;
 }
 
-/* Indicador y Botón de Wake Lock */
+/* Indicador y Botón de Wake Lock (Min 48px) */
 .wakelock-btn {
-  min-height: 44px;
-  padding: 8px 12px;
-  font-size: 0.85rem;
+  min-height: 48px;
+  min-height: var(--touch-min-height);
+  padding: 8px 14px;
+  font-size: 0.88rem;
   border-radius: 6px;
   border: 1px solid #383838;
   background-color: #1c1c1c;
@@ -714,5 +720,23 @@ body {
 @media (min-width: 900px) {
   .atril-container {
     max-width: 880px; /* Margen cómodo, lectura siempre vertical */
+  }
+}
+
+/* Optimización móvil en apaisado / atril horizontal */
+@media (max-height: 500px) and (orientation: landscape) {
+  .atril-toolbar {
+    padding: 4px 0;
+    margin-bottom: 8px;
+  }
+  .atril-meta-header {
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+  }
+  .atril-song-title {
+    font-size: 1.35rem;
+  }
+  .atril-container {
+    padding-bottom: 40px;
   }
 }
