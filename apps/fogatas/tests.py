@@ -97,6 +97,25 @@ class FogataModelAndSetlistTest(TestCase):
         self.assertEqual(r_high.status_code, 200)
         self.assertContains(r_high, "Tema 3 de 3")
 
+    def test_tocar_sesion_renderiza_barra_inferior_atril(self):
+        """
+        Verifica que el modo sesión incluya la barra fija inferior de auto-scroll,
+        bloques, velocidad y el espaciador de seguridad.
+        """
+        url = reverse('fogatas:tocar_sesion', args=[self.fogata.pk]) + '?pos=1'
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'id="atril-bottom-bar"')
+        self.assertContains(res, 'id="btn-scroll-toggle"')
+        self.assertContains(res, 'id="btn-bloque-ant"')
+        self.assertContains(res, 'id="btn-bloque-sig"')
+        self.assertContains(res, 'id="indicador-velocidad"')
+        self.assertContains(res, 'class="atril-bottom-spacer"')
+        # Mantiene además la barra de navegación entre temas del setlist
+        self.assertContains(res, 'class="sesion-nav-bar"')
+        self.assertContains(res, 'Siguiente (#2)')
+
+
 
 class SesionCompartidaTest(TestCase):
     def setUp(self):

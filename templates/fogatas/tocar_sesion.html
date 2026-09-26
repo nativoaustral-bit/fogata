@@ -115,5 +115,40 @@
       </noscript>
     </form>
   </div>
+
+  <!-- Espaciador de seguridad para que la barra fija inferior no tape el setlist ni los últimos versos -->
+  <div class="atril-bottom-spacer" aria-hidden="true"></div>
 </div>
+
+<!-- Barra Fija Inferior de Auto-Scroll y Navegación de Bloques (Fase 2) -->
+<aside id="atril-bottom-bar" class="atril-bottom-bar" aria-label="Controles de reproducción en atril de sesión">
+  <div class="atril-bottom-bar-inner">
+    <!-- 1. Navegación por Bloques -->
+    <div class="atril-bar-group" role="group" aria-label="Navegación por bloques">
+      <button type="button" id="btn-bloque-ant" class="atril-bar-btn" title="Bloque anterior" aria-label="Bloque anterior">
+        &uarr;
+      </button>
+      <button type="button" id="btn-bloque-sig" class="atril-bar-btn" title="Siguiente bloque" aria-label="Siguiente bloque">
+        &darr;
+      </button>
+    </div>
+
+    <!-- 2. Play / Pausa Auto-Scroll -->
+    <button type="button" id="btn-scroll-toggle" class="atril-play-btn" title="Iniciar auto-scroll" aria-label="Iniciar auto-scroll">
+      <span id="icono-scroll-play" aria-hidden="true">&#9654;</span>
+      <span id="texto-scroll-play" class="atril-play-texto">Auto-scroll</span>
+    </button>
+
+    <!-- 3. Velocidad Ajustable -->
+    <div class="atril-bar-group" role="group" aria-label="Velocidad de auto-scroll">
+      <button type="button" id="btn-vel-menos" class="atril-bar-btn" title="Reducir velocidad" aria-label="Reducir velocidad">
+        &minus;
+      </button>
+      <span id="indicador-velocidad" class="atril-vel-label" aria-live="polite">Normal</span>
+      <button type="button" id="btn-vel-mas" class="atril-bar-btn" title="Aumentar velocidad" aria-label="Aumentar velocidad">
+        &#43;
+      </button>
+    </div>
+  </div>
+</aside>
 {% endblock %}

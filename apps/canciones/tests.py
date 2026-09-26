@@ -501,3 +501,87 @@ class Fase1ValidacionRealTest(TestCase):
         self.assertContains(res_form, 'Datos adicionales opcionales')
         self.assertContains(res_form, 'Guardar y Tocar')
 
+
+class Fase2ModoTocarTest(TestCase):
+    """
+    Pruebas automatizadas para Fase 2:
+    Modo Tocar, Auto-Scroll, Velocidad Ajustable y Navegación por Bloques.
+    """
+
+    def setUp(self):
+        self.cancion = Cancion.objects.create(
+            titulo="Canción Test Fase 2",
+            artista="Banda de Atril",
+            tonalidad="G",
+            capo=2,
+            afinacion="Estándar",
+            contenido=(
+                "[Intro]\n"
+                "G  D  Em  C\n\n"
+                "[Verso 1]\n"
+                "G              D\n"
+                "Luz de la mañana sobre la colina\n\n"
+                "[Coro]\n"
+                "Em             C\n"
+                "Canta fuerte junto al río\n"
+            )
+        )
+
+    def test_renderizado_barra_inferior_y_controles(self):
+        """Verifica la presencia de la barra fija inferior y todos los controles mínimos."""
+        res = self.client.get(reverse('canciones:tocar', args=[self.cancion.pk]))
+        self.assertEqual(res.status_code, 200)
+        # Barra fija inferior
+        self.assertContains(res, 'id="atril-bottom-bar"')
+        self.assertContains(res, 'class="atril-bottom-bar"')
+        # Play / Pausa
+        self.assertContains(res, 'id="btn-scroll-toggle"')
+        self.assertContains(res, 'id="icono-scroll-play"')
+        self.assertContains(res, 'id="texto-scroll-play"')
+        # Velocidad
+        self.assertContains(res, 'id="btn-vel-menos"')
+        self.assertContains(res, 'id="btn-vel-mas"')
+        self.assertContains(res, 'id="indicador-velocidad"')
+        # Navegación por bloques
+        self.assertContains(res, 'id="btn-bloque-ant"')
+        self.assertContains(res, 'id="btn-bloque-sig"')
+        # Espaciador inferior para que los últimos versos nunca queden tapados
+        self.assertContains(res, 'class="atril-bottom-spacer"')
+
+    def test_dimensiones_tactiles_minimas_48px(self):
+        """Verifica que el CSS declare min-height y min-width de al menos 48px para los controles de atril."""
+        with open('static/css/fogata.css', 'r', encoding='utf-8') as f:
+            css = f.read()
+        self.assertIn('.atril-bar-btn', css)
+        self.assertIn('min-width: 48px;', css)
+        self.assertIn('min-height: 48px;', css)
+        self.assertIn('.atril-play-btn', css)
+        self.assertIn('min-height: 48px;', css)
+
+    def test_compatibilidad_js_sintaxis_es5(self):
+        """Verifica que fogata.js contiene la lógica requerida en ES5 estricto sin dependencias."""
+        with open('static/js/fogata.js', 'r', encoding='utf-8') as f:
+            js = f.read()
+        self.assertIn("'use strict';", js)
+        self.assertIn('initAutoScrollAndBloques', js)
+        self.assertIn('fogata_scroll_speed', js)
+        self.assertIn('recalcularBloques', js)
+        self.assertIn('onManualUserScroll', js)
+        self.assertIn('visibilitychange', js)
+        # No debe usar const ni arrow functions
+        self.assertNotIn('const ', js)
+        self.assertNotIn('let ', js)
+        self.assertNotIn('=>', js)
+
+    def test_servidor_legacy_first_sin_javascript(self):
+        """Verifica que sin JavaScript el usuario puede leer completamente la canción y acordes."""
+        res = self.client.get(reverse('canciones:tocar', args=[self.cancion.pk]))
+        self.assertEqual(res.status_code, 200)
+        # Contenido 100% visible desde el HTML generado por el servidor
+        self.assertContains(res, 'Luz de la mañana sobre la colina')
+        self.assertContains(res, '<span class="seccion-musical">[Intro]</span>')
+        self.assertContains(res, '<span class="seccion-musical">[Coro]</span>')
+        self.assertContains(res, '<span class="acorde">G</span>')
+        self.assertContains(res, '<span class="acorde">Em</span>')
+
+
