@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ accion }} — Fogata{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div style="margin-bottom: 8px;">
+      <a href="{% if fogata %}{% url 'fogatas:detalle' fogata.pk %}{% else %}{% url 'fogatas:lista' %}{% endif %}" style="color: var(--text-muted); font-size: 0.9rem;">
+        &larr; Volver
+      </a>
+    </div>
+    <h1 class="page-title">{{ accion }}</h1>
+    <p class="page-subtitle">Organiza tus canciones en un setlist preparado para tocar en vivo.</p>
+  </div>
+
+  <form method="POST" class="card" novalidate>
+    {% csrf_token %}
+
+    {% if form.errors %}
+      <div class="card" style="background-color: #2e1616; border-color: #7d2626; color: #ffcdd2; margin-bottom: 20px;">
+        <p style="font-weight: 700; margin-bottom: 6px;">Corrige los errores señalados:</p>
+        <ul style="list-style: disc; margin-left: 20px;">
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <li><strong>{{ field }}:</strong> {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <div class="form-group">
+      <label for="{{ form.nombre.id_for_label }}" class="form-label">
+        Nombre de la Fogata *
+      </label>
+      {{ form.nombre }}
+      <span class="form-help">Ej: Acústicos fogata sábado, Ensayo grupo, Clásicos del rock</span>
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+        Descripción o Notas Generales
+      </label>
+      {{ form.descripcion }}
+    </div>
+
+    <div class="btn-group" style="margin-top: 24px;">
+      <button type="submit" class="btn btn-primary">
+        Guardar Fogata
+      </button>
+      <a href="{% if fogata %}{% url 'fogatas:detalle' fogata.pk %}{% else %}{% url 'fogatas:lista' %}{% endif %}" class="btn btn-secondary">
+        Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

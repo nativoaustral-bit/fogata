@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Canciones — Fogata{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">Canciones</h1>
+        <p class="page-subtitle">{{ total }} canción{{ total|pluralize:"es" }} en tu repertorio</p>
+      </div>
+      <a href="{% url 'canciones:crear' %}" class="btn btn-primary">
+        + Nueva Canción
+      </a>
+    </div>
+  </div>
+
+  <!-- Buscador Simple -->
+  <form method="GET" action="{% url 'canciones:lista' %}" class="search-bar-form">
+    <input 
+      type="search" 
+      name="q" 
+      value="{{ query }}" 
+      placeholder="Buscar por título o artista..." 
+      class="form-input search-input"
+      autocomplete="off"
+    >
+    <button type="submit" class="btn btn-secondary">Buscar</button>
+    {% if query %}
+      <a href="{% url 'canciones:lista' %}" class="btn btn-secondary">Limpiar</a>
+    {% endif %}
+  </form>
+
+  <!-- Lista de Canciones -->
+  {% if canciones %}
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      {% for cancion in canciones %}
+      <div class="card card-clickable">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div style="flex: 1; min-width: 220px;">
+            <a href="{% url 'canciones:detalle' cancion.pk %}">
+              <h2 class="card-title">{{ cancion.titulo }}</h2>
+            </a>
+            {% if cancion.artista %}
+              <p class="card-subtitle">{{ cancion.artista }}</p>
+            {% endif %}
+
+            <div class="card-meta-bar">
+              {% if cancion.tonalidad %}
+                <span class="badge">Tono: {{ cancion.tonalidad }}</span>
+              {% endif %}
+              {% if cancion.capo > 0 %}
+                <span class="badge">Capo: {{ cancion.capo }}</span>
+              {% endif %}
+              {% if cancion.en_fogatas.exists %}
+                <span style="color: var(--text-dim);">En {{ cancion.en_fogatas.count }} fogata{{ cancion.en_fogatas.count|pluralize }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <a href="{% url 'canciones:tocar' cancion.pk %}" class="btn btn-primary" title="Abrir en Modo Músico">
+              🎸 Tocar
+            </a>
+            <a href="{% url 'canciones:detalle' cancion.pk %}" class="btn btn-secondary btn-sm">
+              Ver
+            </a>
+            <a href="{% url 'canciones:editar' cancion.pk %}" class="btn btn-secondary btn-sm">
+              Editar
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 36px;">
+      {% if query %}
+        <p style="color: var(--text-muted); margin-bottom: 12px;">No se encontraron canciones que coincidan con "{{ query }}".</p>
+        <a href="{% url 'canciones:lista' %}" class="btn btn-secondary btn-sm">Ver todas las canciones</a>
+      {% else %}
+        <p style="color: var(--text-muted); margin-bottom: 12px;">Tu repertorio está vacío. Agrega tus canciones favoritas para empezar a tocar.</p>
+        <a href="{% url 'canciones:crear' %}" class="btn btn-primary">Crear primera canción</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

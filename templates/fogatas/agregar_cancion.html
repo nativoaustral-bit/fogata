@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Agregar Canción — {{ fogata.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div style="margin-bottom: 8px;">
+      <a href="{% url 'fogatas:detalle' fogata.pk %}" style="color: var(--text-muted); font-size: 0.9rem;">
+        &larr; Volver al setlist
+      </a>
+    </div>
+    <h1 class="page-title">Agregar Canción al Setlist</h1>
+    <p class="page-subtitle">Añade un tema a <strong>{{ fogata.nombre }}</strong>.</p>
+  </div>
+
+  <form method="POST" class="card" style="max-width: 600px;">
+    {% csrf_token %}
+
+    {% if form.errors %}
+      <div class="card" style="background-color: #2e1616; border-color: #7d2626; color: #ffcdd2; margin-bottom: 20px;">
+        <p style="font-weight: 700; margin-bottom: 6px;">Corrige los siguientes errores:</p>
+        <ul style="list-style: disc; margin-left: 20px;">
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% if form.cancion.field.queryset.exists %}
+      <div class="form-group">
+        <label for="{{ form.cancion.id_for_label }}" class="form-label">
+          Selecciona una Canción de tu Repertorio
+        </label>
+        {{ form.cancion }}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.nota_sesion.id_for_label }}" class="form-label">
+          Nota específica para esta sesión (Opcional)
+        </label>
+        {{ form.nota_sesion }}
+        <span class="form-help">Ej: Tono transportado a D, solo cantar coro, conectar con siguiente</span>
+      </div>
+
+      <div class="btn-group" style="margin-top: 24px;">
+        <button type="submit" class="btn btn-primary">
+          + Agregar al Setlist
+        </button>
+        <a href="{% url 'fogatas:detalle' fogata.pk %}" class="btn btn-secondary">
+          Cancelar
+        </a>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 20px 0;">
+        <p style="color: var(--text-muted); margin-bottom: 16px;">
+          No hay más canciones disponibles para agregar a esta Fogata (o tu repertorio está vacío).
+        </p>
+        <div class="btn-group" style="justify-content: center;">
+          <a href="{% url 'canciones:crear' %}" class="btn btn-primary">
+            + Crear Nueva Canción
+          </a>
+          <a href="{% url 'fogatas:detalle' fogata.pk %}" class="btn btn-secondary">
+            Volver al Setlist
+          </a>
+        </div>
+      </div>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}

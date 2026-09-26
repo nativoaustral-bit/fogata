@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ cancion.titulo }} — Fogata{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div style="margin-bottom: 8px;">
+      <a href="{% url 'canciones:lista' %}" style="color: var(--text-muted); font-size: 0.9rem;">
+        &larr; Volver a canciones
+      </a>
+    </div>
+
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">{{ cancion.titulo }}</h1>
+        {% if cancion.artista %}
+          <p class="page-subtitle" style="font-size: 1.15rem; color: var(--color-flame); margin-top: 4px;">
+            {{ cancion.artista }}
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="btn-group">
+        <a href="{% url 'canciones:tocar' cancion.pk %}" class="btn btn-primary">
+          🎸 Modo Músico (Tocar)
+        </a>
+        <a href="{% url 'canciones:editar' cancion.pk %}" class="btn btn-secondary">
+          Editar
+        </a>
+        <a href="{% url 'canciones:eliminar' cancion.pk %}" class="btn btn-danger">
+          Eliminar
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ficha de Metadatos -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+      <div>
+        <span style="color: var(--text-dim); font-size: 0.85rem; display: block;">Tono:</span>
+        <span style="font-weight: 700; color: #ffffff; font-size: 1.05rem;">
+          {{ cancion.tonalidad|default:"No especificado" }}
+        </span>
+      </div>
+      <div>
+        <span style="color: var(--text-dim); font-size: 0.85rem; display: block;">Capo / Cejillo:</span>
+        <span style="font-weight: 700; color: #ffffff; font-size: 1.05rem;">
+          {% if cancion.capo > 0 %}Traste {{ cancion.capo }}{% else %}Sin capo{% endif %}
+        </span>
+      </div>
+      <div>
+        <span style="color: var(--text-dim); font-size: 0.85rem; display: block;">Afinación:</span>
+        <span style="font-weight: 700; color: #ffffff; font-size: 1.05rem;">
+          {{ cancion.afinacion|default:"Estándar" }}
+        </span>
+      </div>
+    </div>
+
+    {% if cancion.notas_personales %}
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+        <span style="color: var(--text-dim); font-size: 0.85rem; display: block; margin-bottom: 4px;">Notas personales de ensayo:</span>
+        <p style="color: #e0e0e0; font-size: 0.95rem;">{{ cancion.notas_personales }}</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Fogatas donde participa -->
+  <div class="card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 10px;">
+      Fogatas que incluyen esta canción
+    </h3>
+    {% if fogatas_asociadas %}
+      <ul style="display: flex; flex-direction: column; gap: 8px;">
+        {% for relacion in fogatas_asociadas %}
+        <li>
+          <a href="{% url 'fogatas:detalle' relacion.fogata.pk %}" style="color: var(--color-flame); text-decoration: underline;">
+            🔥 {{ relacion.fogata.nombre }}
+          </a>
+          <span style="color: var(--text-muted); font-size: 0.85rem;"> (Posición #{{ relacion.orden }}{% if relacion.nota_sesion %} - {{ relacion.nota_sesion }}{% endif %})</span>
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Esta canción aún no ha sido agregada a ninguna Fogata. Puedes incluirla desde el menú de la Fogata correspondiente.
+      </p>
+    {% endif %}
+  </div>
+
+  <!-- Vista previa de contenido -->
+  <div>
+    <div class="page-header-row" style="margin-bottom: 8px;">
+      <h3 style="font-size: 1.1rem; font-weight: 700; color: #ffffff;">Vista previa de letra y acordes</h3>
+      <a href="{% url 'canciones:tocar' cancion.pk %}" class="btn btn-primary btn-sm">
+        Abrir pantalla completa en atril &rarr;
+      </a>
+    </div>
+
+    <div class="letra-acordes-wrapper">
+      <pre class="letra-acordes-musico">{{ cancion.contenido }}</pre>
+    </div>
+  </div>
+</div>
+{% endblock %}

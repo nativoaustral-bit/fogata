@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ accion }} — Fogata{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div style="margin-bottom: 8px;">
+      <a href="{% if cancion %}{% url 'canciones:detalle' cancion.pk %}{% else %}{% url 'canciones:lista' %}{% endif %}" style="color: var(--text-muted); font-size: 0.9rem;">
+        &larr; Volver
+      </a>
+    </div>
+    <h1 class="page-title">{{ accion }}</h1>
+    <p class="page-subtitle">Pega o escribe tu versión con acordes. Se conservará la separación exacta.</p>
+  </div>
+
+  <form method="POST" class="card" novalidate>
+    {% csrf_token %}
+
+    {% if form.errors %}
+      <div class="card" style="background-color: #2e1616; border-color: #7d2626; color: #ffcdd2; margin-bottom: 20px;">
+        <p style="font-weight: 700; margin-bottom: 6px;">Por favor corrige los errores señalados:</p>
+        <ul style="list-style: disc; margin-left: 20px;">
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <li><strong>{{ field }}:</strong> {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <div class="form-row">
+      <div class="form-group" style="flex: 2;">
+        <label for="{{ form.titulo.id_for_label }}" class="form-label">
+          Título de la Canción *
+        </label>
+        {{ form.titulo }}
+      </div>
+
+      <div class="form-group" style="flex: 2;">
+        <label for="{{ form.artista.id_for_label }}" class="form-label">
+          Artista o Banda
+        </label>
+        {{ form.artista }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.tonalidad.id_for_label }}" class="form-label">
+          Tono
+        </label>
+        {{ form.tonalidad }}
+        <span class="form-help">Ej: G, Am, C#m</span>
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.capo.id_for_label }}" class="form-label">
+          Capo / Cejillo
+        </label>
+        {{ form.capo }}
+        <span class="form-help">0 si no usa</span>
+      </div>
+
+      <div class="form-group" style="flex: 2;">
+        <label for="{{ form.afinacion.id_for_label }}" class="form-label">
+          Afinación
+        </label>
+        {{ form.afinacion }}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.contenido.id_for_label }}" class="form-label">
+        Contenido: Letra con Acordes alineados *
+      </label>
+      <div style="background-color: #1a1a1a; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid var(--color-flame); font-size: 0.85rem; color: #cccccc;">
+        <strong>Preservación espacial:</strong> Pega la letra con los acordes situados exactamente sobre las sílabas. Fogata mantendrá los espacios y saltos de línea sin alteración para que nunca se desalineen en el atril.
+      </div>
+      {{ form.contenido }}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.notas_personales.id_for_label }}" class="form-label">
+        Notas de Interpretación y Ensayo (Opcional)
+      </label>
+      {{ form.notas_personales }}
+      <span class="form-help">Ritmo, rasgueo, arpegio de entrada, estructura específica...</span>
+    </div>
+
+    <div class="btn-group" style="margin-top: 24px;">
+      <button type="submit" class="btn btn-primary">
+        Guardar Canción
+      </button>
+      <a href="{% if cancion %}{% url 'canciones:detalle' cancion.pk %}{% else %}{% url 'canciones:lista' %}{% endif %}" class="btn btn-secondary">
+        Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

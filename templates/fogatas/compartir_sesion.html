@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Enlace Compartido — {{ fogata.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div style="margin-bottom: 8px;">
+      <a href="{% url 'fogatas:detalle' fogata.pk %}" style="color: var(--text-muted); font-size: 0.9rem;">
+        &larr; Volver a la Fogata
+      </a>
+    </div>
+    <h1 class="page-title">Enlace de Sesión Compartida</h1>
+    <p class="page-subtitle">Comparte este enlace o código con tus invitados.</p>
+  </div>
+
+  <div class="card" style="border-left: 4px solid #4caf50; max-width: 680px;">
+    <h2 style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin-bottom: 8px;">
+      🎉 ¡Enlace temporal generado exitosamente!
+    </h2>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 20px;">
+      Cualquiera que abra este enlace podrá ver los títulos y letras de las canciones en una interfaz fluida sin necesidad de registrarse.
+    </p>
+
+    <!-- Campo de URL con botón de Copiado Progresivo -->
+    <div class="form-group">
+      <label for="input-enlace-compartido" class="form-label">
+        Dirección web para tus invitados:
+      </label>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <input 
+          type="text" 
+          id="input-enlace-compartido" 
+          value="{{ url_publica }}" 
+          class="form-input" 
+          readonly 
+          style="flex: 1; min-width: 250px; font-family: var(--font-mono); font-size: 0.95rem; background-color: #0d0d0d; border-color: #444;"
+        >
+        <button type="button" id="btn-copiar-enlace" class="btn btn-primary" style="white-space: nowrap;">
+          📋 Copiar Enlace
+        </button>
+      </div>
+      <span class="form-help">
+        Vigente hasta: <strong>{{ sesion.expira_el|date:"l d/m/Y H:i" }}</strong> (expira automáticamente)
+      </span>
+    </div>
+
+    <!-- Token Seguro -->
+    <div style="background-color: #121212; padding: 12px; border-radius: 6px; margin: 16px 0; border: 1px dashed #333;">
+      <span style="font-size: 0.8rem; color: #888; display: block; text-transform: uppercase; font-weight: 600;">Token criptográfico seguro (~192 bits):</span>
+      <code style="font-family: var(--font-mono); color: #ffb74d; word-break: break-all; font-size: 0.9rem;">{{ sesion.token }}</code>
+    </div>
+
+    <div class="btn-group" style="margin-top: 24px;">
+      <a href="{{ url_publica }}" target="_blank" class="btn btn-secondary">
+        Probar Vista de Invitado &nearr;
+      </a>
+      <a href="{% url 'fogatas:detalle' fogata.pk %}" class="btn btn-secondary">
+        Listo, volver a la Fogata
+      </a>
+      <form method="POST" action="{% url 'fogatas:compartir_revocar' fogata.pk sesion.pk %}" style="display: inline;" onsubmit="return confirm('¿Revocar este enlace inmediatamente? Los invitados ya no podrán acceder.');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-sm">
+          Revocar enlace ahora
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

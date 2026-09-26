@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}🔥 {{ fogata.nombre }} — Fogata{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div style="margin-bottom: 8px;">
+      <a href="{% url 'fogatas:lista' %}" style="color: var(--text-muted); font-size: 0.9rem;">
+        &larr; Volver a Fogatas
+      </a>
+    </div>
+
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">🔥 {{ fogata.nombre }}</h1>
+        {% if fogata.descripcion %}
+          <p class="page-subtitle" style="margin-top: 4px;">{{ fogata.descripcion }}</p>
+        {% endif %}
+      </div>
+
+      <div class="btn-group">
+        {% if canciones_asociadas %}
+        <a href="{% url 'fogatas:tocar_sesion' fogata.pk %}" class="btn btn-primary">
+          ▶ Tocar Sesión en Atril
+        </a>
+        {% endif %}
+        <a href="{% url 'fogatas:agregar_cancion' fogata.pk %}" class="btn btn-secondary">
+          + Agregar Canción
+        </a>
+        <a href="{% url 'fogatas:editar' fogata.pk %}" class="btn btn-secondary">
+          Editar
+        </a>
+        <a href="{% url 'fogatas:eliminar' fogata.pk %}" class="btn btn-danger btn-sm">
+          Eliminar
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generar / Ver Enlaces Compartidos (Modo Invitado) -->
+  <div class="card" style="border-left: 4px solid #ff9800; margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+      <div style="max-width: 500px;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: #ffffff; margin-bottom: 4px;">
+          🔗 Compartir Setlist con Invitados
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.4;">
+          Genera un enlace temporal con token seguro para que los asistentes sigan las letras desde sus teléfonos. Expira automáticamente o cuando decidas revocarlo.
+        </p>
+      </div>
+
+      <form method="POST" action="{% url 'fogatas:compartir_crear' fogata.pk %}" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        {% csrf_token %}
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <label for="id_duracion_horas" style="font-size: 0.85rem; color: #ccc;">Vigencia:</label>
+          {{ form_compartir.duracion_horas }}
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">
+          Crear Enlace
+        </button>
+      </form>
+    </div>
+
+    {% if sesiones_activas %}
+      <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+        <p style="font-size: 0.88rem; font-weight: 600; color: #ffb74d; margin-bottom: 8px;">
+          Enlaces activos actualmente:
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          {% for sesion in sesiones_activas %}
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: #141414; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <span style="font-family: var(--font-mono); color: #fff;">/s/{{ sesion.token|truncatechars:18 }}</span>
+              <span style="color: var(--text-muted); margin-left: 8px;">(Vence {{ sesion.expira_el|date:"H:i" }} hrs)</span>
+            </div>
+            <div class="btn-group">
+              <a href="{% url 'fogatas:compartir_exito' fogata.pk sesion.pk %}" class="btn btn-secondary btn-sm" style="min-height: 32px; padding: 4px 8px;">
+                Ver / Copiar
+              </a>
+              <form method="POST" action="{% url 'fogatas:compartir_revocar' fogata.pk sesion.pk %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm" style="min-height: 32px; padding: 4px 8px;" onclick="return confirm('¿Revocar este enlace inmediatamente?');">
+                  Revocar
+                </button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Lista Ordenada de Canciones del Setlist -->
+  <section>
+    <div class="page-header-row" style="margin-bottom: 12px;">
+      <h2 style="font-size: 1.3rem; font-weight: 700; color: #ffffff;">
+        Canciones del Setlist ({{ canciones_asociadas.count }})
+      </h2>
+      {% if canciones_asociadas %}
+        <a href="{% url 'fogatas:agregar_cancion' fogata.pk %}" class="btn btn-secondary btn-sm">
+          + Agregar otra canción
+        </a>
+      {% endif %}
+    </div>
+
+    {% if canciones_asociadas %}
+      <div class="setlist-list">
+        {% for item in canciones_asociadas %}
+        <div class="setlist-item">
+          <div class="setlist-item-left">
+            <span class="setlist-order">#{{ item.orden }}</span>
+            <div class="setlist-info">
+              <a href="{% url 'canciones:detalle' item.cancion.pk %}" style="text-decoration: none;">
+                <h4>{{ item.cancion.titulo }}</h4>
+              </a>
+              <p>
+                {% if item.cancion.artista %}{{ item.cancion.artista }} &bull; {% endif %}
+                {% if item.cancion.tonalidad %}Tono: {{ item.cancion.tonalidad }} &bull; {% endif %}
+                {% if item.cancion.capo > 0 %}Capo {{ item.cancion.capo }}{% else %}Sin capo{% endif %}
+              </p>
+              {% if item.nota_sesion %}
+                <p style="color: #ffb74d; font-size: 0.82rem; margin-top: 2px;">
+                  📌 {{ item.nota_sesion }}
+                </p>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="setlist-actions">
+            <!-- Tocar directamente en esta posición de la sesión -->
+            <a href="{% url 'fogatas:tocar_sesion' fogata.pk %}?pos={{ forloop.counter }}" class="btn btn-primary btn-sm" title="Tocar desde este tema">
+              🎸 Tocar
+            </a>
+
+            <!-- Subir orden -->
+            {% if not forloop.first %}
+            <form method="POST" action="{% url 'fogatas:mover_cancion' fogata.pk item.cancion.pk 'subir' %}" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-secondary btn-sm" title="Subir de posición" style="min-height: 38px; padding: 6px 10px;">▲</button>
+            </form>
+            {% endif %}
+
+            <!-- Bajar orden -->
+            {% if not forloop.last %}
+            <form method="POST" action="{% url 'fogatas:mover_cancion' fogata.pk item.cancion.pk 'bajar' %}" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-secondary btn-sm" title="Bajar de posición" style="min-height: 38px; padding: 6px 10px;">▼</button>
+            </form>
+            {% endif %}
+
+            <!-- Quitar del setlist -->
+            <form method="POST" action="{% url 'fogatas:quitar_cancion' fogata.pk item.cancion.pk %}" style="display: inline;" onsubmit="return confirm('¿Quitar {{ item.cancion.titulo }} de esta Fogata?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm" title="Quitar de este setlist" style="min-height: 38px; padding: 6px 10px;">✕</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card" style="text-align: center; padding: 36px;">
+        <p style="color: var(--text-muted); margin-bottom: 12px;">
+          Esta Fogata no tiene canciones añadidas todavía.
+        </p>
+        <a href="{% url 'fogatas:agregar_cancion' fogata.pk %}" class="btn btn-primary">
+          + Agregar canciones a esta Fogata
+        </a>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

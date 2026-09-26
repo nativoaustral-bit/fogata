@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ cancion.titulo }} — Letra — {{ fogata.nombre }}{% endblock %}
+
+{% block content %}
+<div class="atril-container" style="max-width: 720px;">
+  <!-- Barra de Herramientas de Invitado -->
+  <div class="atril-toolbar" role="toolbar" aria-label="Controles de lectura de letra">
+    <div class="atril-toolbar-left">
+      <a href="{% url 'sesion_compartida_publica' sesion.token %}" class="btn btn-secondary btn-sm">
+        &larr; Repertorio
+      </a>
+      <span style="font-size: 0.85rem; color: var(--text-muted);">
+        Tema #{{ item.orden }}
+      </span>
+    </div>
+
+    <div class="atril-toolbar-right">
+      <!-- Zoom Tipográfico para Lectura -->
+      <div class="zoom-controls" role="group" aria-label="Tamaño de letra">
+        <button type="button" id="btn-zoom-menos" class="zoom-btn" title="Reducir tamaño de letra">A&minus;</button>
+        <button type="button" id="btn-zoom-mas" class="zoom-btn" title="Aumentar tamaño de letra">A&#43;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encabezado de Canción para Invitados -->
+  <header style="margin-bottom: 24px; border-bottom: 1px solid #242424; padding-bottom: 14px;">
+    <h1 style="font-size: 1.85rem; font-weight: 700; color: #ffffff; line-height: 1.25;">
+      {{ cancion.titulo }}
+    </h1>
+    {% if cancion.artista %}
+      <p style="font-size: 1.1rem; color: var(--color-flame); margin-top: 4px;">
+        {{ cancion.artista }}
+      </p>
+    {% endif %}
+  </header>
+
+  <!-- Letra en Columna Única con Wrapping Fluido para Celulares -->
+  <section class="letra-acordes-wrapper" style="background-color: transparent; border: none; padding: 0;" aria-label="Letra de la canción">
+    <div id="cuerpo-letra" class="letra-invitado">{{ letra }}</div>
+  </section>
+
+  <!-- Pie con Volver -->
+  <div style="margin-top: 48px; padding-top: 16px; border-top: 1px solid #222222; text-align: center;">
+    <a href="{% url 'sesion_compartida_publica' sesion.token %}" class="btn btn-secondary btn-block">
+      &larr; Volver al repertorio de {{ fogata.nombre }}
+    </a>
+  </div>
+</div>
+{% endblock %}

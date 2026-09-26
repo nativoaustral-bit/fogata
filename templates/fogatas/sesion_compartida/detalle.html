@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}🔥 {{ fogata.nombre }} — Letras de la Fogata{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 680px;">
+  <div class="page-header" style="text-align: center; margin-top: 16px;">
+    <span style="font-size: 2.2rem; display: block; margin-bottom: 4px;">🔥</span>
+    <h1 class="page-title">{{ fogata.nombre }}</h1>
+    {% if fogata.descripcion %}
+      <p class="page-subtitle" style="margin-top: 6px;">{{ fogata.descripcion }}</p>
+    {% endif %}
+    <p style="color: var(--text-dim); font-size: 0.85rem; margin-top: 8px;">
+      Sesión compartida &bull; Vigente hasta {{ sesion.expira_el|date:"H:i" }} hrs
+    </p>
+  </div>
+
+  <section style="margin-top: 24px;">
+    <h2 style="font-size: 1.15rem; font-weight: 700; color: #e0e0e0; margin-bottom: 12px; border-bottom: 1px solid #282828; padding-bottom: 8px;">
+      Repertorio para cantar
+    </h2>
+
+    {% if canciones_asociadas %}
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% for item in canciones_asociadas %}
+        <a href="{% url 'sesion_compartida_cancion_publica' sesion.token item.cancion.pk %}" class="card card-clickable" style="margin-bottom: 0; padding: 14px 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.1rem; font-weight: 700; color: var(--color-flame); width: 24px; text-align: center;">
+                {{ item.orden }}
+              </span>
+              <div>
+                <h3 style="font-size: 1.1rem; font-weight: 600; color: #ffffff; margin-bottom: 2px;">
+                  {{ item.cancion.titulo }}
+                </h3>
+                {% if item.cancion.artista %}
+                  <p style="font-size: 0.85rem; color: var(--text-muted);">{{ item.cancion.artista }}</p>
+                {% endif %}
+              </div>
+            </div>
+            <span style="color: var(--color-flame); font-size: 1.2rem;">&rsaquo;</span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card" style="text-align: center; padding: 28px;">
+        <p style="color: var(--text-muted);">Esta Fogata no tiene canciones cargadas en este momento.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

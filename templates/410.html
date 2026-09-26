@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}410 — Recurso no disponible{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="expired-card">
+    <div class="expired-icon">🔥</div>
+    <h1 class="expired-title">Esta Fogata terminó</h1>
+    <p class="expired-desc">
+      El acceso a las letras de esta sesión ya no está disponible (HTTP 410).
+    </p>
+    <div style="margin-top: 24px;">
+      <a href="{% url 'core:home' %}" class="btn btn-secondary btn-sm">
+        Ir a la portada de Fogata
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

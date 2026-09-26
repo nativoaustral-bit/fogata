@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="theme-color" content="#0d0d0d">
+  <title>{% block title %}Fogata — Repertorio y Atril de Canciones{% endblock %}</title>
+  
+  <link rel="stylesheet" href="{% static 'css/reset.css' %}">
+  <link rel="stylesheet" href="{% static 'css/fogata.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="app-wrapper">
+    {% if not modo_musico %}
+    <header class="site-header">
+      <div class="container">
+        <a href="{% url 'core:home' %}" class="site-brand">
+          <span>🔥</span>
+          <span>Fogata</span>
+          <span class="brand-badge">Fase 0</span>
+        </a>
+
+        <nav class="site-nav" aria-label="Navegación principal">
+          <a href="{% url 'canciones:lista' %}" class="{% if request.resolver_match.app_name == 'canciones' %}active{% endif %}">
+            Canciones
+          </a>
+          <a href="{% url 'fogatas:lista' %}" class="{% if request.resolver_match.app_name == 'fogatas' %}active{% endif %}">
+            Fogatas
+          </a>
+        </nav>
+      </div>
+    </header>
+    {% endif %}
+
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    {% if not modo_musico %}
+    <footer class="site-footer">
+      <div class="container">
+        <p>🔥 Fogata — Simplicidad, velocidad y compatibilidad en atril.</p>
+      </div>
+    </footer>
+    {% endif %}
+  </div>
+
+  <script src="{% static 'js/fogata.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

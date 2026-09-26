@@ -1,0 +1,718 @@
+/* ==========================================================================
+   FOGATA — Sistema de Diseño y Hoja de Estilos Principal
+   Fase 0: Legibilidad Extrema, Modo Oscuro Puro, Columna Única, Preservación de Acordes
+   Legacy Compatibility Targets: iOS 9.3+, Android 4.4/5+, Safari 9+, Chrome antiguo
+   ========================================================================== */
+
+:root {
+  --bg-base: #0d0d0d;
+  --bg-surface: #181818;
+  --bg-surface-elevated: #222222;
+  --bg-hover: #2a2a2a;
+  
+  --border-color: #303030;
+  --border-focus: #ff9800;
+
+  --text-main: #f5f5f5;
+  --text-muted: #9e9e9e;
+  --text-dim: #6e6e6e;
+
+  --color-flame: #ff9800;
+  --color-flame-light: #ffb74d;
+  --color-flame-dark: #e65100;
+
+  --color-success: #4caf50;
+  --color-danger: #f44336;
+
+  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  --touch-min-height: 48px;
+  --content-max-width: 840px;
+}
+
+/* Base */
+body {
+  background-color: #0d0d0d;
+  background-color: var(--bg-base);
+  color: #f5f5f5;
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-system);
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* Layout y Lectura en Columna Única */
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: 840px;
+  max-width: var(--content-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* Cabecera Principal */
+.site-header {
+  background-color: #141414;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid #303030;
+  border-bottom-color: var(--border-color);
+  padding: 12px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.site-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.site-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ff9800;
+  color: var(--color-flame);
+  letter-spacing: -0.5px;
+}
+
+.site-brand .brand-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: #2a2a2a;
+  color: #9e9e9e;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-nav a {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #f5f5f5;
+  color: var(--text-main);
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.site-nav a:hover,
+.site-nav a:focus {
+  background-color: #262626;
+  color: #ff9800;
+}
+
+.site-nav a.active {
+  background-color: #262626;
+  color: #ff9800;
+}
+
+/* Contenido Principal */
+.main-content {
+  flex: 1;
+  padding-top: 24px;
+  padding-bottom: 48px;
+}
+
+/* Títulos y Secciones */
+.page-header {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.page-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.page-title {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #f5f5f5;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.page-subtitle {
+  font-size: 1rem;
+  color: #9e9e9e;
+  color: var(--text-muted);
+}
+
+/* Botones con Tamaño Táctil Generoso (Min 48px) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  min-height: var(--touch-min-height);
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-decoration: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-primary {
+  background-color: #e65100;
+  background-color: var(--color-flame-dark);
+  color: #ffffff;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: #ff9800;
+  background-color: var(--color-flame);
+  color: #000000;
+}
+
+.btn-secondary {
+  background-color: #222222;
+  background-color: var(--bg-surface-elevated);
+  border-color: #383838;
+  border-color: var(--border-color);
+  color: #f5f5f5;
+  color: var(--text-main);
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus {
+  background-color: #2e2e2e;
+  border-color: #4a4a4a;
+}
+
+.btn-danger {
+  background-color: #2b1414;
+  border-color: #612323;
+  color: #ef9a9a;
+}
+
+.btn-danger:hover,
+.btn-danger:focus {
+  background-color: #b71c1c;
+  color: #ffffff;
+}
+
+.btn-sm {
+  min-height: 38px;
+  padding: 6px 12px;
+  font-size: 0.88rem;
+}
+
+.btn-block {
+  display: flex;
+  width: 100%;
+}
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Tarjetas y Contenedores de Lista */
+.card {
+  background-color: #181818;
+  background-color: var(--bg-surface);
+  border: 1px solid #303030;
+  border-color: var(--border-color);
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+.card-clickable {
+  display: block;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.card-clickable:hover,
+.card-clickable:focus {
+  border-color: #ff9800;
+  border-color: var(--color-flame);
+  background-color: #202020;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f5f5f5;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.card-subtitle {
+  font-size: 0.92rem;
+  color: #9e9e9e;
+  color: var(--text-muted);
+}
+
+.card-meta-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: #9e9e9e;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background-color: #242424;
+  color: #ff9800;
+  border: 1px solid #3a3a3a;
+}
+
+/* Formularios Estándar (Accesibles y Robustos) */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #f5f5f5;
+  color: var(--text-main);
+}
+
+.form-help {
+  display: block;
+  font-size: 0.82rem;
+  color: #9e9e9e;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  background-color: #141414;
+  border: 1px solid #383838;
+  border-color: var(--border-color);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 12px 14px;
+  font-size: 1rem;
+  min-height: 48px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #ff9800;
+  border-color: var(--border-focus);
+}
+
+.form-input-short {
+  max-width: 160px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.form-row .form-group {
+  flex: 1;
+  min-width: 140px;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 180px;
+}
+
+.font-mono {
+  font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+  font-family: var(--font-mono) !important;
+  line-height: 1.45;
+  tab-size: 4;
+}
+
+/* ==========================================================================
+   MODO MÚSICO / PANTALLA DE ATRIL (Criterios 2 y 3)
+   - Tipografía monoespaciada
+   - Preservación de espacios y saltos de línea (white-space: pre)
+   - Evitar auto-wrapping para que los acordes no se desfasen de las sílabas
+   - Lectura vertical en columna única (arriba -> abajo)
+   ========================================================================== */
+
+.atril-container {
+  width: 100%;
+  max-width: 880px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 12px 16px 80px 16px;
+}
+
+.atril-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background-color: #0d0d0d;
+  background-color: var(--bg-base);
+  border-bottom: 1px solid #282828;
+  padding: 10px 0;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.atril-toolbar-left,
+.atril-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.atril-meta-header {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #222222;
+  padding-bottom: 14px;
+}
+
+.atril-song-title {
+  font-size: 1.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.atril-song-artist {
+  font-size: 1.15rem;
+  color: #ff9800;
+  color: var(--color-flame);
+  margin-top: 4px;
+}
+
+.atril-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.atril-tag {
+  background-color: #1c1c1c;
+  border: 1px solid #333333;
+  color: #e0e0e0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.atril-tag-highlight {
+  border-color: #e65100;
+  color: #ffb74d;
+  background-color: #241407;
+}
+
+.atril-notas-box {
+  background-color: #171717;
+  border-left: 3px solid #ff9800;
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  margin-top: 12px;
+  font-size: 0.92rem;
+  color: #cccccc;
+}
+
+/* Caja de Letra y Acordes en Modo Músico */
+.letra-acordes-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background-color: #121212;
+  border: 1px solid #262626;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-top: 16px;
+}
+
+.letra-acordes-musico {
+  font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  line-height: 1.45;
+  color: #f5f5f5;
+  color: var(--text-main);
+  
+  /* CRITERIO 2: white-space: pre estricto para preservar la relación espacial */
+  white-space: pre;
+  word-wrap: normal;
+  overflow-wrap: normal;
+}
+
+/* Modo Invitado (solo letra, fluido y wrap normal) */
+.letra-invitado {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-system);
+  font-size: 1.25rem;
+  line-height: 1.7;
+  color: #f5f5f5;
+  white-space: pre-wrap; /* Permite wrap natural sin desfasar acordes porque no hay acordes */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Controles de Zoom en Atril */
+.zoom-controls {
+  display: inline-flex;
+  border: 1px solid #383838;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #1c1c1c;
+}
+
+.zoom-btn {
+  background: transparent;
+  border: none;
+  color: #f5f5f5;
+  padding: 8px 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-btn:hover,
+.zoom-btn:focus {
+  background-color: #2b2b2b;
+  color: #ff9800;
+}
+
+.zoom-btn:active {
+  background-color: #ff9800;
+  color: #000;
+}
+
+.zoom-btn + .zoom-btn {
+  border-left: 1px solid #333333;
+}
+
+/* Indicador y Botón de Wake Lock */
+.wakelock-btn {
+  min-height: 44px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  border: 1px solid #383838;
+  background-color: #1c1c1c;
+  color: #9e9e9e;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wakelock-btn.active {
+  background-color: #1a2a1a;
+  border-color: #388e3c;
+  color: #81c784;
+}
+
+/* Barra de Navegación de Sesión (Anterior / Siguiente) */
+.sesion-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #262626;
+}
+
+.sesion-nav-btn {
+  flex: 1;
+  max-width: 220px;
+}
+
+.sesion-indicator {
+  font-size: 0.95rem;
+  color: #9e9e9e;
+  font-weight: 600;
+}
+
+/* Buscador Rápido */
+.search-bar-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.search-input {
+  flex: 1;
+}
+
+/* Tablas / Listas de Setlist */
+.setlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.setlist-item {
+  background-color: #181818;
+  border: 1px solid #2e2e2e;
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.setlist-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.setlist-order {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ff9800;
+  width: 28px;
+  text-align: center;
+}
+
+.setlist-info h4 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.setlist-info p {
+  font-size: 0.85rem;
+  color: #9e9e9e;
+}
+
+.setlist-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Pantalla de Expiración Sobria (410) */
+.expired-card {
+  text-align: center;
+  max-width: 540px;
+  margin: 60px auto;
+  padding: 36px 24px;
+  background-color: #141414;
+  border: 1px solid #2c2c2c;
+  border-radius: 12px;
+}
+
+.expired-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.expired-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.expired-desc {
+  font-size: 1rem;
+  color: #9e9e9e;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+/* Pie de Página */
+.site-footer {
+  border-top: 1px solid #222222;
+  padding: 20px 0;
+  font-size: 0.85rem;
+  color: #666666;
+  text-align: center;
+  margin-top: auto;
+}
+
+/* Ajustes Responsive en Tablets (Manteniendo estricta COLUMNA ÚNICA) */
+@media (min-width: 600px) {
+  .container {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  
+  .atril-container {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .letra-acordes-musico {
+    font-size: 1.25rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .atril-container {
+    max-width: 880px; /* Margen cómodo, lectura siempre vertical */
+  }
+}

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}🎸 {{ cancion.titulo }} — Modo Músico{% endblock %}
+
+{% block content %}
+<div class="atril-container">
+  <!-- Barra de Herramientas de Atril -->
+  <div class="atril-toolbar" role="toolbar" aria-label="Controles de atril">
+    <div class="atril-toolbar-left">
+      <a href="{% url 'canciones:detalle' cancion.pk %}" class="btn btn-secondary btn-sm" title="Volver a la ficha de la canción">
+        &larr; Salir de atril
+      </a>
+    </div>
+
+    <div class="atril-toolbar-right">
+      <!-- Indicador / Activador de Wake Lock -->
+      <button type="button" id="btn-wakelock" class="wakelock-btn" title="Evitar que la pantalla se apague mientras tocas">
+        <span>💡 Mantener activa</span>
+      </button>
+
+      <!-- Zoom Tipográfico en Pantalla -->
+      <div class="zoom-controls" role="group" aria-label="Tamaño de letra">
+        <button type="button" id="btn-zoom-menos" class="zoom-btn" title="Reducir tamaño de letra">A&minus;</button>
+        <button type="button" id="btn-zoom-mas" class="zoom-btn" title="Aumentar tamaño de letra">A&#43;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encabezado de la Canción -->
+  <header class="atril-meta-header">
+    <h1 class="atril-song-title">{{ cancion.titulo }}</h1>
+    {% if cancion.artista %}
+      <p class="atril-song-artist">{{ cancion.artista }}</p>
+    {% endif %}
+
+    <div class="atril-tags-row">
+      {% if cancion.tonalidad %}
+        <span class="atril-tag atril-tag-highlight">Tono: {{ cancion.tonalidad }}</span>
+      {% endif %}
+      {% if cancion.capo > 0 %}
+        <span class="atril-tag atril-tag-highlight">Capo: Traste {{ cancion.capo }}</span>
+      {% else %}
+        <span class="atril-tag">Sin capo</span>
+      {% endif %}
+      {% if cancion.afinacion and cancion.afinacion != 'Estándar (E A D G B E)' %}
+        <span class="atril-tag">Afinación: {{ cancion.afinacion }}</span>
+      {% endif %}
+    </div>
+
+    {% if cancion.notas_personales %}
+      <div class="atril-notas-box">
+        <strong>Nota:</strong> {{ cancion.notas_personales }}
+      </div>
+    {% endif %}
+  </header>
+
+  <!-- Cuerpo de Letra y Acordes en Columna Única (Modo Músico con white-space: pre) -->
+  <section class="letra-acordes-wrapper" aria-label="Letra y acordes">
+    <pre id="cuerpo-letra" class="letra-acordes-musico">{{ cancion.contenido }}</pre>
+  </section>
+
+  <!-- Pie de Navegación Rápida -->
+  <div style="margin-top: 36px; padding-top: 16px; border-top: 1px solid #222222; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+    <a href="{% url 'canciones:detalle' cancion.pk %}" class="btn btn-secondary btn-sm">
+      &larr; Volver al detalle
+    </a>
+    <a href="{% url 'canciones:lista' %}" class="btn btn-secondary btn-sm">
+      Ir al repertorio general
+    </a>
+  </div>
+</div>
+{% endblock %}

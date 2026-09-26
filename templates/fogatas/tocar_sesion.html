@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}🎸 {{ cancion.titulo }} ({{ pos }}/{{ total_canciones }}) — {{ fogata.nombre }}{% endblock %}
+
+{% block content %}
+<div class="atril-container">
+  <!-- Barra de Herramientas de Sesión -->
+  <div class="atril-toolbar" role="toolbar" aria-label="Controles de sesión de atril">
+    <div class="atril-toolbar-left">
+      <a href="{% url 'fogatas:detalle' fogata.pk %}" class="btn btn-secondary btn-sm" title="Volver al setlist">
+        &larr; Salir de sesión
+      </a>
+      <span style="font-weight: 700; color: #ff9800; font-size: 0.95rem;">
+        Tema {{ pos }} de {{ total_canciones }}
+      </span>
+    </div>
+
+    <div class="atril-toolbar-right">
+      <!-- Indicador / Activador de Wake Lock -->
+      <button type="button" id="btn-wakeLock" class="wakelock-btn" title="Evitar que la pantalla se apague mientras tocas">
+        <span>💡 Mantener activa</span>
+      </button>
+
+      <!-- Zoom Tipográfico en Pantalla -->
+      <div class="zoom-controls" role="group" aria-label="Tamaño de letra">
+        <button type="button" id="btn-zoom-menos" class="zoom-btn" title="Reducir tamaño de letra">A&minus;</button>
+        <button type="button" id="btn-zoom-mas" class="zoom-btn" title="Aumentar tamaño de letra">A&#43;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encabezado de la Canción Actual -->
+  <header class="atril-meta-header">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+      <div>
+        <h1 class="atril-song-title">{{ cancion.titulo }}</h1>
+        {% if cancion.artista %}
+          <p class="atril-song-artist">{{ cancion.artista }}</p>
+        {% endif %}
+      </div>
+      <span class="badge" style="font-size: 0.9rem; padding: 4px 10px;">
+        🔥 {{ fogata.nombre }}
+      </span>
+    </div>
+
+    <div class="atril-tags-row">
+      {% if cancion.tonalidad %}
+        <span class="atril-tag atril-tag-highlight">Tono: {{ cancion.tonalidad }}</span>
+      {% endif %}
+      {% if cancion.capo > 0 %}
+        <span class="atril-tag atril-tag-highlight">Capo: Traste {{ cancion.capo }}</span>
+      {% else %}
+        <span class="atril-tag">Sin capo</span>
+      {% endif %}
+      {% if cancion.afinacion and cancion.afinacion != 'Estándar (E A D G B E)' %}
+        <span class="atril-tag">Afinación: {{ cancion.afinacion }}</span>
+      {% endif %}
+    </div>
+
+    {% if item_actual.nota_sesion %}
+      <div class="atril-notas-box" style="border-left-color: #ff9800; background-color: #21160a;">
+        <strong style="color: #ffb74d;">📌 Indicación de Setlist:</strong> {{ item_actual.nota_sesion }}
+      </div>
+    {% elif cancion.notas_personales %}
+      <div class="atril-notas-box">
+        <strong>Nota:</strong> {{ cancion.notas_personales }}
+      </div>
+    {% endif %}
+  </header>
+
+  <!-- Letra y Acordes en Columna Única (white-space: pre) -->
+  <section class="letra-acordes-wrapper" aria-label="Letra y acordes">
+    <pre id="cuerpo-letra" class="letra-acordes-musico">{{ cancion.contenido }}</pre>
+  </section>
+
+  <!-- Barra de Navegación del Setlist (Anterior / Siguiente) -->
+  <nav class="sesion-nav-bar" aria-label="Navegación entre temas del setlist">
+    {% if anterior_pos %}
+      <a href="{% url 'fogatas:tocar_sesion' fogata.pk %}?pos={{ anterior_pos }}" class="btn btn-secondary sesion-nav-btn">
+        &larr; Anterior (#{{ anterior_pos }})
+      </a>
+    {% else %}
+      <span class="sesion-nav-btn"></span>
+    {% endif %}
+
+    <div class="sesion-indicator">
+      {{ pos }} / {{ total_canciones }}
+    </div>
+
+    {% if siguiente_pos %}
+      <a href="{% url 'fogatas:tocar_sesion' fogata.pk %}?pos={{ siguiente_pos }}" class="btn btn-primary sesion-nav-btn">
+        Siguiente (#{{ siguiente_pos }}) &rarr;
+      </a>
+    {% else %}
+      <a href="{% url 'fogatas:detalle' fogata.pk %}" class="btn btn-secondary sesion-nav-btn">
+        Fin del Setlist &check;
+      </a>
+    {% endif %}
+  </nav>
+
+  <!-- Lista desplegable rápida de canciones de la sesión -->
+  <div style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #222222; text-align: center;">
+    <form method="GET" action="{% url 'fogatas:tocar_sesion' fogata.pk %}" style="display: inline-flex; align-items: center; gap: 8px;">
+      <label for="select-pos" style="font-size: 0.85rem; color: var(--text-muted);">Saltar a tema:</label>
+      <select id="select-pos" name="pos" class="form-select" style="min-height: 40px; padding: 4px 10px; width: auto;" onchange="this.form.submit()">
+        {% for item in items %}
+          <option value="{{ forloop.counter }}" {% if forloop.counter == pos %}selected{% endif %}>
+            #{{ forloop.counter }}. {{ item.cancion.titulo }}
+          </option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Fogata — Fogata{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card" style="max-width: 520px; margin: 40px auto; border-color: #612323;">
+    <h1 class="page-title" style="font-size: 1.5rem; color: #ff8a80; margin-bottom: 12px;">
+      ¿Eliminar Fogata?
+    </h1>
+    <p style="color: #e0e0e0; margin-bottom: 16px;">
+      ¿Estás seguro de que deseas eliminar la sesión <strong>{{ fogata.nombre }}</strong>?
+    </p>
+    <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 24px;">
+      Esta acción eliminará el setlist y los enlaces compartidos asociados. Las canciones originales de tu biblioteca <strong>no se borrarán</strong>.
+    </p>
+
+    <form method="POST">
+      {% csrf_token %}
+      <div class="btn-group">
+        <button type="submit" class="btn btn-danger">
+          Sí, eliminar Fogata
+        </button>
+        <a href="{% url 'fogatas:detalle' fogata.pk %}" class="btn btn-secondary">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

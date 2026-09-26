@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio — Fogata{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">🔥 Bienvenido a Fogata</h1>
+    <p class="page-subtitle">Repertorio acústico, atril de lectura vertical y sesiones compartidas.</p>
+  </div>
+
+  <div class="card" style="border-left: 4px solid var(--color-flame); margin-bottom: 24px;">
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+      <div>
+        <p style="font-size: 1.1rem; font-weight: 600; color: #ffffff;">Estado del Repertorio</p>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          <strong>{{ total_canciones }}</strong> canciones guardadas &bull; <strong>{{ total_fogatas }}</strong> fogatas armadas
+        </p>
+      </div>
+      <div class="btn-group">
+        <a href="{% url 'canciones:crear' %}" class="btn btn-primary">
+          + Nueva Canción
+        </a>
+        <a href="{% url 'fogatas:crear' %}" class="btn btn-secondary">
+          + Nueva Fogata
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canciones Recientes -->
+  <section style="margin-bottom: 32px;">
+    <div class="page-header-row" style="margin-bottom: 12px;">
+      <h2 style="font-size: 1.3rem; font-weight: 700; color: #ffffff;">Canciones Recientes</h2>
+      <a href="{% url 'canciones:lista' %}" class="btn btn-secondary btn-sm">Ver todas ({{ total_canciones }})</a>
+    </div>
+
+    {% if ultimas_canciones %}
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% for cancion in ultimas_canciones %}
+        <div class="card card-clickable" style="margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <a href="{% url 'canciones:detalle' cancion.pk %}" style="text-decoration: none;">
+                <h3 class="card-title">{{ cancion.titulo }}</h3>
+              </a>
+              {% if cancion.artista %}
+                <p class="card-subtitle">{{ cancion.artista }}</p>
+              {% endif %}
+            </div>
+            <div class="btn-group">
+              <a href="{% url 'canciones:tocar' cancion.pk %}" class="btn btn-primary btn-sm">
+                🎸 Tocar
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card" style="text-align: center; padding: 28px;">
+        <p style="color: var(--text-muted); margin-bottom: 12px;">Aún no has agregado ninguna canción a tu biblioteca.</p>
+        <a href="{% url 'canciones:crear' %}" class="btn btn-primary btn-sm">Agregar mi primera canción</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Fogatas Recientes -->
+  <section>
+    <div class="page-header-row" style="margin-bottom: 12px;">
+      <h2 style="font-size: 1.3rem; font-weight: 700; color: #ffffff;">Tus Fogatas (Setlists)</h2>
+      <a href="{% url 'fogatas:lista' %}" class="btn btn-secondary btn-sm">Ver todas ({{ total_fogatas }})</a>
+    </div>
+
+    {% if ultimas_fogatas %}
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% for fogata in ultimas_fogatas %}
+        <div class="card card-clickable" style="margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <a href="{% url 'fogatas:detalle' fogata.pk %}" style="text-decoration: none;">
+                <h3 class="card-title">🔥 {{ fogata.nombre }}</h3>
+              </a>
+              <p class="card-subtitle">{{ fogata.canciones_asociadas.count }} canciones en el setlist</p>
+            </div>
+            <div class="btn-group">
+              {% if fogata.canciones_asociadas.exists %}
+              <a href="{% url 'fogatas:tocar_sesion' fogata.pk %}" class="btn btn-primary btn-sm">
+                ▶ Iniciar Sesión
+              </a>
+              {% endif %}
+              <a href="{% url 'fogatas:detalle' fogata.pk %}" class="btn btn-secondary btn-sm">
+                Ver Setlist
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card" style="text-align: center; padding: 28px;">
+        <p style="color: var(--text-muted); margin-bottom: 12px;">No tienes Fogatas armadas aún. Crea una para ordenar tus canciones para tocar.</p>
+        <a href="{% url 'fogatas:crear' %}" class="btn btn-primary btn-sm">Crear nueva Fogata</a>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Fogatas — Repertorio en Vivo{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">Tus Fogatas</h1>
+        <p class="page-subtitle">{{ total }} sesion{{ total|pluralize:"es" }} o setlists armados</p>
+      </div>
+      <a href="{% url 'fogatas:crear' %}" class="btn btn-primary">
+        + Nueva Fogata
+      </a>
+    </div>
+  </div>
+
+  {% if fogatas %}
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      {% for fogata in fogatas %}
+      <div class="card card-clickable">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div style="flex: 1; min-width: 220px;">
+            <a href="{% url 'fogatas:detalle' fogata.pk %}">
+              <h2 class="card-title">🔥 {{ fogata.nombre }}</h2>
+            </a>
+            {% if fogata.descripcion %}
+              <p class="card-subtitle">{{ fogata.descripcion|truncatewords:20 }}</p>
+            {% endif %}
+
+            <div class="card-meta-bar">
+              <span class="badge">{{ fogata.canciones_asociadas.count }} canción{{ fogata.canciones_asociadas.count|pluralize:"es" }}</span>
+              <span style="color: var(--text-dim);">Creada el {{ fogata.created_at|date:"d/m/Y" }}</span>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            {% if fogata.canciones_asociadas.exists %}
+            <a href="{% url 'fogatas:tocar_sesion' fogata.pk %}" class="btn btn-primary" title="Iniciar sesión en atril continuo">
+              ▶ Tocar Sesión
+            </a>
+            {% endif %}
+            <a href="{% url 'fogatas:detalle' fogata.pk %}" class="btn btn-secondary btn-sm">
+              Ver Setlist
+            </a>
+            <a href="{% url 'fogatas:editar' fogata.pk %}" class="btn btn-secondary btn-sm">
+              Editar
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 36px;">
+      <p style="color: var(--text-muted); margin-bottom: 12px;">
+        No tienes Fogatas armadas aún. Crea tu primer setlist para organizar las canciones que vas a tocar en grupo o evento.
+      </p>
+      <a href="{% url 'fogatas:crear' %}" class="btn btn-primary">Crear primera Fogata</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
