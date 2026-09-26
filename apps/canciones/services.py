@@ -9,13 +9,16 @@ debe ser estrictamente tolerante a errores y jamás modificar la fuente de datos
 """
 
 
+from apps.canciones.parser import extraer_solo_letra
+
+
 def obtener_solo_letra(contenido):
     """
-    Helper preparado para el futuro Modo Invitado.
-    Por ahora, devuelve el texto de forma segura y tolerante sin aplicar
-    filtros destructivos sobre el contenido original.
+    Helper para el Modo Invitado.
+    Utiliza el parser musical para suprimir líneas de acordes y tablatura,
+    y limpiar acordes embebidos [G], preservando las estrofas y versos intactos
+    sin alterar el contenido original en la base de datos.
     """
     if not contenido:
         return ""
-    # En Fase 0 devolvemos el texto íntegro para evitar destrucción o cortes accidentales.
-    return str(contenido)
+    return extraer_solo_letra(contenido)

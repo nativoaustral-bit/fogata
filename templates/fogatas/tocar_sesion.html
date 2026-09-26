@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load cancion_tags %}
 
 {% block title %}🎸 {{ cancion.titulo }} ({{ pos }}/{{ total_canciones }}) — {{ fogata.nombre }}{% endblock %}
 
@@ -70,7 +71,7 @@
 
   <!-- Letra y Acordes en Columna Única (white-space: pre) -->
   <section class="letra-acordes-wrapper" aria-label="Letra y acordes">
-    <pre id="cuerpo-letra" class="letra-acordes-musico">{{ cancion.contenido }}</pre>
+    <pre id="cuerpo-letra" class="letra-acordes-musico">{{ cancion.contenido|formatear_contenido_musical }}</pre>
   </section>
 
   <!-- Barra de Navegación del Setlist (Anterior / Siguiente) -->

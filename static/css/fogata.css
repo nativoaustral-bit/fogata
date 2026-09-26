@@ -501,6 +501,21 @@ body {
   overflow-wrap: normal;
 }
 
+/* Acordes identificados en naranja Fogata (Criterio 5 - Fase 1) */
+.acorde {
+  color: #ff9800;
+  color: var(--color-flame);
+  font-weight: 700;
+}
+
+/* Encabezados de sección ([Intro], [Coro], etc.) */
+.seccion-musical {
+  color: #ffb74d;
+  color: var(--color-flame-light);
+  font-weight: 700;
+  opacity: 0.95;
+}
+
 /* Modo Invitado (solo letra, fluido y wrap normal) */
 .letra-invitado {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;

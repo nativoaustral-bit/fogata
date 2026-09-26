@@ -106,6 +106,35 @@ class Command(BaseCommand):
             }
         )
 
+        c4, _ = Cancion.objects.update_or_create(
+            titulo="Balada del Puerto",
+            defaults={
+                'artista': "Marea Austral (Ficticio)",
+                'tonalidad': "Do",
+                'capo': 0,
+                'afinacion': "Estándar (E A D G B E)",
+                'notas_personales': "Demuestra notación latina (Do, Sol, Lam, Fa) y acordes embebidos entre corchetes.",
+                'contenido': (
+                    "[Intro]\n"
+                    "Do, Sol, Lam, Fa  (x2)\n\n"
+                    "[Verso 1]\n"
+                    "[Do]Cruzando el muelle al [Sol]amanecer\n"
+                    "[Lam]siento la brisa del [Fa]mar volver\n"
+                    "[Do]luces lejanas que [Sol]empiezan a arder\n\n"
+                    "[Coro]\n"
+                    "Do          Sol          Lam        Fa\n"
+                    "Canta la noche, canta el amor\n"
+                    "Do          Sol          Fa         Do\n"
+                    "Guarda en tus manos todo el calor\n\n"
+                    "[Puente]\n"
+                    "Rem7        Sol7         Do         Lam\n"
+                    "Si buscas el rumbo en la oscuridad\n"
+                    "Fa          Sol7/Si      Do\n"
+                    "sigue la lumbre de la ciudad\n"
+                )
+            }
+        )
+
         # Limpiar canciones protegidas anteriores si existían
         Cancion.objects.filter(titulo__in=[
             "De Música Ligera",
@@ -129,5 +158,6 @@ class Command(BaseCommand):
         FogataCancion.objects.create(fogata=fogata, cancion=c1, orden=1, nota_sesion="Tema de apertura, arpegio suave")
         FogataCancion.objects.create(fogata=fogata, cancion=c2, orden=2, nota_sesion="Poner capo en traste 2")
         FogataCancion.objects.create(fogata=fogata, cancion=c3, orden=3, nota_sesion="Ritmo rápido, cierre festivo")
+        FogataCancion.objects.create(fogata=fogata, cancion=c4, orden=4, nota_sesion="Notación latina y acordes embebidos")
 
         self.stdout.write(self.style.SUCCESS("✓ Canciones ficticias de prueba cargadas correctamente."))

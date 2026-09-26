@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load cancion_tags %}
 
 {% block title %}{{ cancion.titulo }} — Fogata{% endblock %}
 
@@ -99,7 +100,7 @@
     </div>
 
     <div class="letra-acordes-wrapper">
-      <pre class="letra-acordes-musico">{{ cancion.contenido }}</pre>
+      <pre class="letra-acordes-musico">{{ cancion.contenido|formatear_contenido_musical }}</pre>
     </div>
   </div>
 </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load cancion_tags %}
 
 {% block title %}🎸 {{ cancion.titulo }} — Modo Músico{% endblock %}
 
@@ -56,7 +57,7 @@
 
   <!-- Cuerpo de Letra y Acordes en Columna Única (Modo Músico con white-space: pre) -->
   <section class="letra-acordes-wrapper" aria-label="Letra y acordes">
-    <pre id="cuerpo-letra" class="letra-acordes-musico">{{ cancion.contenido }}</pre>
+    <pre id="cuerpo-letra" class="letra-acordes-musico">{{ cancion.contenido|formatear_contenido_musical }}</pre>
   </section>
 
   <!-- Pie de Navegación Rápida -->
