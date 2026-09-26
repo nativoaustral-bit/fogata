@@ -104,7 +104,7 @@ REGEX_SECCION = re.compile(
 
 # Tablaturas: líneas con marcas características de cuerdas o guiones repetidos
 REGEX_TABLATURA = re.compile(
-    r'(?:^[eBGDAE]\|[-0-9hpbr/\\~ ]+\||[-]{4,})'
+    r'(?:^[eBGDAE]\|[-0-9hpbr/\\~| ]+|[-]{4,})'
 )
 
 # Separadores musicales aceptados en líneas de acordes (espacios, barras, guiones, comas, repeticiones)

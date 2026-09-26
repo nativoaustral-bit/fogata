@@ -42,11 +42,14 @@ def detalle(request, pk):
 def crear(request):
     """
     Crear una nueva canción en el repertorio.
+    Soporta flujo directo 'Pegar y Tocar' con el botón Guardar y Tocar.
     """
     if request.method == 'POST':
         form = CancionForm(request.POST)
         if form.is_valid():
             cancion = form.save()
+            if request.POST.get('accion_guardar') == 'tocar':
+                return redirect('canciones:tocar', pk=cancion.pk)
             return redirect('canciones:detalle', pk=cancion.pk)
     else:
         form = CancionForm()
@@ -67,6 +70,8 @@ def editar(request, pk):
         form = CancionForm(request.POST, instance=cancion)
         if form.is_valid():
             cancion = form.save()
+            if request.POST.get('accion_guardar') == 'tocar':
+                return redirect('canciones:tocar', pk=cancion.pk)
             return redirect('canciones:detalle', pk=cancion.pk)
     else:
         form = CancionForm(instance=cancion)

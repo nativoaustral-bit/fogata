@@ -11,7 +11,7 @@
       </a>
     </div>
     <h1 class="page-title">{{ accion }}</h1>
-    <p class="page-subtitle">Pega o escribe tu versión con acordes. Se conservará la separación exacta.</p>
+    <p class="page-subtitle">Pega la letra con acordes y empieza a tocar. Los espacios y la alineación se conservarán exactamente.</p>
   </div>
 
   <form method="POST" class="card" novalidate>
@@ -30,6 +30,7 @@
       </div>
     {% endif %}
 
+    <!-- 1. Campos Primarios Esenciales: Título y Artista -->
     <div class="form-row">
       <div class="form-group" style="flex: 2;">
         <label for="{{ form.titulo.id_for_label }}" class="form-label">
@@ -46,52 +47,66 @@
       </div>
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label for="{{ form.tonalidad.id_for_label }}" class="form-label">
-          Tono
-        </label>
-        {{ form.tonalidad }}
-        <span class="form-help">Ej: G, Am, C#m</span>
-      </div>
-
-      <div class="form-group">
-        <label for="{{ form.capo.id_for_label }}" class="form-label">
-          Capo / Cejillo
-        </label>
-        {{ form.capo }}
-        <span class="form-help">0 si no usa</span>
-      </div>
-
-      <div class="form-group" style="flex: 2;">
-        <label for="{{ form.afinacion.id_for_label }}" class="form-label">
-          Afinación
-        </label>
-        {{ form.afinacion }}
-      </div>
-    </div>
-
+    <!-- 2. Contenido Primario: Pegar y Tocar -->
     <div class="form-group">
       <label for="{{ form.contenido.id_for_label }}" class="form-label">
-        Contenido: Letra con Acordes alineados *
+        Contenido: Letra con Acordes *
       </label>
-      <div style="background-color: #1a1a1a; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid var(--color-flame); font-size: 0.85rem; color: #cccccc;">
-        <strong>Preservación espacial:</strong> Pega la letra con los acordes situados exactamente sobre las sílabas. Fogata mantendrá los espacios y saltos de línea sin alteración para que nunca se desalineen en el atril.
+      <div style="background-color: #1a1a1a; padding: 10px 14px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid var(--color-flame); font-size: 0.88rem; color: #cccccc;">
+        <strong>Pegar y tocar:</strong> Copia y pega aquí el texto desde tu página habitual o bloc de notas. Fogata detecta los acordes sin modificar el texto original y respeta cada espacio y salto de línea.
       </div>
       {{ form.contenido }}
     </div>
 
-    <div class="form-group">
-      <label for="{{ form.notas_personales.id_for_label }}" class="form-label">
-        Notas de Interpretación y Ensayo (Opcional)
-      </label>
-      {{ form.notas_personales }}
-      <span class="form-help">Ritmo, rasgueo, arpegio de entrada, estructura específica...</span>
-    </div>
+    <!-- 3. Datos Opcionales (Secundarios, no saturan la vista) -->
+    <details style="margin-top: 16px; margin-bottom: 24px; border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 16px; background-color: var(--bg-surface-elevated);" {% if form.tonalidad.value or form.capo.value or form.afinacion.value or form.notas_personales.value or form.tonalidad.errors or form.capo.errors or form.afinacion.errors or form.notas_personales.errors %}open{% endif %}>
+      <summary style="cursor: pointer; font-weight: 600; color: var(--text-muted); font-size: 0.95rem; user-select: none;">
+        ⚙️ Datos adicionales opcionales (Tono, Capo, Afinación, Notas)
+      </summary>
 
+      <div style="margin-top: 18px;">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="{{ form.tonalidad.id_for_label }}" class="form-label">
+              Tono
+            </label>
+            {{ form.tonalidad }}
+            <span class="form-help">Ej: G, Am, Do</span>
+          </div>
+
+          <div class="form-group">
+            <label for="{{ form.capo.id_for_label }}" class="form-label">
+              Capo / Cejillo
+            </label>
+            {{ form.capo }}
+            <span class="form-help">0 si no usa</span>
+          </div>
+
+          <div class="form-group" style="flex: 2;">
+            <label for="{{ form.afinacion.id_for_label }}" class="form-label">
+              Afinación
+            </label>
+            {{ form.afinacion }}
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="{{ form.notas_personales.id_for_label }}" class="form-label">
+            Notas de Interpretación y Ensayo
+          </label>
+          {{ form.notas_personales }}
+          <span class="form-help">Ritmo, rasgueo, arpegio de entrada, estructura específica...</span>
+        </div>
+      </div>
+    </details>
+
+    <!-- 4. Acciones: Flujo Inmediato 'Pegar y Tocar' -->
     <div class="btn-group" style="margin-top: 24px;">
-      <button type="submit" class="btn btn-primary">
-        Guardar Canción
+      <button type="submit" name="accion_guardar" value="tocar" class="btn btn-primary" style="font-weight: 700;">
+        🎸 Guardar y Tocar
+      </button>
+      <button type="submit" name="accion_guardar" value="guardar" class="btn btn-secondary">
+        Guardar
       </button>
       <a href="{% if cancion %}{% url 'canciones:detalle' cancion.pk %}{% else %}{% url 'canciones:lista' %}{% endif %}" class="btn btn-secondary">
         Cancelar

@@ -285,3 +285,219 @@ class CancionViewsTest(TestCase):
         response_post = self.client.post(reverse('canciones:eliminar', args=[self.cancion.pk]))
         self.assertEqual(response_post.status_code, 302)
         self.assertFalse(Cancion.objects.filter(pk=self.cancion.pk).exists())
+
+
+class Fase1ValidacionRealTest(TestCase):
+    """
+    Suite de Validación Real para Fase 1.1 (Criterios 1 al 15 de Aceptación).
+    Verifica que el flujo 'copiar -> pegar -> guardar -> tocar' sea robusto.
+    """
+
+    def test_01_preservacion_de_espacios(self):
+        """1. Preservación estricta de espacios antes, entre y después de acordes."""
+        linea = "       G              D"
+        html = render_cancion_html(linea)
+        import re
+        texto_limpio = re.sub(r'<[^>]+>', '', html)
+        self.assertEqual(texto_limpio, linea)
+        self.assertTrue(html.startswith("       <span class=\"acorde\">G</span>              <span class=\"acorde\">D</span>"))
+
+    def test_02_acordes_en_lineas_independientes(self):
+        """2. Formato A: Acordes sobre letra en líneas separadas."""
+        formato_a = (
+            "       G              D\n"
+            "Cuando llegue la mañana\n"
+            "\n"
+            "       Em             C\n"
+            "seguiremos el camino"
+        )
+        cancion = Cancion.objects.create(
+            titulo="Formato A Test",
+            artista="Banda A",
+            contenido=formato_a
+        )
+        self.assertEqual(cancion.contenido, formato_a)
+
+        html = render_cancion_html(formato_a)
+        self.assertIn('<span class="acorde">G</span>', html)
+        self.assertIn('<span class="acorde">D</span>', html)
+        self.assertIn('<span class="acorde">Em</span>', html)
+        self.assertIn('<span class="acorde">C</span>', html)
+        self.assertIn("Cuando llegue la mañana", html)
+        self.assertIn("seguiremos el camino", html)
+
+    def test_03_acordes_embebidos(self):
+        """3. Formato B: Acordes entre corchetes sin alterar letra ni perder corchetes."""
+        formato_b = (
+            "[G]Cuando llegue la [D]mañana\n"
+            "[Em]seguiremos el [C]camino"
+        )
+        html = render_cancion_html(formato_b)
+        self.assertIn('[<span class="acorde">G</span>]Cuando llegue la [<span class="acorde">D</span>]mañana', html)
+        self.assertIn('[<span class="acorde">Em</span>]seguiremos el [<span class="acorde">C</span>]camino', html)
+
+    def test_04_progresiones(self):
+        """4. Formato C: Progresiones con barras, guiones o comas."""
+        formato_c = "| G | D | Em | C |"
+        lineas = parse_cancion(formato_c)
+        self.assertEqual(lineas[0].tipo, 'acordes')
+        self.assertEqual(len(lineas[0].tokens_acorde), 4)
+
+        html = render_cancion_html(formato_c)
+        self.assertEqual(
+            html,
+            '| <span class="acorde">G</span> | <span class="acorde">D</span> | <span class="acorde">Em</span> | <span class="acorde">C</span> |'
+        )
+
+    def test_05_notacion_latina(self):
+        """5. Formato E: Notación latina (Sol, Re, Mim, Do, Fa#, Lam)."""
+        formato_e = (
+            "Sol             Re\n"
+            "Texto ficticio\n\n"
+            "Mim             Do\n"
+            "Texto ficticio"
+        )
+        html = render_cancion_html(formato_e)
+        self.assertIn('<span class="acorde">Sol</span>             <span class="acorde">Re</span>', html)
+        self.assertIn('<span class="acorde">Mim</span>             <span class="acorde">Do</span>', html)
+
+    def test_06_notacion_americana(self):
+        """6. Notación americana completa con alteraciones, números y slash."""
+        linea = "C  G/B  Am7  F#m7b5  Dsus4  Ebadd9"
+        html = render_cancion_html(linea)
+        self.assertIn('<span class="acorde">G/B</span>', html)
+        self.assertIn('<span class="acorde">F#m7b5</span>', html)
+        self.assertIn('<span class="acorde">Dsus4</span>', html)
+        self.assertIn('<span class="acorde">Ebadd9</span>', html)
+
+    def test_07_secciones(self):
+        """7. Formato D: Secciones diferenciadas visualmente sin alterar estructura."""
+        formato_d = (
+            "[Intro]\n"
+            "G D Em C\n\n"
+            "[Verso]\n"
+            "G              D\n"
+            "Texto ficticio de prueba\n\n"
+            "[Coro]\n"
+            "Em             C\n"
+            "Texto ficticio de prueba"
+        )
+        html = render_cancion_html(formato_d)
+        self.assertIn('<span class="seccion-musical">[Intro]</span>', html)
+        self.assertIn('<span class="seccion-musical">[Verso]</span>', html)
+        self.assertIn('<span class="seccion-musical">[Coro]</span>', html)
+
+    def test_08_tablaturas(self):
+        """8. Formato F: Tablaturas legibles e intactas sin acordes erróneos."""
+        tabs = (
+            "e|-------------------\n"
+            "B|-----3-------------\n"
+            "G|---2---------------"
+        )
+        lineas = parse_cancion(tabs)
+        for l in lineas:
+            self.assertEqual(l.tipo, 'tablatura')
+            self.assertEqual(len(l.tokens_acorde), 0)
+
+        html = render_cancion_html(tabs)
+        # No debe haber spans de acordes en las cuerdas de tablatura
+        self.assertNotIn('<span class="acorde">', html)
+        self.assertEqual(html, tabs)
+
+    def test_09_contenido_desconocido_no_desaparece_ni_falla(self):
+        """9. Ninguna línea dudosa desaparece ni genera excepción."""
+        mixto = (
+            "Intro: G - D - Em - C\n\n"
+            "G                  D\n"
+            "Texto ficticio de prueba\n\n"
+            "Nota: tocar suave con púa fina\n"
+            "Observación: Capo en traste 2 para la segunda guitarra\n"
+            "e|---0-2-3---"
+        )
+        # Parse y render sin error
+        html = render_cancion_html(mixto)
+        self.assertIn("Nota: tocar suave con púa fina", html)
+        self.assertIn("Observación: Capo en traste 2 para la segunda guitarra", html)
+        self.assertIn("e|---0-2-3---", html)
+        self.assertIn('<span class="acorde">G</span>', html)
+
+    def test_10_pegado_desde_navegador_configuracion_textarea(self):
+        """10. Textarea configurado para recibir texto plano sin auto-correcciones móviles ni wrap."""
+        from .forms import CancionForm
+        form = CancionForm()
+        widget = form.fields['contenido'].widget
+        attrs = widget.attrs
+        self.assertEqual(attrs.get('wrap'), 'off')
+        self.assertEqual(attrs.get('autocapitalize'), 'off')
+        self.assertEqual(attrs.get('autocorrect'), 'off')
+        self.assertEqual(attrs.get('spellcheck'), 'false')
+        self.assertFalse(form.fields['contenido'].strip)
+
+    def test_11_flujo_pegar_y_tocar_inmediato_y_edicion(self):
+        """11. Flujo 'Pegar y Tocar' con Guardar y Tocar, y posterior edición."""
+        data_crear = {
+            'titulo': 'Canción Inmediata',
+            'artista': 'Banda Inmediata',
+            'contenido': '   G       D\nCantar en paz...',
+            'accion_guardar': 'tocar'
+        }
+        res_crear = self.client.post(reverse('canciones:crear'), data=data_crear)
+        cancion = Cancion.objects.get(titulo='Canción Inmediata')
+        # Redirección inmediata a Tocar (Modo Músico)
+        self.assertRedirects(res_crear, reverse('canciones:tocar', args=[cancion.pk]))
+
+        # Edición posterior
+        data_editar = {
+            'titulo': 'Canción Inmediata (Corregida)',
+            'artista': 'Banda Inmediata',
+            'contenido': '   G       D        Em\nCantar en paz y libertad...',
+            'accion_guardar': 'tocar'
+        }
+        res_editar = self.client.post(reverse('canciones:editar', args=[cancion.pk]), data=data_editar)
+        self.assertRedirects(res_editar, reverse('canciones:tocar', args=[cancion.pk]))
+        cancion.refresh_from_db()
+        self.assertEqual(cancion.titulo, 'Canción Inmediata (Corregida)')
+        self.assertIn('Em', cancion.contenido)
+
+    def test_12_seguridad_xss(self):
+        """12. Contenido malicioso escapado rigurosamente; no se inyecta HTML ejecutable."""
+        xss_payload = '<img src=x onerror=alert(1)> [G] <script>alert("hack")</script>'
+        html = render_cancion_html(xss_payload)
+        self.assertNotIn('<img src=x', html)
+        self.assertNotIn('<script>', html)
+        self.assertIn('&lt;img src=x onerror=alert(1)&gt;', html)
+        self.assertIn('&lt;script&gt;alert(&quot;hack&quot;)&lt;/script&gt;', html)
+        self.assertIn('<span class="acorde">G</span>', html)
+
+    def test_13_funcionamiento_sin_javascript(self):
+        """13. Modo Tocar y Detalle son 100% renderizados en servidor con HTML puro."""
+        cancion = Cancion.objects.create(
+            titulo="Canción No-JS",
+            artista="Autor No-JS",
+            contenido="   A      E\nCaminando sin prisa..."
+        )
+        res_tocar = self.client.get(reverse('canciones:tocar', args=[cancion.pk]))
+        self.assertEqual(res_tocar.status_code, 200)
+        # Acordes ya vienen con clase .acorde desde el servidor
+        self.assertContains(res_tocar, '<span class="acorde">A</span>')
+        self.assertContains(res_tocar, '<span class="acorde">E</span>')
+
+    def test_14_visualizacion_movil_clases_y_estilos(self):
+        """14. Modo tocar incluye contenedor de atril monoespaciado y con scroll horizontal seguro."""
+        cancion = Cancion.objects.create(
+            titulo="Test Móvil",
+            artista="Autor Móvil",
+            contenido="G       C\nUna sola columna..."
+        )
+        res = self.client.get(reverse('canciones:tocar', args=[cancion.pk]))
+        self.assertContains(res, 'class="letra-acordes-wrapper"')
+        self.assertContains(res, 'class="letra-acordes-musico"')
+
+    def test_15_visualizacion_tablet_y_datos_opcionales(self):
+        """15. La vista de crear/editar contiene el bloque details con los datos opcionales."""
+        res_form = self.client.get(reverse('canciones:crear'))
+        self.assertEqual(res_form.status_code, 200)
+        self.assertContains(res_form, '<details')
+        self.assertContains(res_form, 'Datos adicionales opcionales')
+        self.assertContains(res_form, 'Guardar y Tocar')
+

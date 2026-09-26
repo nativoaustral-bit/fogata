@@ -31,6 +31,7 @@ class Cancion(models.Model):
     )
     capo = models.PositiveSmallIntegerField(
         default=0,
+        blank=True,
         verbose_name='Capo / Cejillo',
         help_text='Traste del cejillo (0 = sin capo)'
     )
