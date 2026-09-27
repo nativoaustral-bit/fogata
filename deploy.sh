@@ -57,7 +57,7 @@ EOF
 
 # 3. Comprobación de salud HTTP en producción
 echo "🔍 [3/3] Ejecutando comprobación de servicio web en https://fogata.humm.cl..."
-HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://fogata.humm.cl/)
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --resolve fogata.humm.cl:443:162.241.60.177 https://fogata.humm.cl/ 2>/dev/null || curl -s -o /dev/null -w "%{http_code}" https://fogata.humm.cl/)
 if [ "$HTTP_STATUS" != "200" ]; then
     echo "❌ Error: https://fogata.humm.cl/ devolvió código HTTP $HTTP_STATUS (esperado 200)." >&2
     exit 1
