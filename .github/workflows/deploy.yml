@@ -1,0 +1,61 @@
+name: Deploy Fogata to HostGator Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to HostGator Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout Código
+        uses: actions/checkout@v4
+
+      - name: 2. Actualizar Código y Recargar en Servidor
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -euo pipefail
+
+            APP_DIR="/home1/paulocis/apps/fogata/app"
+            VENV_DIR="/home1/paulocis/apps/fogata/venv"
+            SUBDOMAIN_DIR="/home1/paulocis/fogata.humm.cl"
+            SECRETS_DIR="/home1/paulocis/apps/fogata/secrets"
+
+            cd "$APP_DIR"
+            git fetch origin main
+            git checkout main
+            git merge origin/main --ff-only
+
+            # Instalar dependencias si hay cambios
+            /home1/paulocis/.local/bin/uv pip install -r requirements.txt --python "$VENV_DIR" --quiet
+
+            # Exportar variables de entorno de producción
+            set -a
+            source "${SECRETS_DIR}/.env"
+            set +a
+
+            # Ejecutar migraciones
+            "${VENV_DIR}/bin/python" manage.py migrate --noinput
+
+            # Recolectar estáticos
+            "${VENV_DIR}/bin/python" manage.py collectstatic --noinput
+
+            # Reiniciar Passenger
+            touch "${SUBDOMAIN_DIR}/tmp/restart.txt"
+
+      - name: 3. Comprobación de Salud Web (Smoke Test)
+        run: |
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://fogata.humm.cl/)
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "❌ Error: https://fogata.humm.cl/ devolvió código HTTP $HTTP_STATUS (esperado 200)." >&2
+            exit 1
+          fi
+          echo "✔ Fogata en producción responde correctamente: HTTP $HTTP_STATUS"
