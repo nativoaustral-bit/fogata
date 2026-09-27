@@ -1,4 +1,6 @@
 import secrets
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.urls import reverse
@@ -26,6 +28,13 @@ class Fogata(models.Model):
     """
     Representa una sesión o setlist de canciones ordenadas para tocar en vivo.
     """
+    propietario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='fogatas',
+        verbose_name='Propietario',
+        db_index=True
+    )
     nombre = models.CharField(
         max_length=150,
         verbose_name='Nombre de la Fogata',
@@ -99,6 +108,17 @@ class FogataCancion(models.Model):
                 name='unique_fogata_cancion'
             )
         ]
+
+    def clean(self):
+        super().clean()
+        if hasattr(self, 'fogata') and hasattr(self, 'cancion') and self.fogata and self.cancion:
+            if self.fogata.propietario_id and self.cancion.propietario_id:
+                if self.fogata.propietario_id != self.cancion.propietario_id:
+                    raise ValidationError("Una Fogata solo puede contener canciones pertenecientes a su mismo propietario.")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.orden}. {self.cancion.titulo} ({self.fogata.nombre})"

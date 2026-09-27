@@ -1,21 +1,35 @@
 """
-Django settings for Fogata MVP (Fase 0).
-Django 5.2 LTS, SQLite, Server-Side Rendering (SSR), Legacy-First.
+Django settings for Fogata MVP (Fase 0 - Fase 6).
+Django 5.2 LTS, SQLite, Server-Side Rendering (SSR), Multi-User Ready.
 """
 
+import os
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-fogata-mvp-fase0-segura-y-minimalista'
+# Modo DEBUG controlado por entorno (True por defecto en desarrollo local)
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Configuración estricta de SECRET_KEY (Criterio 15)
+if DEBUG:
+    SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fogata-mvp-fase0-segura-y-minimalista')
+else:
+    SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+    if not SECRET_KEY:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY es obligatoria cuando DEBUG=False en producción.")
 
-# Permitir pruebas locales tanto desde localhost como desde dispositivos legacy en la misma red WiFi
-ALLOWED_HOSTS = ['*']
+# Configuración estricta de ALLOWED_HOSTS (Criterio 15)
+if DEBUG:
+    allowed_hosts_env = os.environ.get('DJANGO_ALLOWED_HOSTS')
+    ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()] if allowed_hosts_env else ['*']
+else:
+    allowed_hosts_env = os.environ.get('DJANGO_ALLOWED_HOSTS')
+    if not allowed_hosts_env:
+        raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS debe configurarse explícitamente cuando DEBUG=False en producción.")
+    ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
 
 
 # Application definition
@@ -42,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.core.middleware.PrivateCacheMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -64,13 +79,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# Database: SQLite para desarrollo y MVP Fase 0
+# Database: SQLite para desarrollo y MVP
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+db_path_env = os.environ.get('DJANGO_DB_PATH')
+DB_NAME = Path(db_path_env) if db_path_env else BASE_DIR / 'db.sqlite3'
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DB_NAME,
+        'OPTIONS': {
+            'timeout': 20,
+        },
     }
 }
 
@@ -105,3 +125,37 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Autenticación Nativa (Fase 6)
+AUTHENTICATION_BACKENDS = [
+    'apps.core.backends.EmailAuthBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+LOGIN_URL = 'core:login'
+LOGIN_REDIRECT_URL = 'core:home'
+LOGOUT_REDIRECT_URL = 'core:home'
+
+# Configuración de Correo Electrónico (Fase 6 - Criterio 18)
+EMAIL_BACKEND = os.environ.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1')
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() in ('true', '1')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Fogata <no-reply@humm.cl>')
+
+# Orígenes confiables CSRF
+csrf_trusted_env = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS')
+if csrf_trusted_env:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in csrf_trusted_env.split(',') if o.strip()]
+
+# Seguridad de Producción y Cookies HTTPS (Fase 6 - Criterio 16)
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+

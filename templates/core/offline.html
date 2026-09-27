@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Modo Sin Conexión — Fogata{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 40px auto; text-align: center;">
+  <div class="page-header" style="text-align: center;">
+    <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 12px;">
+      <span class="badge" style="background-color: #332200; color: #ffb74d; border: 1px solid #ff9800; font-size: 0.85rem; padding: 4px 10px;">
+        ⚡ Sin conexión
+      </span>
+    </div>
+    <h1 class="page-title" style="font-size: 1.8rem; margin-bottom: 8px;">🔥 Fogata Offline</h1>
+    <p class="page-subtitle" style="font-size: 1rem; color: var(--text-muted); line-height: 1.6;">
+      No tienes conexión a internet en este momento.
+    </p>
+  </div>
+
+  <div class="card" style="padding: 32px 24px; text-align: center; margin-bottom: 24px;">
+    <p style="font-size: 1.05rem; font-weight: 600; color: #ffffff; margin-bottom: 12px;">
+      Biblioteca privada protegida
+    </p>
+    <p style="color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; margin-bottom: 24px;">
+      Para garantizar el aislamiento absoluto y la privacidad de tus canciones en este piloto multiusuario, el acceso a tus repertorios privados requiere una sesión activa con conexión.
+    </p>
+    <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+      <a href="/" class="btn btn-primary" style="min-height: 44px; display: inline-flex; align-items: center;">
+        ↻ Reintentar conexión
+      </a>
+      <a href="/canciones/diagrama/?root=0&mod=&notacion=american" class="btn btn-secondary" style="min-height: 44px; display: inline-flex; align-items: center;">
+        🎸 Ver diagramas de acordes
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

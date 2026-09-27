@@ -1,0 +1,30 @@
+<!-- Modal de Diagrama de Acorde (Fase 4) -->
+<div id="modal-diagrama-acorde" class="modal-diagrama-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modal-diagrama-titulo">
+  <div class="modal-diagrama-box">
+    <div class="modal-diagrama-header">
+      <h3 id="modal-diagrama-titulo" class="modal-diagrama-title">Diagrama de Acorde</h3>
+      <button type="button" id="btn-cerrar-diagrama" class="modal-diagrama-close" aria-label="Cerrar ventana de acorde">&times;</button>
+    </div>
+    
+    <div class="modal-diagrama-body">
+      <!-- Advertencia si la afinación no es estándar (Criterio 5) -->
+      <div id="modal-diagrama-alerta" class="diagrama-alerta-afinacion" style="display: none;">
+        ⚠️ Diagrama basado en afinación estándar EADGBE.
+      </div>
+
+      <!-- Contenedor del SVG renderizado (Criterios 1, 8, 12, 13) -->
+      <div id="modal-diagrama-svg" class="diagrama-svg-wrapper"></div>
+
+      <!-- Mensaje si no está disponible (Criterio 19) -->
+      <div id="modal-diagrama-mensaje" class="diagrama-mensaje-texto" style="display: none;">
+        Diagrama aún no disponible para este acorde.
+      </div>
+    </div>
+
+    <div class="modal-diagrama-footer">
+      <button type="button" id="btn-cerrar-diagrama-pie" class="btn btn-secondary btn-sm">
+        Cerrar (Esc)
+      </button>
+    </div>
+  </div>
+</div>

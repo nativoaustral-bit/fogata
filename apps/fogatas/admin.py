@@ -10,8 +10,9 @@ class FogataCancionInline(admin.TabularInline):
 
 @admin.register(Fogata)
 class FogataAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'total_canciones', 'created_at')
-    search_fields = ('nombre', 'descripcion')
+    list_display = ('nombre', 'propietario', 'total_canciones', 'created_at')
+    list_filter = ('propietario',)
+    search_fields = ('nombre', 'descripcion', 'propietario__email')
     inlines = [FogataCancionInline]
 
     def total_canciones(self, obj):

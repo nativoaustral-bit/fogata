@@ -26,8 +26,11 @@
         <a href="{% url 'canciones:tocar' cancion.pk %}" class="btn btn-primary">
           🎸 Modo Músico (Tocar)
         </a>
+        <a href="{% url 'canciones:editar_acordes' cancion.pk %}" class="btn btn-secondary" title="Corregir acordes de forma rápida">
+          🎵 Editar acordes
+        </a>
         <a href="{% url 'canciones:editar' cancion.pk %}" class="btn btn-secondary">
-          Editar
+          Editar todo
         </a>
         <a href="{% url 'canciones:eliminar' cancion.pk %}" class="btn btn-danger">
           Eliminar
@@ -58,6 +61,16 @@
         </span>
       </div>
     </div>
+
+    {% acordes_de_cancion cancion as acordes_lista %}
+    {% if acordes_lista %}
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+        <span style="color: var(--text-dim); font-size: 0.85rem; display: block; margin-bottom: 4px;">Acordes de esta canción:</span>
+        <p style="color: var(--color-flame); font-weight: 600; font-family: var(--font-mono); font-size: 1rem;">
+          {{ acordes_lista|join:" · " }}
+        </p>
+      </div>
+    {% endif %}
 
     {% if cancion.notas_personales %}
       <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color);">

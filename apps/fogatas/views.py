@@ -1,12 +1,16 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
-from django.http import HttpResponseGone
+from django.http import HttpResponseGone, HttpResponseForbidden
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Max
 from .models import Fogata, FogataCancion, SesionCompartida
 from .forms import FogataForm, AgregarCancionForm, CrearSesionCompartidaForm
 from apps.canciones.models import Cancion
 from apps.canciones.services import obtener_solo_letra
+from apps.canciones.views import obtener_parametros_musicales
+
 
 
 # ==========================================
@@ -35,11 +39,12 @@ def respuesta_sesion_expirada(request):
 # Vistas de Gestión de Fogatas (Músico)
 # ==========================================
 
+@login_required
 def lista(request):
     """
-    Listado de todas las Fogatas creadas.
+    Listado de las Fogatas del usuario autenticado.
     """
-    fogatas = Fogata.objects.all().prefetch_related('canciones_asociadas')
+    fogatas = Fogata.objects.filter(propietario=request.user).prefetch_related('canciones_asociadas')
     context = {
         'fogatas': fogatas,
         'total': fogatas.count(),
@@ -47,12 +52,13 @@ def lista(request):
     return render(request, 'fogatas/lista.html', context)
 
 
+@login_required
 def detalle(request, pk):
     """
     Detalle de una Fogata con su setlist ordenado, sesiones compartidas activas
     y opciones de gestión.
     """
-    fogata = get_object_or_404(Fogata, pk=pk)
+    fogata = get_object_or_404(Fogata, pk=pk, propietario=request.user)
     canciones_asociadas = fogata.canciones_asociadas.select_related('cancion').order_by('orden')
     sesiones_activas = [s for s in fogata.sesiones_compartidas.filter(activa=True) if s.esta_vigente()]
 
@@ -65,14 +71,17 @@ def detalle(request, pk):
     return render(request, 'fogatas/detalle.html', context)
 
 
+@login_required
 def crear(request):
     """
-    Crea una nueva Fogata.
+    Crea una nueva Fogata perteneciente al usuario autenticado.
     """
     if request.method == 'POST':
         form = FogataForm(request.POST)
         if form.is_valid():
-            fogata = form.save()
+            fogata = form.save(commit=False)
+            fogata.propietario = request.user
+            fogata.save()
             return redirect('fogatas:detalle', pk=fogata.pk)
     else:
         form = FogataForm()
@@ -84,11 +93,12 @@ def crear(request):
     return render(request, 'fogatas/crear_editar.html', context)
 
 
+@login_required
 def editar(request, pk):
     """
-    Edita nombre o descripción de la Fogata.
+    Edita nombre o descripción de la Fogata propia.
     """
-    fogata = get_object_or_404(Fogata, pk=pk)
+    fogata = get_object_or_404(Fogata, pk=pk, propietario=request.user)
     if request.method == 'POST':
         form = FogataForm(request.POST, instance=fogata)
         if form.is_valid():
@@ -105,11 +115,12 @@ def editar(request, pk):
     return render(request, 'fogatas/crear_editar.html', context)
 
 
+@login_required
 def eliminar(request, pk):
     """
-    Elimina una Fogata (las canciones originales no se eliminan).
+    Elimina una Fogata propia (las canciones originales no se eliminan).
     """
-    fogata = get_object_or_404(Fogata, pk=pk)
+    fogata = get_object_or_404(Fogata, pk=pk, propietario=request.user)
     if request.method == 'POST':
         fogata.delete()
         return redirect('fogatas:lista')
@@ -120,15 +131,20 @@ def eliminar(request, pk):
     return render(request, 'fogatas/eliminar.html', context)
 
 
+@login_required
 def agregar_cancion(request, pk):
     """
     Agrega una canción existente al setlist de la Fogata.
+    Valida en formulario, vista y modelo que la canción pertenezca al mismo propietario.
     """
-    fogata = get_object_or_404(Fogata, pk=pk)
+    fogata = get_object_or_404(Fogata, pk=pk, propietario=request.user)
     if request.method == 'POST':
         form = AgregarCancionForm(request.POST, fogata=fogata)
         if form.is_valid():
             cancion = form.cleaned_data['cancion']
+            if cancion.propietario != request.user:
+                raise PermissionDenied("La canción no pertenece al usuario.")
+
             nota_sesion = form.cleaned_data.get('nota_sesion', '')
 
             # Calcular siguiente orden
@@ -152,11 +168,12 @@ def agregar_cancion(request, pk):
     return render(request, 'fogatas/agregar_cancion.html', context)
 
 
+@login_required
 def quitar_cancion(request, fogata_pk, cancion_pk):
     """
     Quita una canción del setlist y reordena las restantes.
     """
-    fogata = get_object_or_404(Fogata, pk=fogata_pk)
+    fogata = get_object_or_404(Fogata, pk=fogata_pk, propietario=request.user)
     if request.method == 'POST':
         FogataCancion.objects.filter(fogata=fogata, cancion_id=cancion_pk).delete()
 
@@ -169,12 +186,13 @@ def quitar_cancion(request, fogata_pk, cancion_pk):
     return redirect('fogatas:detalle', pk=fogata.pk)
 
 
+@login_required
 def mover_cancion(request, fogata_pk, cancion_pk, direccion):
     """
     Sube o baja una canción en el setlist.
     direccion: 'subir' | 'bajar'
     """
-    fogata = get_object_or_404(Fogata, pk=fogata_pk)
+    fogata = get_object_or_404(Fogata, pk=fogata_pk, propietario=request.user)
     if request.method == 'POST':
         asociaciones = list(fogata.canciones_asociadas.order_by('orden'))
         indice_actual = next((i for i, a in enumerate(asociaciones) if a.cancion_id == cancion_pk), None)
@@ -193,13 +211,14 @@ def mover_cancion(request, fogata_pk, cancion_pk, direccion):
     return redirect('fogatas:detalle', pk=fogata.pk)
 
 
+@login_required
 def tocar_sesion(request, pk):
     """
     Modo Músico para una Fogata completa (ejecución continua de setlist).
     Permite avanzar tema a tema (Anterior / Siguiente) sin abandonar la pantalla completa.
     Lectura siempre en columna única vertical.
     """
-    fogata = get_object_or_404(Fogata, pk=pk)
+    fogata = get_object_or_404(Fogata, pk=pk, propietario=request.user)
     items = list(fogata.canciones_asociadas.select_related('cancion').order_by('orden'))
 
     if not items:
@@ -222,6 +241,8 @@ def tocar_sesion(request, pk):
     anterior_pos = pos - 1 if pos > 1 else None
     siguiente_pos = pos + 1 if pos < len(items) else None
 
+    semitonos, notacion = obtener_parametros_musicales(request)
+
     context = {
         'fogata': fogata,
         'item_actual': item_actual,
@@ -232,6 +253,10 @@ def tocar_sesion(request, pk):
         'siguiente_pos': siguiente_pos,
         'items': items,
         'modo_musico': True,
+        'semitonos': semitonos,
+        'notacion': notacion,
+        'semitonos_mas_uno': min(6, semitonos + 1),
+        'semitonos_menos_uno': max(-6, semitonos - 1),
     }
     return render(request, 'fogatas/tocar_sesion.html', context)
 
@@ -240,11 +265,12 @@ def tocar_sesion(request, pk):
 # Gestión de Sesiones Compartidas
 # ==========================================
 
+@login_required
 def compartir_crear(request, pk):
     """
     Genera un nuevo enlace temporal criptográficamente seguro para la Fogata.
     """
-    fogata = get_object_or_404(Fogata, pk=pk)
+    fogata = get_object_or_404(Fogata, pk=pk, propietario=request.user)
     if request.method == 'POST':
         form = CrearSesionCompartidaForm(request.POST)
         if form.is_valid():
@@ -259,11 +285,12 @@ def compartir_crear(request, pk):
     return redirect('fogatas:detalle', pk=fogata.pk)
 
 
+@login_required
 def compartir_exito(request, pk, sesion_id):
     """
     Muestra el enlace generado y los detalles de la sesión compartida.
     """
-    fogata = get_object_or_404(Fogata, pk=pk)
+    fogata = get_object_or_404(Fogata, pk=pk, propietario=request.user)
     sesion = get_object_or_404(SesionCompartida, pk=sesion_id, fogata=fogata)
     url_publica = request.build_absolute_uri(sesion.get_absolute_url())
 
@@ -275,11 +302,12 @@ def compartir_exito(request, pk, sesion_id):
     return render(request, 'fogatas/compartir_sesion.html', context)
 
 
+@login_required
 def compartir_revocar(request, pk, sesion_id):
     """
     Revoca un enlace compartido antes de su fecha natural de expiración.
     """
-    fogata = get_object_or_404(Fogata, pk=pk)
+    fogata = get_object_or_404(Fogata, pk=pk, propietario=request.user)
     sesion = get_object_or_404(SesionCompartida, pk=sesion_id, fogata=fogata)
     if request.method == 'POST':
         sesion.revocar()

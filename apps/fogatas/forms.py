@@ -24,7 +24,7 @@ class FogataForm(forms.ModelForm):
 
 class AgregarCancionForm(forms.Form):
     cancion = forms.ModelChoiceField(
-        queryset=Cancion.objects.all(),
+        queryset=Cancion.objects.none(),
         widget=forms.Select(attrs={'class': 'form-select'}),
         label='Seleccionar Canción'
     )
@@ -41,10 +41,14 @@ class AgregarCancionForm(forms.Form):
     def __init__(self, *args, **kwargs):
         fogata = kwargs.pop('fogata', None)
         super().__init__(*args, **kwargs)
-        if fogata:
-            # Excluir canciones que ya estén en esta fogata
+        if fogata and fogata.propietario:
+            # Excluir canciones que ya estén en esta fogata y restringir al propietario
             canciones_existentes = fogata.canciones_asociadas.values_list('cancion_id', flat=True)
-            self.fields['cancion'].queryset = Cancion.objects.exclude(id__in=canciones_existentes)
+            self.fields['cancion'].queryset = Cancion.objects.filter(
+                propietario=fogata.propietario
+            ).exclude(id__in=canciones_existentes)
+        else:
+            self.fields['cancion'].queryset = Cancion.objects.none()
 
 
 class CrearSesionCompartidaForm(forms.Form):

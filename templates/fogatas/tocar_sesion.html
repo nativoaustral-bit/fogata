@@ -30,6 +30,44 @@
     </div>
   </div>
 
+  <!-- Barra de Control Musical: Transposición y Notación (Fase 3) -->
+  <div class="atril-musical-bar" role="region" aria-label="Ajustes musicales">
+    <div class="atril-transposicion-group">
+      <a href="?semitonos={{ semitonos_menos_uno }}&notacion={{ notacion }}&pos={{ pos }}"
+         id="btn-tono-bajar"
+         class="atril-tono-btn"
+         title="Bajar 1 semitono (−♭)"
+         aria-label="Bajar medio tono">
+        &minus;&#9837;
+      </a>
+
+      <a href="?semitonos=0&notacion={{ notacion }}&pos={{ pos }}"
+         id="btn-tono-reset"
+         class="atril-tono-badge"
+         title="Restablecer tono original (0 semitonos)"
+         aria-label="Tono actual">
+        <span id="indicador-tono">{% texto_tonalidad cancion semitonos=semitonos notacion=notacion %}</span>
+      </a>
+
+      <a href="?semitonos={{ semitonos_mas_uno }}&notacion={{ notacion }}&pos={{ pos }}"
+         id="btn-tono-subir"
+         class="atril-tono-btn"
+         title="Subir 1 semitono (♯+)"
+         aria-label="Subir medio tono">
+        &#9839;&#43;
+      </a>
+    </div>
+
+    <div class="atril-notacion-group">
+      <a href="?semitonos={{ semitonos }}&notacion={% if notacion == 'latin' %}american{% else %}latin{% endif %}&pos={{ pos }}"
+         id="btn-toggle-notacion"
+         class="atril-notacion-btn"
+         title="Alternar entre notación Americana (C-D-E) y Latina (Do-Re-Mi)">
+        <span id="indicador-notacion-texto">{% if notacion == 'latin' %}Do Re Mi{% else %}A B C{% endif %}</span>
+      </a>
+    </div>
+  </div>
+
   <!-- Encabezado de la Canción Actual -->
   <header class="atril-meta-header">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
@@ -46,7 +84,9 @@
 
     <div class="atril-tags-row">
       {% if cancion.tonalidad %}
-        <span class="atril-tag atril-tag-highlight">Tono: {{ cancion.tonalidad }}</span>
+        <span class="atril-tag atril-tag-highlight" id="atril-tag-tonalidad">
+          {% texto_tonalidad cancion semitonos=semitonos notacion=notacion %}
+        </span>
       {% endif %}
       {% if cancion.capo > 0 %}
         <span class="atril-tag atril-tag-highlight">Capo: Traste {{ cancion.capo }}</span>
@@ -57,6 +97,15 @@
         <span class="atril-tag">Afinación: {{ cancion.afinacion }}</span>
       {% endif %}
     </div>
+
+    <!-- Acordes utilizados en esta canción (Criterio 16) -->
+    {% acordes_de_cancion cancion semitonos=semitonos notacion=notacion as acordes_lista %}
+    {% if acordes_lista %}
+      <div class="atril-acordes-resumen" aria-label="Acordes de esta canción">
+        <span class="atril-acordes-label">Acordes:</span>
+        <span id="atril-lista-acordes" class="atril-acordes-tokens">{{ acordes_lista|join:" · " }}</span>
+      </div>
+    {% endif %}
 
     {% if item_actual.nota_sesion %}
       <div class="atril-notas-box" style="border-left-color: #ff9800; background-color: #21160a;">
@@ -71,7 +120,15 @@
 
   <!-- Letra y Acordes en Columna Única (white-space: pre) -->
   <section class="letra-acordes-wrapper" aria-label="Letra y acordes">
-    <pre id="cuerpo-letra" class="letra-acordes-musico">{{ cancion.contenido|formatear_contenido_musical }}</pre>
+    <pre id="cuerpo-letra"
+         class="letra-acordes-musico"
+         data-semitonos="{{ semitonos }}"
+         data-notacion="{{ notacion }}"
+         data-tonalidad="{{ cancion.tonalidad|default:'' }}"
+         data-cancion-id="{{ cancion.pk }}"
+         data-fogata-id="{{ fogata.pk }}"
+         data-pos="{{ pos }}"
+         data-afinacion="{{ cancion.afinacion|default:'' }}">{% render_cancion cancion semitonos=semitonos notacion=notacion incluir_metadata=True cancion_id=cancion.pk fogata_id=fogata.pk pos=pos %}</pre>
   </section>
 
   <!-- Barra de Navegación del Setlist (Anterior / Siguiente) -->
@@ -151,4 +208,5 @@
     </div>
   </div>
 </aside>
+{% include 'canciones/_modal_diagrama.html' %}
 {% endblock %}

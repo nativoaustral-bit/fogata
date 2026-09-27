@@ -7,34 +7,75 @@
   <meta name="theme-color" content="#0d0d0d">
   <title>{% block title %}Fogata — Repertorio y Atril de Canciones{% endblock %}</title>
   
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Fogata">
+
   <link rel="stylesheet" href="{% static 'css/reset.css' %}">
   <link rel="stylesheet" href="{% static 'css/fogata.css' %}">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
+  <!-- Banner discreto de estado de conectividad (Criterio 16) -->
+  <aside id="indicador-sin-conexion" class="banner-offline" style="display: none;" role="status" aria-live="polite">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 16px;">
+      <span>⚡ Sin conexión a internet — Modo offline activo</span>
+      <a href="{% url 'core:offline' %}" style="color: #ffb74d; text-decoration: underline; font-size: 0.85rem;">Ver Fogatas Guardadas</a>
+    </div>
+  </aside>
+
   <div class="app-wrapper">
     {% if not modo_musico %}
     <header class="site-header">
       <div class="container">
         <a href="{% url 'core:home' %}" class="site-brand">
-          <span>🔥</span>
+          <img src="{% static 'img/fogata_logo.svg' %}" alt="Fogata" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+          <span class="brand-fallback-emoji" style="display: none;">🔥</span>
           <span>Fogata</span>
-          <span class="brand-badge">Fase 0</span>
         </a>
 
         <nav class="site-nav" aria-label="Navegación principal">
-          <a href="{% url 'canciones:lista' %}" class="{% if request.resolver_match.app_name == 'canciones' %}active{% endif %}">
-            Canciones
-          </a>
-          <a href="{% url 'fogatas:lista' %}" class="{% if request.resolver_match.app_name == 'fogatas' %}active{% endif %}">
-            Fogatas
-          </a>
+          {% if request.user.is_authenticated %}
+            <a href="{% url 'canciones:lista' %}" class="{% if request.resolver_match.app_name == 'canciones' %}active{% endif %}">
+              Canciones
+            </a>
+            <a href="{% url 'fogatas:lista' %}" class="{% if request.resolver_match.app_name == 'fogatas' %}active{% endif %}">
+              Fogatas
+            </a>
+            <form method="post" action="{% url 'core:logout' %}" style="display: inline; margin-left: 6px;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-secondary btn-sm" style="padding: 5px 10px; font-size: 0.82rem;" title="Cerrar sesión de {{ request.user.email }}">
+                Salir
+              </button>
+            </form>
+          {% else %}
+            <a href="{% url 'core:login' %}" class="btn btn-secondary btn-sm" style="padding: 6px 12px;">
+              Iniciar sesión
+            </a>
+            <a href="{% url 'core:registro' %}" class="btn btn-primary btn-sm" style="padding: 6px 12px;">
+              Crear cuenta
+            </a>
+          {% endif %}
+          <button type="button" id="btn-instalar-pwa" class="btn btn-secondary btn-sm" style="display: none; padding: 6px 12px; margin-left: 8px;" title="Instalar Fogata como aplicación en este dispositivo">
+            📲 Instalar
+          </button>
         </nav>
       </div>
     </header>
     {% endif %}
 
     <main class="main-content">
+      {% if messages %}
+      <div class="container" style="margin-top: 14px; margin-bottom: 10px;">
+        {% for message in messages %}
+          <div class="card alert alert-{{ message.tags }}" style="margin-bottom: 10px; border-left: 4px solid {% if message.tags == 'error' %}#f44336{% else %}var(--color-flame){% endif %};">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
       {% block content %}{% endblock %}
     </main>
 
@@ -42,6 +83,9 @@
     <footer class="site-footer">
       <div class="container">
         <p>🔥 Fogata — Simplicidad, velocidad y compatibilidad en atril.</p>
+        <p class="site-footer-rights" style="font-size: 0.78rem; color: #555555; margin-top: 6px;">
+          Todos los derechos reservados Humm Co-Creation
+        </p>
       </div>
     </footer>
     {% endif %}

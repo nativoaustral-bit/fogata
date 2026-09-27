@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.urls import reverse
 
@@ -8,6 +9,13 @@ class Cancion(models.Model):
     Almacena el contenido íntegro y sin alteraciones ingresado por el usuario
     (letra con acordes espaciados), garantizando fidelidad espacial absoluta.
     """
+    propietario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='canciones',
+        verbose_name='Propietario',
+        db_index=True
+    )
     titulo = models.CharField(
         max_length=200,
         verbose_name='Título',

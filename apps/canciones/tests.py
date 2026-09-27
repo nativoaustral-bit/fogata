@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
+from django.contrib.auth.models import User
 from .models import Cancion
 from .services import obtener_solo_letra
 from .parser import (
@@ -9,11 +10,25 @@ from .parser import (
     extraer_acordes_unicos,
     validar_token_acorde,
     LineaMusical,
-    AcordeToken
+    AcordeToken,
+    compensar_espacios_en_linea,
+    reemplazar_acorde_en_contenido,
+    transponer_y_formatear_token,
+    transponer_acorde_str,
+    transponer_tonalidad,
+    determinar_preferencia_alteraciones
 )
 
 
+
 class CancionModelTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='musico_model@fogata.app',
+            email='musico_model@fogata.app',
+            password='password123'
+        )
+
     def test_creacion_cancion_preserva_contenido_integro(self):
         """
         Verifica que el contenido con espacios, saltos de línea y acordes
@@ -26,6 +41,7 @@ class CancionModelTest(TestCase):
             "Y una fogata encendida mirando la luz\n"
         )
         cancion = Cancion.objects.create(
+            propietario=self.user,
             titulo="Canto Nocturno Ficticio",
             artista="Grupo Prueba",
             tonalidad="Bm",
@@ -229,7 +245,14 @@ class ParserMusicalTest(TestCase):
 
 class CancionViewsTest(TestCase):
     def setUp(self):
+        self.user = User.objects.create_user(
+            username='musico_views@fogata.app',
+            email='musico_views@fogata.app',
+            password='password123'
+        )
+        self.client.force_login(self.user)
         self.cancion = Cancion.objects.create(
+            propietario=self.user,
             titulo="Canción del Amanecer Ficticia",
             artista="Banda de Prueba",
             tonalidad="F",
@@ -250,14 +273,16 @@ class CancionViewsTest(TestCase):
     def test_detalle_cancion_renderiza_acordes_en_preview(self):
         response = self.client.get(reverse('canciones:detalle', args=[self.cancion.pk]))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '<span class="acorde">F</span>')
-        self.assertContains(response, '<span class="acorde">Bb</span>')
+        self.assertContains(response, 'class="acorde"')
+        self.assertContains(response, '>F</span>')
+        self.assertContains(response, '>Bb</span>')
 
     def test_tocar_cancion_renderiza_acordes_en_atril(self):
         response = self.client.get(reverse('canciones:tocar', args=[self.cancion.pk]))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '<span class="acorde">F</span>')
-        self.assertContains(response, '<span class="acorde">Bb</span>')
+        self.assertContains(response, 'class="acorde"')
+        self.assertContains(response, '>F</span>')
+        self.assertContains(response, '>Bb</span>')
         self.assertContains(response, 'letra-acordes-musico')
 
     def test_crear_y_preservar_espacios(self):
@@ -292,6 +317,13 @@ class Fase1ValidacionRealTest(TestCase):
     Suite de Validación Real para Fase 1.1 (Criterios 1 al 15 de Aceptación).
     Verifica que el flujo 'copiar -> pegar -> guardar -> tocar' sea robusto.
     """
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='musico_fase1@fogata.app',
+            email='musico_fase1@fogata.app',
+            password='password123'
+        )
+        self.client.force_login(self.user)
 
     def test_01_preservacion_de_espacios(self):
         """1. Preservación estricta de espacios antes, entre y después de acordes."""
@@ -312,6 +344,7 @@ class Fase1ValidacionRealTest(TestCase):
             "seguiremos el camino"
         )
         cancion = Cancion.objects.create(
+            propietario=self.user,
             titulo="Formato A Test",
             artista="Banda A",
             contenido=formato_a
@@ -472,6 +505,7 @@ class Fase1ValidacionRealTest(TestCase):
     def test_13_funcionamiento_sin_javascript(self):
         """13. Modo Tocar y Detalle son 100% renderizados en servidor con HTML puro."""
         cancion = Cancion.objects.create(
+            propietario=self.user,
             titulo="Canción No-JS",
             artista="Autor No-JS",
             contenido="   A      E\nCaminando sin prisa..."
@@ -479,12 +513,14 @@ class Fase1ValidacionRealTest(TestCase):
         res_tocar = self.client.get(reverse('canciones:tocar', args=[cancion.pk]))
         self.assertEqual(res_tocar.status_code, 200)
         # Acordes ya vienen con clase .acorde desde el servidor
-        self.assertContains(res_tocar, '<span class="acorde">A</span>')
-        self.assertContains(res_tocar, '<span class="acorde">E</span>')
+        self.assertContains(res_tocar, 'class="acorde"')
+        self.assertContains(res_tocar, '>A</span>')
+        self.assertContains(res_tocar, '>E</span>')
 
     def test_14_visualizacion_movil_clases_y_estilos(self):
         """14. Modo tocar incluye contenedor de atril monoespaciado y con scroll horizontal seguro."""
         cancion = Cancion.objects.create(
+            propietario=self.user,
             titulo="Test Móvil",
             artista="Autor Móvil",
             contenido="G       C\nUna sola columna..."
@@ -509,7 +545,14 @@ class Fase2ModoTocarTest(TestCase):
     """
 
     def setUp(self):
+        self.user = User.objects.create_user(
+            username='musico_fase2@fogata.app',
+            email='musico_fase2@fogata.app',
+            password='password123'
+        )
+        self.client.force_login(self.user)
         self.cancion = Cancion.objects.create(
+            propietario=self.user,
             titulo="Canción Test Fase 2",
             artista="Banda de Atril",
             tonalidad="G",
@@ -581,7 +624,715 @@ class Fase2ModoTocarTest(TestCase):
         self.assertContains(res, 'Luz de la mañana sobre la colina')
         self.assertContains(res, '<span class="seccion-musical">[Intro]</span>')
         self.assertContains(res, '<span class="seccion-musical">[Coro]</span>')
-        self.assertContains(res, '<span class="acorde">G</span>')
-        self.assertContains(res, '<span class="acorde">Em</span>')
+        self.assertContains(res, 'class="acorde"')
+        self.assertContains(res, '>G</span>')
+        self.assertContains(res, '>Em</span>')
+
+
+# =============================================================================
+# Pruebas Automatizadas Fase 3: Gestión, Edición Rápida, Notación y Transposición
+# =============================================================================
+
+class Fase3GestionAcordesTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='musico_fase3@fogata.app',
+            email='musico_fase3@fogata.app',
+            password='password123'
+        )
+        self.client.force_login(self.user)
+        self.cancion = Cancion.objects.create(
+            propietario=self.user,
+            titulo="Canción Test Fase 3",
+            artista="Guitarrista Ficticio",
+            tonalidad="G",
+            capo=0,
+            contenido=(
+                "[Intro]\n"
+                "G              D\n\n"
+                "[Verso 1]\n"
+                "[G]Luz de la mañana sobre la [C]colina\n"
+                "G              D              Em             C\n"
+                "Río cristalino que corre hacia el mar\n\n"
+                "[Coro]\n"
+                "G/B            C              D              G\n"
+                "Canta fuerte junto al fogón\n"
+            )
+        )
+
+    def test_edicion_acorde_embebido(self):
+        """18.1. Edición de acorde embebido ([G] -> [G7]) sin compensación espacial."""
+        contenido = "[G]Palabra [D]otra"
+        exito, nuevo_contenido, err = reemplazar_acorde_en_contenido(
+            contenido=contenido,
+            num_linea=0,
+            col_inicio=1,
+            col_fin=2,
+            texto_original='G',
+            nuevo_acorde='G7',
+            modo='uno'
+        )
+        self.assertTrue(exito)
+        self.assertEqual(nuevo_contenido, "[G7]Palabra [D]otra")
+
+    def test_edicion_G_a_Gmaj7_conservando_columna_posterior(self):
+        """18.2. Edición G -> Gmaj7 conservando la columna de inicio del acorde posterior D."""
+        linea_original = "G              D"
+        # G está en 0..1, D empieza en índice 15
+        col_D_original = linea_original.index("D")
+        self.assertEqual(col_D_original, 15)
+
+        exito, nueva_linea, err = reemplazar_acorde_en_contenido(
+            contenido=linea_original,
+            num_linea=0,
+            col_inicio=0,
+            col_fin=1,
+            texto_original='G',
+            nuevo_acorde='Gmaj7',
+            modo='uno'
+        )
+        self.assertTrue(exito)
+        self.assertEqual(nueva_linea, "Gmaj7          D")
+        self.assertEqual(nueva_linea.index("D"), col_D_original)
+
+    def test_reduccion_Gmaj7_a_G_conservando_columna_posterior(self):
+        """18.3. Reducción Gmaj7 -> G insertando espacios para conservar la columna de D."""
+        linea_original = "Gmaj7          D"
+        col_D_original = linea_original.index("D")
+        self.assertEqual(col_D_original, 15)
+
+        exito, nueva_linea, err = reemplazar_acorde_en_contenido(
+            contenido=linea_original,
+            num_linea=0,
+            col_inicio=0,
+            col_fin=5,
+            texto_original='Gmaj7',
+            nuevo_acorde='G',
+            modo='uno'
+        )
+        self.assertTrue(exito)
+        self.assertEqual(nueva_linea, "G              D")
+        self.assertEqual(nueva_linea.index("D"), col_D_original)
+
+    def test_reemplazo_global_multiples_acordes_misma_linea(self):
+        """18.4. Reemplazo global (modo='todos') con múltiples acordes en la misma línea sin tocar letra ni tabs."""
+        contenido = (
+            "G              G\n"
+            "Palabras con G y letra de canción\n"
+            "e|---G---|\n"
+        )
+        exito, nuevo_contenido, err = reemplazar_acorde_en_contenido(
+            contenido=contenido,
+            num_linea=0,
+            col_inicio=0,
+            col_fin=1,
+            texto_original='G',
+            nuevo_acorde='Gmaj7',
+            modo='todos'
+        )
+        self.assertTrue(exito)
+        lineas = nuevo_contenido.splitlines()
+        self.assertEqual(lineas[0], "Gmaj7          Gmaj7")
+        self.assertEqual(lineas[1], "Palabras con G y letra de canción")
+        self.assertEqual(lineas[2], "e|---G---|")
+
+    def test_transposicion_acorde_con_bajo_slash(self):
+        """18.5. Transposición de acorde con bajo slash (raíz y bajo se transponen consistentemente)."""
+        # G/B + 2 semitonos -> A/C#
+        resultado = transponer_acorde_str("G/B", semitonos=2, notacion='american')
+        self.assertEqual(resultado, "A/C#")
+
+        # C/E + 1 semitono con bemoles -> Db/F
+        resultado_b = transponer_acorde_str("C/E", semitonos=1, usar_bemoles=True, notacion='american')
+        self.assertEqual(resultado_b, "Db/F")
+
+    def test_transposicion_combinada_con_notacion_latina(self):
+        """18.6. Transposición combinada con notación latina (C#m7 -> Rem7, Bb -> Si, G/B -> La/Do#)."""
+        res1 = transponer_acorde_str("C#m7", semitonos=1, notacion='latin')
+        self.assertEqual(res1, "Rem7")
+
+        res2 = transponer_acorde_str("Bb", semitonos=1, notacion='latin')
+        self.assertEqual(res2, "Si")
+
+        res3 = transponer_acorde_str("G/B", semitonos=2, notacion='latin')
+        self.assertEqual(res3, "La/Do#")
+
+    def test_consistencia_sostenidos_bemoles_cancion_completa(self):
+        """18.7. Consistencia determinista de sostenidos y bemoles en una canción completa (Criterio 6)."""
+        # Prioridad 1: tonalidad explícita
+        self.assertTrue(determinar_preferencia_alteraciones("", tonalidad="F", semitonos=0))
+        self.assertTrue(determinar_preferencia_alteraciones("", tonalidad="Bb", semitonos=0))
+        self.assertFalse(determinar_preferencia_alteraciones("", tonalidad="A", semitonos=0))
+        self.assertFalse(determinar_preferencia_alteraciones("", tonalidad="G", semitonos=0))
+
+        # Prioridad 2: predominio de alteraciones en acordes
+        contenido_bemoles = "Eb        Bb\nAb       Fm"
+        self.assertTrue(determinar_preferencia_alteraciones(contenido_bemoles, tonalidad="", semitonos=0))
+
+        contenido_sostenidos = "F#m       C#m\nG#m      D#"
+        self.assertFalse(determinar_preferencia_alteraciones(contenido_sostenidos, tonalidad="", semitonos=0))
+
+        # Prioridad 3: acordes naturales neutros según dirección de transposición
+        contenido_natural = "C   G   Am   F"
+        self.assertTrue(determinar_preferencia_alteraciones(contenido_natural, tonalidad="", semitonos=-2))
+        self.assertFalse(determinar_preferencia_alteraciones(contenido_natural, tonalidad="", semitonos=2))
+
+    def test_parametro_semitonos_fuera_de_rango(self):
+        """18.8. Parámetro semitonos fuera de rango (-6 a +6) o inválido vuelve a 0 de forma segura."""
+        res_alto = self.client.get(reverse('canciones:tocar', args=[self.cancion.pk]) + '?semitonos=12')
+        self.assertEqual(res_alto.status_code, 200)
+        self.assertEqual(res_alto.context['semitonos'], 0)
+
+        res_bajo = self.client.get(reverse('canciones:tocar', args=[self.cancion.pk]) + '?semitonos=-10')
+        self.assertEqual(res_bajo.status_code, 200)
+        self.assertEqual(res_bajo.context['semitonos'], 0)
+
+        res_texto = self.client.get(reverse('canciones:tocar', args=[self.cancion.pk]) + '?semitonos=invalido')
+        self.assertEqual(res_texto.status_code, 200)
+        self.assertEqual(res_texto.context['semitonos'], 0)
+
+    def test_fallback_servidor_sin_javascript(self):
+        """18.9. Fallback servidor sin JavaScript: el servidor renderiza acordes transpuestos y notación por GET."""
+        url = reverse('canciones:tocar', args=[self.cancion.pk]) + '?semitonos=2&notacion=latin'
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        # G (+2 semitonos en notación latina) -> La
+        self.assertContains(res, '>La</span>')
+        # D (+2 semitonos en notación latina) -> Mi
+        self.assertContains(res, '>Mi</span>')
+        # Enlaces para cambiar medio tono y reset están presentes
+        self.assertContains(res, 'id="btn-tono-bajar"')
+        self.assertContains(res, 'id="btn-tono-subir"')
+        self.assertContains(res, 'id="btn-tono-reset"')
+        self.assertContains(res, 'id="btn-toggle-notacion"')
+
+    def test_contenido_con_html_malicioso_durante_edicion(self):
+        """18.10. Validación y rechazo de HTML malicioso durante la edición rápida de acordes."""
+        url_guardar = reverse('canciones:guardar_edicion_acorde', args=[self.cancion.pk])
+        payload = {
+            'num_linea': 1,
+            'col_inicio': 0,
+            'col_fin': 1,
+            'texto_original': 'G',
+            'nuevo_acorde': '<script>alert("xss")</script>',
+            'modo': 'uno'
+        }
+        res = self.client.post(url_guardar, payload, follow=True)
+        self.cancion.refresh_from_db()
+        # No debe haber modificado el contenido con HTML malicioso
+        self.assertNotIn('<script>', self.cancion.contenido)
+        # Mensaje de validación amigable al usuario
+        self.assertContains(res, "No reconocemos este acorde")
+
+    def test_retorno_a_tono_original_manteniendo_notacion_seleccionada(self):
+        """18.11. Retorno a tono original (semitonos=0) manteniendo la preferencia visual latina."""
+        url = reverse('canciones:tocar', args=[self.cancion.pk]) + '?semitonos=0&notacion=latin'
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        # G en notación latina sin transposición es Sol
+        self.assertContains(res, '>Sol</span>')
+        # D en notación latina sin transposición es Re
+        self.assertContains(res, '>Re</span>')
+
+    def test_concurrencia_e_integridad_cancion_modificada(self):
+        """5. Validación de concurrencia e integridad ante cambios en el contenido guardado."""
+        url_guardar = reverse('canciones:guardar_edicion_acorde', args=[self.cancion.pk])
+        payload = {
+            'num_linea': 1,
+            'col_inicio': 99,  # Posición inexistente o desfasada
+            'col_fin': 105,
+            'texto_original': 'G',
+            'nuevo_acorde': 'G7',
+            'modo': 'uno'
+        }
+        res = self.client.post(url_guardar, payload, follow=True)
+        self.assertContains(res, "La canción cambió desde que abriste el editor. Recarga antes de modificar este acorde.")
+
+    def test_vista_editar_acordes_renderiza_correctamente(self):
+        """Verifica que la vista editar_acordes renderice con clase .acorde-editable y formulario."""
+        url = reverse('canciones:editar_acordes', args=[self.cancion.pk])
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'acorde-editable')
+        self.assertContains(res, 'data-linea=')
+        self.assertContains(res, 'data-inicio=')
+        self.assertContains(res, 'id="form-edicion-acorde"')
+
+    def test_acordes_unicos_de_cancion_reflejan_transposicion_y_notacion(self):
+        """16. Acordes únicos reflejan transposición y notación activa."""
+        lineas = parse_cancion(self.cancion.contenido)
+        acordes_orig = extraer_acordes_unicos(lineas, semitonos=0, notacion='original')
+        self.assertIn("G", acordes_orig)
+        self.assertIn("D", acordes_orig)
+
+        acordes_transp_latin = extraer_acordes_unicos(lineas, semitonos=2, notacion='latin')
+        self.assertIn("La", acordes_transp_latin)
+        self.assertIn("Mi", acordes_transp_latin)
+
+    def test_javascript_es5_fase3_sintaxis_y_funciones(self):
+        """Verifica que fogata.js incorpora la lógica de Fase 3 en ES5 sin dependencias."""
+        with open('static/js/fogata.js', 'r', encoding='utf-8') as f:
+            js = f.read()
+        self.assertIn('initTransposicionYNotacion', js)
+        self.assertIn('initEdicionAcordesRapida', js)
+        self.assertIn('fogata_chord_notation', js)
+        self.assertIn('transformarAcordeSpan', js)
+        # Garantizar que no se colaron sintaxis ES6
+        self.assertNotIn('const ', js)
+        self.assertNotIn('let ', js)
+        self.assertNotIn('=>', js)
+
+
+class Fase4DiagramasAcordesTest(TestCase):
+    """
+    Pruebas completas de la Fase 4: Diagramas de Acordes para Guitarra.
+    Cubre validación armónica de biblioteca, detección de digitaciones inválidas,
+    comportamiento de capo y afinación alternativa, endpoint canónico /canciones/diagrama/,
+    seguridad XSS, accesibilidad SVG, fallback sin JavaScript con retorno seguro,
+    flujo en Fogatas/setlists y preservación métrica.
+    """
+
+    def setUp(self):
+        from apps.canciones.diagramas import (
+            BIBLIOTECA_ACORDES,
+            validar_digitacion_musical,
+            calcular_clases_altura,
+            obtener_info_diagrama,
+            generar_svg_acorde,
+            DigitacionAcorde
+        )
+        self.BIBLIOTECA_ACORDES = BIBLIOTECA_ACORDES
+        self.validar_digitacion_musical = validar_digitacion_musical
+        self.calcular_clases_altura = calcular_clases_altura
+        self.obtener_info_diagrama = obtener_info_diagrama
+        self.generar_svg_acorde = generar_svg_acorde
+        self.DigitacionAcorde = DigitacionAcorde
+
+        self.user = User.objects.create_user(
+            username='musico_fase4@fogata.app',
+            email='musico_fase4@fogata.app',
+            password='password123'
+        )
+        self.client.force_login(self.user)
+
+        self.cancion_std = Cancion.objects.create(
+            propietario=self.user,
+            titulo="Cancion EADGBE",
+            artista="Banda Acustica",
+            tonalidad="G",
+            capo=0,
+            afinacion="Estándar (E A D G B E)",
+            contenido="G     C     D\nLetra de prueba en afinacion estandar"
+        )
+        self.cancion_capo = Cancion.objects.create(
+            propietario=self.user,
+            titulo="Cancion con Capo",
+            artista="Trovador",
+            tonalidad="G",
+            capo=2,
+            afinacion="Estándar",
+            contenido="G     Em    C     D\nCantando con capo en segundo traste"
+        )
+        self.cancion_drop_d = Cancion.objects.create(
+            propietario=self.user,
+            titulo="Cancion Alternativa",
+            artista="Rockero",
+            tonalidad="D",
+            capo=0,
+            afinacion="Drop D",
+            contenido="D     G     A\nSonido pesado en Drop D"
+        )
+
+    def test_validacion_armonica_biblioteca_completa(self):
+        """
+        Criterios 1, 2 y 18:
+        Comprueba que TODAS las 64 posiciones en la biblioteca inicial sean
+        musicalmente válidas contra la afinación estándar.
+        """
+        self.assertGreaterEqual(len(self.BIBLIOTECA_ACORDES), 60)
+        for (root_pitch, mod, bass_pitch), digitacion in self.BIBLIOTECA_ACORDES.items():
+            valida, razon = self.validar_digitacion_musical(root_pitch, mod, digitacion, bass_pitch)
+            self.assertTrue(
+                valida,
+                f"Fallo en acorde root={root_pitch}, mod='{mod}', bass={bass_pitch}: {razon} (trastes={digitacion.trastes})"
+            )
+
+    def test_sus4_sin_tercera(self):
+        """
+        Criterios 1 y 2:
+        Comprueba que Csus4 y todos los sus4 contengan raíz, 4ta y 5ta,
+        y NO contengan tercera mayor ni menor.
+        """
+        # Csus4 = x33011 -> notas C, F, G, C, F (pitches 0, 5, 7)
+        c_sus4 = self.BIBLIOTECA_ACORDES.get((0, 'sus4', None))
+        self.assertIsNotNone(c_sus4)
+        notas, _ = self.calcular_clases_altura(c_sus4.trastes)
+        self.assertIn(0, notas)  # Raíz C
+        self.assertIn(5, notas)  # 4ta F
+        self.assertIn(7, notas)  # 5ta G
+        self.assertNotIn(4, notas)  # NO tercera mayor (E)
+        self.assertNotIn(3, notas)  # NO tercera menor (Eb)
+
+    def test_sus2_sin_tercera(self):
+        """
+        Criterio 2:
+        Comprueba que Dsus2 y acordes sus2 contengan raíz, 2da y 5ta,
+        y NO contengan tercera mayor ni menor.
+        """
+        d_sus2 = self.BIBLIOTECA_ACORDES.get((2, 'sus2', None))
+        self.assertIsNotNone(d_sus2)
+        notas, _ = self.calcular_clases_altura(d_sus2.trastes)
+        self.assertIn(2, notas)  # Raíz D
+        self.assertIn(4, notas)  # 2da E
+        self.assertIn(9, notas)  # 5ta A
+        self.assertNotIn(6, notas)  # NO F# (3ra mayor)
+        self.assertNotIn(5, notas)  # NO F (3ra menor)
+
+    def test_slash_chord_con_bajo_correcto(self):
+        """
+        Criterio 3:
+        Para G/B, la nota más grave que efectivamente suena DEBE ser B.
+        Para D/F#, la nota más grave que efectivamente suena DEBE ser F#.
+        """
+        g_on_b = self.BIBLIOTECA_ACORDES.get((7, '', 11))
+        self.assertIsNotNone(g_on_b)
+        valido, razon = self.validar_digitacion_musical(7, '', g_on_b, 11)
+        self.assertTrue(valido, razon)
+
+        # Trastes G/B: [-1, 2, 0, 0, 3, 3] -> cuerda 5 en traste 2 es B (pitch 11)
+        cuerda_bajo_idx = next(i for i, t in enumerate(g_on_b.trastes) if t != -1)
+        self.assertEqual(cuerda_bajo_idx, 1)  # Cuerda 5 (índice 1 en array 0..5 de 6ª a 1ª)
+
+        d_on_fsharp = self.BIBLIOTECA_ACORDES.get((2, '', 6))
+        self.assertIsNotNone(d_on_fsharp)
+        valido, razon = self.validar_digitacion_musical(2, '', d_on_fsharp, 6)
+        self.assertTrue(valido, razon)
+        self.assertEqual(d_on_fsharp.trastes[0], 2)  # Cuerda 6 en traste 2 = F# (pitch 6)
+
+    def test_detector_digitacion_invalida(self):
+        """
+        Criterio 2 y 20:
+        Comprueba que validar_digitacion_musical detecte y rechace errores:
+        - Csus4 con primera cuerda al aire (contiene tercera mayor E).
+        - G/B donde suena la sexta cuerda al aire (bajo es E en vez de B).
+        - Mayor sin tercera.
+        """
+        # Digitacion con error: Csus4 con traste 0 en 1ra cuerda (E)
+        pos_erronea_csus4 = self.DigitacionAcorde(trastes=[-1, 3, 3, 0, 1, 0])
+        valido, razon = self.validar_digitacion_musical(0, 'sus4', pos_erronea_csus4)
+        self.assertFalse(valido)
+        self.assertIn("tercera", razon.lower())
+
+        # Digitacion con error: G/B pero con 6ta cuerda al aire (0 en 6ta da bajo E, no B)
+        pos_erronea_gb = self.DigitacionAcorde(trastes=[0, 2, 0, 0, 3, 3])
+        valido, razon = self.validar_digitacion_musical(7, '', pos_erronea_gb, bajo_pitch=11)
+        self.assertFalse(valido)
+        self.assertIn("bajo", razon.lower())
+
+    def test_acorde_no_disponible_mensaje_exacto(self):
+        """
+        Criterio 19:
+        Acordes no incluidos no deben aproximarse ni simplificarse.
+        Deben mostrar exactamente: 'Diagrama aún no disponible para este acorde.'
+        """
+        # Solicitamos un acorde inexistente en la biblioteca (ej: Cdim7)
+        res = self.client.get(
+            reverse('canciones:ver_diagrama'),
+            {'root': '0', 'mod': 'dim7', 'format': 'json'}
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertFalse(data['disponible'])
+        self.assertEqual(data['mensaje'], "Diagrama aún no disponible para este acorde.")
+
+        # Slash chord no incluido (ej: F/A)
+        res_slash = self.client.get(
+            reverse('canciones:ver_diagrama'),
+            {'root': '5', 'mod': '', 'bass': '9', 'format': 'json'}
+        )
+        data_slash = res_slash.json()
+        self.assertFalse(data_slash['disponible'])
+        self.assertEqual(data_slash['mensaje'], "Diagrama aún no disponible para este acorde.")
+
+    def test_capo_no_altera_diagrama(self):
+        """
+        Criterio 4:
+        Si una canción tiene Capo 2 y un acorde 'G', el diagrama generado debe
+        ser 'G' (root=7), no 'A' (root=9). El diagrama representa la forma que
+        ejecuta la mano del guitarrista respecto del capo.
+        """
+        res = self.client.get(reverse('canciones:tocar', args=[self.cancion_capo.pk]))
+        self.assertEqual(res.status_code, 200)
+        # El enlace del acorde debe apuntar a root=7 (G)
+        self.assertContains(res, 'root=7')
+        self.assertNotContains(res, 'root=9&mod=')
+
+    def test_afinacion_alternativa_muestra_advertencia(self):
+        """
+        Criterio 5:
+        Si la afinación es distinta de estándar, el endpoint debe devolver
+        advertencia_afinacion=True con el texto 'Diagrama basado en afinación estándar EADGBE.'
+        """
+        # Afinacion estandar -> sin advertencia
+        res_std = self.client.get(
+            reverse('canciones:ver_diagrama'),
+            {'root': '7', 'mod': '', 'cancion_id': self.cancion_std.pk, 'format': 'json'}
+        )
+        data_std = res_std.json()
+        self.assertFalse(data_std['advertencia_afinacion'])
+
+        # Afinacion alternativa Drop D -> con advertencia discreta
+        res_drop_d = self.client.get(
+            reverse('canciones:ver_diagrama'),
+            {'root': '2', 'mod': '', 'cancion_id': self.cancion_drop_d.pk, 'format': 'json'}
+        )
+        data_drop_d = res_drop_d.json()
+        self.assertTrue(bool(data_drop_d['advertencia_afinacion']))
+        self.assertIn("Diagrama basado en afinación estándar EADGBE.", data_drop_d['advertencia_afinacion'])
+
+    def test_endpoint_diagrama_rechaza_root_fuera_de_rango(self):
+        """
+        Criterio 6:
+        El servidor debe validar root entre 0 y 11. Rechaza valores fuera de rango con 400.
+        """
+        res_neg = self.client.get(reverse('canciones:ver_diagrama'), {'root': '-1', 'mod': ''})
+        self.assertEqual(res_neg.status_code, 400)
+
+        res_12 = self.client.get(reverse('canciones:ver_diagrama'), {'root': '12', 'mod': ''})
+        self.assertEqual(res_12.status_code, 400)
+
+        res_str = self.client.get(reverse('canciones:ver_diagrama'), {'root': 'C#', 'mod': ''})
+        self.assertEqual(res_str.status_code, 400)
+
+    def test_endpoint_diagrama_rechaza_modificador_invalido(self):
+        """
+        Criterio 6 y 7:
+        El servidor debe validar el modificador contra el vocabulario conocido.
+        Rechaza modificadores arbitrarios o scripts maliciosos con 400.
+        """
+        res_xss = self.client.get(
+            reverse('canciones:ver_diagrama'),
+            {'root': '0', 'mod': '<script>alert(1)</script>'}
+        )
+        self.assertEqual(res_xss.status_code, 400)
+
+        res_inv = self.client.get(reverse('canciones:ver_diagrama'), {'root': '0', 'mod': 'inventado'})
+        self.assertEqual(res_inv.status_code, 400)
+
+    def test_svg_seguridad_xss_accesibilidad_y_primitivas(self):
+        """
+        Criterios 12 y 13:
+        El SVG debe usar <circle> sin relleno para cuerda abierta,
+        dos <line> cruzadas para cuerda anulada, role='img', y <title>.
+        """
+        res = self.client.get(
+            reverse('canciones:ver_diagrama'),
+            {'root': '7', 'mod': '', 'format': 'json'}
+        )
+        data = res.json()
+        svg = data['svg']
+        self.assertIn('role="img"', svg)
+        self.assertIn('<title>', svg)
+        self.assertIn('Diagrama de acorde G', svg)
+        # G = 320003 -> Cuerdas abiertas (traste 0) usan circle
+        self.assertIn('<circle', svg)
+        self.assertIn('fill="none"', svg)
+
+        # C = x32010 -> Cuerda 6 anulada (-1) usa lineas cruzadas (X)
+        res_c = self.client.get(
+            reverse('canciones:ver_diagrama'),
+            {'root': '0', 'mod': '', 'format': 'json'}
+        )
+        svg_c = res_c.json()['svg']
+        self.assertIn('<line', svg_c)
+
+    def test_endpoint_diagrama_soporte_notacion_latina(self):
+        """
+        Criterio 11:
+        Misma digitación física, solo cambia el nombre mostrado.
+        """
+        res_am = self.client.get(
+            reverse('canciones:ver_diagrama'),
+            {'root': '0', 'mod': '', 'notacion': 'american', 'format': 'json'}
+        )
+        self.assertEqual(res_am.json()['nombre'], 'C')
+
+        res_lat = self.client.get(
+            reverse('canciones:ver_diagrama'),
+            {'root': '0', 'mod': '', 'notacion': 'latin', 'format': 'json'}
+        )
+        self.assertEqual(res_lat.json()['nombre'], 'Do')
+
+    def test_retorno_no_js_con_ancla(self):
+        """
+        Criterios 15 y 16:
+        En modo sin JavaScript, la vista HTML del diagrama genera un enlace
+        de retorno seguro a la canción con su ancla exacta (#acorde-l...-c...).
+        """
+        res = self.client.get(
+            reverse('canciones:ver_diagrama'),
+            {
+                'root': '7',
+                'mod': '',
+                'cancion_id': self.cancion_std.pk,
+                'semitonos': '0',
+                'notacion': 'american',
+                'anchor': 'acorde-l1-c0'
+            }
+        )
+        self.assertEqual(res.status_code, 200)
+        # Debe contener enlace de retorno a /canciones/<id>/tocar/?...#acorde-l1-c0
+        expected_url = f"/canciones/{self.cancion_std.pk}/tocar/?semitonos=0&amp;notacion=american#acorde-l1-c0"
+        self.assertContains(res, expected_url)
+
+    def test_retorno_no_js_dentro_de_fogata_setlist(self):
+        """
+        Criterio 17:
+        Si se consulta desde Tocar Fogata, el enlace de retorno regresa
+        a la misma posición del setlist, conservando contexto.
+        """
+        from apps.fogatas.models import Fogata, FogataCancion
+        fogata = Fogata.objects.create(nombre="Fogata Nocturna", propietario=self.user)
+        FogataCancion.objects.create(fogata=fogata, cancion=self.cancion_std, orden=1)
+
+        res = self.client.get(
+            reverse('canciones:ver_diagrama'),
+            {
+                'root': '7',
+                'mod': '',
+                'cancion_id': self.cancion_std.pk,
+                'fogata_id': fogata.pk,
+                'pos': '1',
+                'semitonos': '1',
+                'notacion': 'latin',
+                'anchor': 'acorde-l1-c6'
+            }
+        )
+        self.assertEqual(res.status_code, 200)
+        expected_url = f"/fogatas/{fogata.pk}/tocar/?pos=1&amp;semitonos=1&amp;notacion=latin#acorde-l1-c6"
+        self.assertContains(res, expected_url)
+
+    def test_seguridad_retorno_sin_open_redirect(self):
+        """
+        Criterio 16:
+        Parámetros maliciosos no pueden forzar una redirección abierta.
+        """
+        res = self.client.get(
+            reverse('canciones:ver_diagrama'),
+            {
+                'root': '7',
+                'mod': '',
+                'cancion_id': 'malicioso',
+                'anchor': 'http://evil.com'  # Caracteres no permitidos en anchor
+            }
+        )
+        self.assertEqual(res.status_code, 200)
+        # Debe caer al fallback seguro del repertorio general
+        self.assertContains(res, reverse('canciones:lista'))
+        self.assertNotContains(res, 'evil.com')
+
+    def test_acorde_interactivo_no_rompe_alineacion_monospace(self):
+        """
+        Criterio 14:
+        Comprueba que los acordes interactivos usen .acorde-link inline
+        y que no agreguen espaciado o caracteres adicionales que rompan columnas.
+        """
+        contenido = "G    D    Em   C\nLetra debajo alineada"
+        html = render_cancion_html(contenido, cancion_id=self.cancion_std.pk)
+        self.assertIn('class="acorde-link"', html)
+        self.assertIn('class="acorde"', html)
+        self.assertIn('id="acorde-l0-c0"', html)
+
+        with open('static/css/fogata.css', 'r', encoding='utf-8') as f:
+            css = f.read()
+        self.assertIn('.acorde-link {', css)
+        self.assertIn('display: inline;', css)
+        self.assertIn('padding: 0;', css)
+        self.assertIn('margin: 0;', css)
+
+    def test_diagramas_javascript_es5_y_cache(self):
+        """
+        Criterios 8, 9 y 20:
+        Comprueba que fogata.js tenga la implementación de diagramas:
+        - initDiagramasAtril
+        - diagramCache
+        - XHR XMLHttpRequest (no fetch obligatorio)
+        - Pausar auto-scroll al hacer click
+        - No reanudar auto-scroll al cerrar
+        - Cero sintaxis ES6
+        """
+        with open('static/js/fogata.js', 'r', encoding='utf-8') as f:
+            js = f.read()
+
+        self.assertIn('initDiagramasAtril', js)
+        self.assertIn('diagramCache', js)
+        self.assertIn('XMLHttpRequest', js)
+        self.assertIn('pausarAutoScroll', js)
+        self.assertIn('__FOGATA_DIAGRAM_CACHE__', js)
+
+        # Verificar ES5 estricto
+        self.assertNotIn('const ', js)
+        self.assertNotIn('let ', js)
+        self.assertNotIn('=>', js)
+
+
+# =============================================================================
+# Pruebas Automatizadas Fase 5: Precarga Batch de Diagramas Offline
+# =============================================================================
+
+class DiagramasBatchTest(TestCase):
+    def test_diagramas_batch_endpoint_status_y_contenido(self):
+        """
+        Criterios 6 y 7 (Fase 5):
+        El endpoint /canciones/diagramas/batch/ debe devolver la biblioteca completa
+        de 64 digitaciones con nombres y SVGs para ambas notaciones (American y Latin).
+        """
+        import json
+        response = self.client.get('/canciones/diagramas/batch/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('application/json', response['Content-Type'])
+
+        data = json.loads(response.content.decode('utf-8'))
+        self.assertTrue(data.get('ok'))
+        self.assertEqual(data.get('total'), 64)
+        diagramas = data.get('diagramas', {})
+        self.assertEqual(len(diagramas), 64)
+
+        # Probar acorde C (0, '', None)
+        c_item = diagramas.get('0||')
+        self.assertIsNotNone(c_item)
+        self.assertEqual(c_item['root'], 0)
+        self.assertEqual(c_item['mod'], '')
+        self.assertIsNone(c_item['bass'])
+        self.assertEqual(c_item['nombre_american'], 'C')
+        self.assertEqual(c_item['nombre_latin'], 'Do')
+        self.assertIn('<svg', c_item['svg_american'])
+        self.assertIn('<svg', c_item['svg_latin'])
+
+        # Probar acorde slash C/G (0, '', 7)
+        cg_item = diagramas.get('0||7')
+        self.assertIsNotNone(cg_item)
+        self.assertEqual(cg_item['root'], 0)
+        self.assertEqual(cg_item['bass'], 7)
+        self.assertEqual(cg_item['nombre_american'], 'C/G')
+        self.assertEqual(cg_item['nombre_latin'], 'Do/Sol')
+
+    def test_fogata_js_incluye_precarga_batch_es5(self):
+        """
+        Criterio 6:
+        Verifica que fogata.js invoque la precarga del batch de diagramas
+        manteniendo compatibilidad ES5 estricta.
+        """
+        with open('static/js/fogata.js', 'r', encoding='utf-8') as f:
+            js = f.read()
+
+        self.assertIn('precargarBatchDiagramas', js)
+        self.assertIn('/canciones/diagramas/batch/', js)
+        # Verificar ES5 estricto
+        self.assertNotIn('const ', js)
+        self.assertNotIn('let ', js)
+        self.assertNotIn('=>', js)
+
+
 
 

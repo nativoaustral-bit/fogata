@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="100" fill="#0d0d0d"/>
+  <circle cx="256" cy="256" r="236" fill="none" stroke="#222222" stroke-width="4"/>
+  <!-- Llama exterior naranja -->
+  <path d="M256 60 C265 140 370 200 370 330 C370 410 320 450 256 450 C192 450 142 410 142 330 C142 220 230 150 256 60 Z" fill="#ff9800"/>
+  <!-- Llama interior dorada -->
+  <path d="M256 180 C262 230 320 270 320 350 C320 400 290 425 256 425 C222 425 192 400 192 350 C192 280 242 240 256 180 Z" fill="#ffc107"/>
+  <!-- Núcleo brillante -->
+  <ellipse cx="256" cy="370" rx="30" ry="40" fill="#fff3e0"/>
+</svg>

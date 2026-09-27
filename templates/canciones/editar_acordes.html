@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load cancion_tags %}
+
+{% block title %}Editar acordes: {{ cancion.titulo }} — Fogata{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div style="margin-bottom: 8px;">
+      <a href="{% url 'canciones:detalle' cancion.pk %}" style="color: var(--text-muted); font-size: 0.9rem;">
+        &larr; Volver a {{ cancion.titulo }}
+      </a>
+    </div>
+
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">Editar acordes</h1>
+        <p class="page-subtitle" style="font-size: 1.05rem; color: var(--color-flame); margin-top: 4px;">
+          {{ cancion.titulo }}{% if cancion.artista %} &mdash; {{ cancion.artista }}{% endif %}
+        </p>
+      </div>
+
+      <div class="btn-group">
+        <a href="{% url 'canciones:tocar' cancion.pk %}" class="btn btn-primary btn-sm">
+          🎸 Ir a Modo Músico
+        </a>
+        <a href="{% url 'canciones:editar' cancion.pk %}" class="btn btn-secondary btn-sm">
+          Editar letra completa
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instrucciones claras y amigables -->
+  <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--color-flame);">
+    <p style="margin: 0; font-size: 0.95rem; color: #e0e0e0;">
+      💡 <strong>Haz clic o toca cualquier acorde</strong> resaltado para corregirlo rápidamente.
+      Puedes modificar solamente la aparición seleccionada o reemplazar todas las apariciones equivalentes.
+      La letra, los espacios y la alineación se conservarán automáticamente.
+    </p>
+  </div>
+
+  <!-- Contenedor de la canción con acordes interactivos -->
+  <div class="card" style="margin-bottom: 30px; padding: 20px 16px;">
+    <div class="letra-acordes-wrapper" style="overflow-x: auto;">
+      <pre id="cuerpo-edicion-acordes" class="letra-acordes-musico">{% render_cancion cancion modo_edicion=True %}</pre>
+    </div>
+  </div>
+
+  <!-- Formulario de Fallback / Edición Directa (Accesible sin JS) -->
+  <div id="panel-edicion-acorde" class="card edicion-acorde-card" style="margin-bottom: 40px;">
+    <h3 id="titulo-panel-edicion" style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: 14px;">
+      ✏️ Modificar acorde
+    </h3>
+
+    <form method="post" action="{% url 'canciones:guardar_edicion_acorde' cancion.pk %}" id="form-edicion-acorde">
+      {% csrf_token %}
+      <input type="hidden" name="num_linea" id="edit-num-linea" value="0">
+      <input type="hidden" name="col_inicio" id="edit-col-inicio" value="0">
+      <input type="hidden" name="col_fin" id="edit-col-fin" value="0">
+      <input type="hidden" name="texto_original" id="edit-texto-original" value="">
+      <input type="hidden" name="modo" id="edit-modo" value="uno">
+
+      <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px;">
+        <div style="min-width: 140px;">
+          <span style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 4px;">Acorde actual:</span>
+          <span id="badge-acorde-actual" class="acorde-badge-display">Selecciona un acorde</span>
+        </div>
+
+        <div style="flex: 1; min-width: 180px;">
+          <label for="input-nuevo-acorde" style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
+            Cambiar por:
+          </label>
+          <input
+            type="text"
+            id="input-nuevo-acorde"
+            name="nuevo_acorde"
+            class="form-input"
+            placeholder="Ej: G, G7, Gmaj7, Sol"
+            required
+            autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+            style="font-family: var(--font-mono); font-weight: 700; font-size: 1.1rem;"
+          >
+        </div>
+      </div>
+
+      <div class="btn-group" style="margin-top: 16px;">
+        <!-- La acción predeterminada siempre modifica solamente la aparición seleccionada (Criterio 2) -->
+        <button type="submit" id="btn-guardar-uno" class="btn btn-primary">
+          💾 Guardar
+        </button>
+        <button type="submit" id="btn-guardar-todos" class="btn btn-secondary">
+          🔁 Cambiar todas las apariciones
+        </button>
+        <button type="button" id="btn-cancelar-edicion" class="btn btn-secondary" style="display: none;">
+          ✕ Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Flotante de Edición Rápida (para pantallas táctiles y escritorio) -->
+<div id="modal-edicion-acorde" class="modal-backdrop" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog" role="dialog" aria-labelledby="modal-edicion-titulo">
+    <div class="modal-header">
+      <h3 id="modal-edicion-titulo" class="modal-title">✏️ Corregir acorde</h3>
+      <button type="button" class="modal-close-btn" id="modal-btn-cerrar" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom: 16px;">
+        <span style="font-size: 0.85rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Acorde seleccionado:</span>
+        <span id="modal-acorde-actual-label" class="acorde-badge-display">G</span>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label for="modal-input-nuevo-acorde" style="font-size: 0.9rem; color: var(--text-muted); display: block; margin-bottom: 6px;">
+          Cambiar por:
+        </label>
+        <input
+          type="text"
+          id="modal-input-nuevo-acorde"
+          class="form-input"
+          placeholder="Ej: G7, Gmaj7, C#m7"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+          style="font-family: var(--font-mono); font-weight: 700; font-size: 1.2rem;"
+        >
+      </div>
+
+      <div class="btn-group" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+        <button type="button" id="modal-btn-guardar-uno" class="btn btn-primary" style="width: 100%; justify-content: center;">
+          💾 Guardar
+        </button>
+        <button type="button" id="modal-btn-guardar-todos" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+          🔁 Cambiar todas las apariciones
+        </button>
+        <button type="button" id="modal-btn-cancelar" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

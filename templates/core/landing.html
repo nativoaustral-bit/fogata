@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Fogata — Atril Digital y Repertorio para Guitarra{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 580px; margin: 48px auto; text-align: center;">
+  <div style="margin-bottom: 24px;">
+    <h1 style="font-size: 2.4rem; font-weight: 800; color: #ffffff; letter-spacing: -1px; margin-bottom: 8px;">
+      Fogata 🔥
+    </h1>
+    <p style="font-size: 1.25rem; font-weight: 600; color: var(--color-flame); margin-bottom: 12px;">
+      Tus canciones. Tus acordes. Tu sesión.
+    </p>
+    <p style="font-size: 1.05rem; color: var(--text-muted); line-height: 1.5;">
+      Un atril digital simple para tocar guitarra.
+    </p>
+  </div>
+
+  <div class="card" style="padding: 32px 24px; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 24px;">
+    <div style="display: flex; flex-direction: column; gap: 14px; max-width: 320px; margin: 0 auto;">
+      <a href="{% url 'core:registro' %}" class="btn btn-primary" style="font-size: 1.05rem; padding: 12px 24px;">
+        Crear cuenta
+      </a>
+      <a href="{% url 'core:login' %}" class="btn btn-secondary" style="font-size: 1.05rem; padding: 12px 24px;">
+        Iniciar sesión
+      </a>
+    </div>
+  </div>
+
+  <p style="font-size: 0.85rem; color: var(--text-muted);">
+    Piloto privado por invitación &bull; Humm Co-Creation
+  </p>
+</div>
+{% endblock %}

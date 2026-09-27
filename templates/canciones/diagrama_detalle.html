@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Diagrama de {{ info.nombre }} — Fogata{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 500px; margin: 30px auto; text-align: center;">
+  <div style="margin-bottom: 20px; text-align: left;">
+    <a href="{{ return_url }}" class="btn btn-secondary btn-sm">
+      &larr; Volver a la canción
+    </a>
+  </div>
+
+  <div class="card" style="padding: 30px 20px; background-color: #1c1c1c; border: 1px solid #333333; border-radius: 10px;">
+    {% if info.advertencia_afinacion %}
+      <div style="background-color: #2a2010; border-left: 3px solid #ff9800; color: #ffb74d; padding: 8px 12px; margin-bottom: 16px; font-size: 0.85rem; text-align: left;">
+        ⚠️ {{ info.advertencia_afinacion }}
+      </div>
+    {% endif %}
+
+    {% if info.disponible %}
+      <div style="display: flex; justify-content: center; margin: 10px 0;">
+        {{ info.svg|safe }}
+      </div>
+    {% else %}
+      <div style="padding: 20px 10px;">
+        <h2 style="color: #ff9800; font-size: 1.8rem; margin-bottom: 12px; font-family: var(--font-mono);">
+          {{ info.nombre }}
+        </h2>
+        <p style="color: #b0b0b0; font-size: 1.05rem;">
+          {{ info.mensaje }}
+        </p>
+      </div>
+    {% endif %}
+
+    <div style="margin-top: 24px;">
+      <a href="{{ return_url }}" class="btn btn-primary" style="min-width: 180px;">
+        ← Volver a la canción
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
