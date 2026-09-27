@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}410 — Recurso no disponible{% endblock %}
 
 {% block content %}
 <div class="container">
   <div class="expired-card">
-    <div class="expired-icon">🔥</div>
+    <div class="expired-icon"><img src="{% static 'img/icono.svg' %}" alt="Fogata" style="width: 56px; height: 56px; display: inline-block;"></div>
     <h1 class="expired-title">Esta Fogata terminó</h1>
     <p class="expired-desc">
       El acceso a las letras de esta sesión ya no está disponible (HTTP 410).

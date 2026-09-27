@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}🔥 Esta Fogata terminó — Fogata{% endblock %}
+{% block title %}Esta Fogata terminó — Fogata{% endblock %}
 
 {% block extra_head %}
 <meta name="robots" content="noindex, nofollow">
@@ -9,7 +10,7 @@
 {% block content %}
 <div class="container">
   <div class="expired-card">
-    <div class="expired-icon">🔥</div>
+    <div class="expired-icon"><img src="{% static 'img/icono.svg' %}" alt="Fogata" style="width: 56px; height: 56px; display: inline-block;"></div>
     <h1 class="expired-title">Esta Fogata terminó</h1>
     <p class="expired-desc">
       El acceso a las letras de esta sesión ya no está disponible.

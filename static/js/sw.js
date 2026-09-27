@@ -18,8 +18,9 @@ var STATIC_ASSETS = [
   '/static/icons/icon-192.png',
   '/static/icons/icon-512.png',
   '/static/icons/icon.svg',
-  '/static/img/logo.svg',
-  '/static/img/fogata_logo.svg',
+  '/static/icons/icono.svg',
+  '/static/img/icono.svg',
+  '/static/img/fogata_logo_full.svg',
   '/manifest.webmanifest',
   '/offline/'
 ];
@@ -128,7 +129,7 @@ self.addEventListener('fetch', function (event) {
             '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fogata Offline</title>' +
             '<meta name="viewport" content="width=device-width,initial-scale=1"></head>' +
             '<body style="background:#0d0d0d;color:#fff;font-family:sans-serif;padding:24px;text-align:center;">' +
-            '<h1>🔥 Fogata</h1><p>Sin conexión a internet.</p><a href="/offline/" style="color:#ff9800;">Ver Modo Offline</a></body></html>',
+            '<h1><img src="/static/img/icono.svg" style="width:32px;height:32px;vertical-align:-4px;margin-right:8px;" alt="Fogata">Fogata</h1><p>Sin conexión a internet.</p><a href="/offline/" style="color:#ff9800;">Ver Modo Offline</a></body></html>',
             { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
           );
         });

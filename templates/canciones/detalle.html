@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load cancion_tags %}
+{% load static %}
 
 {% block title %}{{ cancion.titulo }} — Fogata{% endblock %}
 
@@ -90,7 +91,7 @@
         {% for relacion in fogatas_asociadas %}
         <li>
           <a href="{% url 'fogatas:detalle' relacion.fogata.pk %}" style="color: var(--color-flame); text-decoration: underline;">
-            🔥 {{ relacion.fogata.nombre }}
+            <img src="{% static 'img/icono.svg' %}" alt="" style="width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px; display: inline-block;">{{ relacion.fogata.nombre }}
           </a>
           <span style="color: var(--text-muted); font-size: 0.85rem;"> (Posición #{{ relacion.orden }}{% if relacion.nota_sesion %} - {{ relacion.nota_sesion }}{% endif %})</span>
         </li>

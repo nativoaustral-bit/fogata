@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Inicio — Fogata{% endblock %}
 
@@ -8,7 +9,7 @@
   <!-- Bienvenida Primer Usuario (Criterio 20) -->
   <div class="card" style="padding: 44px 24px; text-align: center; max-width: 580px; margin: 36px auto; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px;">
     <h1 style="font-size: 2.1rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; margin-bottom: 8px;">
-      Bienvenido a Fogata 🔥
+      Bienvenido a Fogata
     </h1>
     <p style="font-size: 1.15rem; font-weight: 600; color: var(--color-flame); margin-bottom: 16px;">
       Agrega tu primera canción.
@@ -89,7 +90,7 @@
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <div>
               <a href="{% url 'fogatas:detalle' fogata.pk %}" style="text-decoration: none;">
-                <h3 class="card-title">🔥 {{ fogata.nombre }}</h3>
+                <h3 class="card-title"><img src="{% static 'img/icono.svg' %}" alt="" style="width: 18px; height: 18px; vertical-align: -3px; margin-right: 4px; display: inline-block;">{{ fogata.nombre }}</h3>
               </a>
               <p class="card-subtitle">{{ fogata.canciones_asociadas.count }} canciones</p>
             </div>

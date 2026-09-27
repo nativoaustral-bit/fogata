@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load cancion_tags %}
+{% load static %}
 
 {% block title %}🎸 {{ cancion.titulo }} ({{ pos }}/{{ total_canciones }}) — {{ fogata.nombre }}{% endblock %}
 
@@ -78,7 +79,7 @@
         {% endif %}
       </div>
       <span class="badge" style="font-size: 0.9rem; padding: 4px 10px;">
-        🔥 {{ fogata.nombre }}
+        <img src="{% static 'img/icono.svg' %}" alt="" style="width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px; display: inline-block;">{{ fogata.nombre }}
       </span>
     </div>
 

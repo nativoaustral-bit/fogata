@@ -7,6 +7,8 @@
   <meta name="theme-color" content="#0d0d0d">
   <title>{% block title %}Fogata — Repertorio y Atril de Canciones{% endblock %}</title>
   
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/icono.svg' %}">
+  <link rel="alternate icon" href="{% static 'icons/favicon-32x32.png' %}">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -31,8 +33,7 @@
     <header class="site-header">
       <div class="container">
         <a href="{% url 'core:home' %}" class="site-brand">
-          <img src="{% static 'img/fogata_logo.svg' %}" alt="Fogata" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-          <span class="brand-fallback-emoji" style="display: none;">🔥</span>
+          <img src="{% static 'img/icono.svg' %}" alt="Fogata" class="brand-logo">
           <span>Fogata</span>
         </a>
 
@@ -82,7 +83,7 @@
     {% if not modo_musico %}
     <footer class="site-footer">
       <div class="container">
-        <p>🔥 Fogata — Simplicidad, velocidad y compatibilidad en atril.</p>
+        <p><img src="{% static 'img/icono.svg' %}" alt="" style="width: 16px; height: 16px; vertical-align: -2px; margin-right: 4px; display: inline-block;"> Fogata — Simplicidad, velocidad y compatibilidad en atril.</p>
         <p class="site-footer-rights" style="font-size: 0.78rem; color: #555555; margin-top: 6px;">
           Todos los derechos reservados Humm Co-Creation
         </p>

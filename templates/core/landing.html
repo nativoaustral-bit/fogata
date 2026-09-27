@@ -2,12 +2,14 @@
 
 {% block title %}Fogata — Atril Digital y Repertorio para Guitarra{% endblock %}
 
+{% load static %}
+
 {% block content %}
 <div class="container" style="max-width: 580px; margin: 48px auto; text-align: center;">
   <div style="margin-bottom: 24px;">
-    <h1 style="font-size: 2.4rem; font-weight: 800; color: #ffffff; letter-spacing: -1px; margin-bottom: 8px;">
-      Fogata 🔥
-    </h1>
+    <div style="margin-bottom: 16px;">
+      <img src="{% static 'img/fogata_logo_full.svg' %}" alt="Fogata" style="width: 160px; height: auto; display: inline-block;">
+    </div>
     <p style="font-size: 1.25rem; font-weight: 600; color: var(--color-flame); margin-bottom: 12px;">
       Tus canciones. Tus acordes. Tu sesión.
     </p>
@@ -27,8 +29,8 @@
     </div>
   </div>
 
-  <p style="font-size: 0.85rem; color: var(--text-muted);">
-    Piloto privado por invitación &bull; Humm Co-Creation
+  <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.55; max-width: 480px; margin: 0 auto;">
+    Tu música siempre contigo. Toca desde cualquier dispositivo, incluso ese que creías que ya había quedado atrás.
   </p>
 </div>
 {% endblock %}

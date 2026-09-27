@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Fogatas — Repertorio en Vivo{% endblock %}
 
@@ -23,7 +24,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div style="flex: 1; min-width: 220px;">
             <a href="{% url 'fogatas:detalle' fogata.pk %}">
-              <h2 class="card-title">🔥 {{ fogata.nombre }}</h2>
+              <h2 class="card-title"><img src="{% static 'img/icono.svg' %}" alt="" style="width: 20px; height: 20px; vertical-align: -3px; margin-right: 5px; display: inline-block;">{{ fogata.nombre }}</h2>
             </a>
             {% if fogata.descripcion %}
               <p class="card-subtitle">{{ fogata.descripcion|truncatewords:20 }}</p>

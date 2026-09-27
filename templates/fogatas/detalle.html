@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}🔥 {{ fogata.nombre }} — Fogata{% endblock %}
+{% block title %}{{ fogata.nombre }} — Fogata{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -13,7 +14,7 @@
 
     <div class="page-header-row">
       <div>
-        <h1 class="page-title">🔥 {{ fogata.nombre }}</h1>
+        <h1 class="page-title"><img src="{% static 'img/icono.svg' %}" alt="" style="width: 26px; height: 26px; vertical-align: -4px; margin-right: 6px; display: inline-block;">{{ fogata.nombre }}</h1>
         {% if fogata.descripcion %}
           <p class="page-subtitle" style="margin-top: 4px;">{{ fogata.descripcion }}</p>
         {% endif %}

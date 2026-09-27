@@ -148,7 +148,7 @@ class Command(BaseCommand):
 
         self.stdout.write("Actualizando Fogata de prueba...")
         fogata, _ = Fogata.objects.get_or_create(
-            nombre="🔥 Fogata Acústica de Prueba",
+            nombre="Fogata Acústica de Prueba",
             defaults={
                 'descripcion': "Setlist de prueba con canciones ficticias para verificar Modo Músico y Sesión Compartida."
             }
