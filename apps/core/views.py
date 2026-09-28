@@ -7,11 +7,15 @@ from django.urls import reverse_lazy
 from django.contrib.auth import views as auth_views
 from django.http import HttpResponseNotAllowed
 
-from .models import Invitacion
+from django.conf import settings
+from django.utils import timezone
+from .models import Invitacion, PerfilPiloto
 from .forms import RegistroForm, LoginForm
+from .planes import obtener_estado_capacidad
 from apps.canciones.models import Cancion
 from apps.fogatas.models import Fogata
 from apps.gestion.services import registrar_evento
+
 
 
 def home(request):
@@ -76,7 +80,8 @@ def registro_view(request):
                     )
                     PerfilPiloto.objects.create(
                         user=user,
-                        codigo_invitacion=codigo
+                        codigo_invitacion=codigo,
+                        tipo_cuenta='GRATIS'
                     )
                     registrar_evento(usuario=user, tipo_evento='registro', objeto_tipo='usuario', objeto_id=user.id)
 
@@ -239,3 +244,38 @@ def offline_view(request):
     en CacheStorage para garantizar aislamiento absoluto entre usuarios.
     """
     return render(request, 'core/offline.html')
+
+
+def pro_view(request):
+    """
+    Landing interna de Fogata Pro (Fase 8).
+    Exhibe comparativa Freemium, capacidad y precios referenciales sin medios de pago reales.
+    Emite evento comercial 'ver_pro' con debounce de 15 minutos en sesión.
+    """
+    origen = request.GET.get('origen', 'directo')
+    clave_sesion = 'ultima_visita_pro'
+    ultima_visita = request.session.get(clave_sesion)
+    ahora_ts = timezone.now().timestamp()
+    if not ultima_visita or (ahora_ts - float(ultima_visita)) >= 900:
+        registrar_evento(
+            usuario=request.user if request.user.is_authenticated else None,
+            tipo_evento='ver_pro',
+            metadata={'origen': origen[:50]}
+        )
+        request.session[clave_sesion] = ahora_ts
+
+    estado_capacidad = obtener_estado_capacidad(request.user) if request.user.is_authenticated else None
+
+    precio_sem = getattr(settings, 'FOGATA_PRO_SEMESTRAL_PRICE_CLP', 5990)
+    precio_anu = getattr(settings, 'FOGATA_PRO_ANUAL_PRICE_CLP', 9990)
+
+    context = {
+        'precio_semestral': f"{precio_sem:,}".replace(",", "."),
+        'precio_anual': f"{precio_anu:,}".replace(",", "."),
+        'max_canciones_gratis': getattr(settings, 'FOGATA_FREE_MAX_SONGS', 10),
+        'max_fogatas_gratis': getattr(settings, 'FOGATA_FREE_MAX_FOGATAS', 1),
+        'capacidad': estado_capacidad,
+        'origen': origen,
+    }
+    return render(request, 'core/pro.html', context)
+

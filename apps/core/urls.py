@@ -17,4 +17,7 @@ urlpatterns = [
 
     # Offline informativo
     path('offline/', views.offline_view, name='offline'),
+
+    # Fogata Pro (Fase 8)
+    path('pro/', views.pro_view, name='pro'),
 ]

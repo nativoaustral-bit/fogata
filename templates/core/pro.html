@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fogata Pro — Todo tu repertorio sin límites{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 860px; padding: 30px 16px 60px;">
+  <!-- CABECERA PRINCIPAL -->
+  <div style="text-align: center; margin-bottom: 40px;">
+    <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 152, 0, 0.12); border: 1px solid rgba(255, 152, 0, 0.35); padding: 4px 14px; border-radius: 20px; font-size: 0.85rem; color: var(--color-flame); margin-bottom: 16px;">
+      <span>🔥</span>
+      <span style="font-weight: 600;">Plan de expansión para músicos</span>
+    </div>
+    <h1 style="font-size: 2.2rem; font-weight: 800; color: #f5f5f5; margin-bottom: 12px; line-height: 1.2;">
+      Todo tu repertorio. Todas tus Fogatas.<br>
+      <span style="color: var(--color-flame);">Sin límites.</span>
+    </h1>
+    <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 580px; margin: 0 auto; line-height: 1.6;">
+      Toca en vivo con tranquilidad total. Guarda cada canción que aprendas y arma listas de temas para cada ensayo o presentación.
+    </p>
+
+    {% if capacidad and user.is_authenticated %}
+    <div style="margin-top: 18px; display: inline-block; background: var(--bg-surface); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; font-size: 0.88rem;">
+      <span style="color: var(--text-muted);">Tu plan actual:</span>
+      <strong style="color: {% if capacidad.es_ilimitado %}#81c784{% else %}var(--color-flame){% endif %}; margin-left: 4px;">
+        {{ capacidad.nombre_plan }}
+      </strong>
+      <span style="color: var(--text-muted); margin-left: 8px;">
+        ({{ capacidad.canciones_usadas }}{% if capacidad.canciones_limite %}/{{ capacidad.canciones_limite }}{% else %}/∞{% endif %} canciones · {{ capacidad.fogatas_usadas }}{% if capacidad.fogatas_limite %}/{{ capacidad.fogatas_limite }}{% else %}/∞{% endif %} Fogatas)
+      </span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- COMPARATIVA DE PLANES -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 40px;">
+    <!-- TARJETA GRATIS -->
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 28px 24px; display: flex; flex-direction: column;">
+      <div style="margin-bottom: 16px;">
+        <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);">Para empezar</span>
+        <h2 style="font-size: 1.6rem; color: #f5f5f5; margin: 4px 0;">Fogata Gratis</h2>
+        <div style="font-size: 1.8rem; font-weight: 800; color: #f5f5f5; margin-top: 8px;">$0 <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-muted);">para siempre</span></div>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 24px;">
+        Ideal para preparar tus canciones principales y probar la experiencia de atril digital.
+      </p>
+
+      <ul style="list-style: none; padding: 0; margin: 0 0 24px; font-size: 0.92rem; line-height: 2; flex: 1;">
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Hasta <strong>{{ max_canciones_gratis }} canciones</strong></li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> <strong>{{ max_fogatas_gratis }} Fogata</strong> activa (reutilizable)</li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Modo Tocar con atril continuo</li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Auto-scroll y transposición</li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> C ↔ Do y diagramas interactivos</li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Compartir sesiones con invitados</li>
+      </ul>
+
+      <div>
+        {% if capacidad and capacidad.tipo_cuenta == 'GRATIS' %}
+          <span style="display: block; text-align: center; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; color: var(--text-muted); font-size: 0.88rem;">
+            Tu plan activo actual
+          </span>
+        {% else %}
+          <a href="{% url 'canciones:lista' %}" class="btn btn-secondary" style="width: 100%; text-align: center; display: block;">
+            Ir a mis canciones
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- TARJETA PRO (DESTACADA) -->
+    <div style="background: linear-gradient(180deg, rgba(255, 152, 0, 0.08) 0%, var(--bg-surface) 100%); border: 2px solid var(--color-flame); border-radius: 12px; padding: 28px 24px; display: flex; flex-direction: column; position: relative;">
+      <div style="position: absolute; top: -12px; right: 20px; background: var(--color-flame); color: #121212; font-weight: 800; font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+        Recomendado
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame);">Músicos y bandas</span>
+        <h2 style="font-size: 1.6rem; color: #f5f5f5; margin: 4px 0;">Fogata Pro</h2>
+        <div style="font-size: 1.8rem; font-weight: 800; color: #f5f5f5; margin-top: 8px;">
+          ${{ precio_anual }} <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-muted);">/ año</span>
+        </div>
+        <div style="font-size: 0.82rem; color: #81c784; font-weight: 600; margin-top: 2px;">
+          Equivale a menos de $1.000 al mes
+        </div>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 24px;">
+        Todo tu repertorio completo, listas para cada evento y la tranquilidad de no preocuparte por el espacio.
+      </p>
+
+      <ul style="list-style: none; padding: 0; margin: 0 0 24px; font-size: 0.92rem; line-height: 2; flex: 1;">
+        <li><span style="color: var(--color-flame); font-weight: 800; margin-right: 8px;">★</span> <strong>Canciones ilimitadas</strong></li>
+        <li><span style="color: var(--color-flame); font-weight: 800; margin-right: 8px;">★</span> <strong>Fogatas (setlists) ilimitadas</strong></li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Todas las funciones musicales incluidas</li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Múltiples sesiones compartidas simultáneas</li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Soporte técnico preferente</li>
+      </ul>
+
+      <!-- OPCIÓN SEMESTRAL ALTERNATIVA -->
+      <div style="border-top: 1px solid var(--border-color); padding-top: 14px; margin-bottom: 16px; font-size: 0.82rem; color: var(--text-muted); text-align: center;">
+        Opción semestral: <strong>${{ precio_semestral }} / 6 meses</strong>
+      </div>
+
+      <div>
+        {% if capacidad and capacidad.es_ilimitado and capacidad.tipo_cuenta != 'GRATIS' %}
+          <div style="text-align: center; padding: 12px; background: rgba(76, 175, 80, 0.15); border: 1px solid rgba(76, 175, 80, 0.4); border-radius: 6px; color: #81c784; font-weight: 700; font-size: 0.9rem;">
+            ✓ Tienes acceso Pro habilitado
+          </div>
+        {% else %}
+          <div style="text-align: center;">
+            <button type="button" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 700; opacity: 0.9;" disabled>
+              Próximamente disponible
+            </button>
+            <span style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-top: 8px;">
+              Los pagos en línea se habilitarán próximamente. Si necesitas ampliar tu cuenta para el piloto, contáctanos.
+            </span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- PREGUNTAS FRECUENTES TRANSPARENTES -->
+  <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; margin-top: 20px;">
+    <h3 style="font-size: 1.1rem; color: #f5f5f5; margin-bottom: 16px;">Preguntas Frecuentes</h3>
+    
+    <div style="margin-bottom: 14px;">
+      <h4 style="font-size: 0.92rem; color: var(--color-flame); margin-bottom: 4px;">¿Qué ocurre con mis canciones si alcanzo el límite de 10?</h4>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0; line-height: 1.5;">
+        Tus 10 canciones permanecen siempre disponibles para ver, tocar, editar y compartir. Nada se bloquea ni se borra. Simplemente necesitarás Fogata Pro cuando quieras seguir incorporando temas a tu biblioteca.
+      </p>
+    </div>
+
+    <div style="margin-bottom: 14px;">
+      <h4 style="font-size: 0.92rem; color: var(--color-flame); margin-bottom: 4px;">¿Qué significa que Fogata Gratis incluya 1 Fogata?</h4>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0; line-height: 1.5;">
+        Significa que puedes mantener 1 setlist activo a la vez. Puedes cambiarle las canciones, reordenarlas, renombrarla y reutilizarla todas las veces que quieras. Con Pro puedes guardar múltiples setlists simultáneos (ej: "Acústico", "Rock", "Misa").
+      </p>
+    </div>
+
+    <div>
+      <h4 style="font-size: 0.92rem; color: var(--color-flame); margin-bottom: 4px;">¿Mis invitados necesitan pagar para ver mis letras?</h4>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0; line-height: 1.5;">
+        No, jamás. Los invitados acceden 100% gratis mediante tu link temporal o código QR, sin necesidad de registrarse ni instalar aplicaciones.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

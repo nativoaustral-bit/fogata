@@ -101,4 +101,33 @@
     </div>
   </div>
 </div>
+
+<!-- SECCIÓN 3: FUNNEL COMERCIAL FREEMIUM (FASE 8) -->
+<div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; flex-wrap: wrap;">
+    <h2 style="font-size: 1rem; color: #f5f5f5; margin: 0;">Funnel Comercial Freemium (Conversión hacia Pro)</h2>
+    <span style="font-size: 0.82rem; color: var(--text-muted);">
+      Total cuentas Gratis: <strong>{{ comercial.total_gratis }}</strong> · Señales de demanda: <strong>{{ comercial.total_senales_conversion }}</strong>
+    </span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    {% for paso in comercial.funnel %}
+    <div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+        <span style="color: {% if paso.etapa == 'PRO' %}#ff9800{% elif paso.etapa == 'Visitó Pro' or paso.etapa == 'Límite alcanzado' %}var(--color-flame-light){% else %}#f5f5f5{% endif %}; font-weight: {% if paso.etapa == 'PRO' %}700{% else %}500{% endif %};">
+          {{ forloop.counter }}. {{ paso.etapa }}
+        </span>
+        <span><strong>{{ paso.cantidad }}</strong> usuarios ({{ paso.pct }}%)</span>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.05); height: 10px; border-radius: 5px; overflow: hidden;">
+        <div style="background: {% if paso.etapa == 'PRO' %}#ff9800{% elif forloop.counter > 3 %}var(--color-flame){% else %}#4caf50{% endif %}; height: 100%; width: {{ paso.pct }}%;"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <p style="font-size: 0.78rem; color: #888; margin-top: 14px; line-height: 1.4;">
+    En Fase 8, el paso final (PRO) se produce exclusivamente mediante activación administrativa para validación de la arquitectura sin cobro real.
+  </p>
+</div>
 {% endblock %}

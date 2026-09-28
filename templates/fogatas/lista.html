@@ -9,13 +9,31 @@
     <div class="page-header-row">
       <div>
         <h1 class="page-title">Tus Fogatas</h1>
-        <p class="page-subtitle">{{ total }} sesion{{ total|pluralize:"es" }} o setlists armados</p>
+        <p class="page-subtitle">
+          {% if capacidad and not capacidad.es_ilimitado %}
+            {{ total }} / {{ capacidad.fogatas_limite }} Fogata en tu plan
+          {% else %}
+            {{ total }} sesion{{ total|pluralize:"es" }} o setlists armados
+          {% endif %}
+        </p>
       </div>
       <a href="{% url 'fogatas:crear' %}" class="btn btn-primary">
         + Nueva Fogata
       </a>
     </div>
   </div>
+
+  {% if capacidad and not capacidad.es_ilimitado and capacidad.sobre_limite_fogatas %}
+    <div style="background: rgba(224, 86, 36, 0.12); border: 1px solid var(--accent); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <strong style="color: var(--accent);">Tienes {{ capacidad.fogatas_usadas }} Fogata activa (límite del plan Gratis).</strong>
+        <p style="margin: 4px 0 0 0; font-size: 0.9rem; color: var(--text-muted);">
+          Puedes editarla, renombrarla, reordenar y cambiar sus canciones indefinidamente. Con Fogata Pro puedes armar múltiples Fogatas simultáneas.
+        </p>
+      </div>
+      <a href="{% url 'pro' %}?origen=banner_fogatas" class="btn btn-primary btn-sm">Conocer Pro 🔥</a>
+    </div>
+  {% endif %}
 
   {% if fogatas %}
     <div style="display: flex; flex-direction: column; gap: 12px;">

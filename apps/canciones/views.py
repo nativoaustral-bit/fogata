@@ -3,11 +3,13 @@ from django.db.models import Q
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.db import transaction
 from django.utils import timezone
 from .models import Cancion
 from .forms import CancionForm
 from .parser import reemplazar_acorde_en_contenido
 from apps.gestion.services import registrar_evento
+from apps.core.planes import puede_crear_cancion, canciones_utilizadas, limite_canciones, obtener_estado_capacidad
 
 
 def obtener_parametros_musicales(request):
@@ -48,6 +50,7 @@ def lista(request):
         'canciones': canciones,
         'query': query,
         'total': canciones.count(),
+        'capacidad': obtener_estado_capacidad(request.user),
     }
     return render(request, 'canciones/lista.html', context)
 
@@ -72,13 +75,55 @@ def crear(request):
     """
     Crear una nueva canción en el repertorio del usuario.
     Soporta flujo directo 'Pegar y Tocar' con el botón Guardar y Tocar.
+    Protegido por límites comerciales Freemium (Fase 8).
     """
+    # 1. Verificación comercial inicial (GET o previo a validación)
+    if not puede_crear_cancion(request.user):
+        clave_sesion = 'evento_limite_canciones'
+        ahora_ts = timezone.now().timestamp()
+        ultima_alerta = request.session.get(clave_sesion)
+        if not ultima_alerta or (ahora_ts - float(ultima_alerta)) >= 300:
+            registrar_evento(
+                usuario=request.user,
+                tipo_evento='alcanzar_limite_canciones',
+                objeto_tipo='cancion',
+                metadata={'intentos': 1}
+            )
+            request.session[clave_sesion] = ahora_ts
+
+        context = {
+            'canciones_utilizadas': canciones_utilizadas(request.user),
+            'limite_canciones': limite_canciones(request.user),
+        }
+        return render(request, 'canciones/limite_alcanzado.html', context)
+
     if request.method == 'POST':
         form = CancionForm(request.POST)
         if form.is_valid():
-            cancion = form.save(commit=False)
-            cancion.propietario = request.user
-            cancion.save()
+            with transaction.atomic():
+                # Re-validación atómica con bloqueo ante peticiones concurrentes (Criterios 12 y 13)
+                if not puede_crear_cancion(request.user, bloquear=True):
+                    clave_sesion = 'evento_limite_canciones'
+                    ahora_ts = timezone.now().timestamp()
+                    ultima_alerta = request.session.get(clave_sesion)
+                    if not ultima_alerta or (ahora_ts - float(ultima_alerta)) >= 300:
+                        registrar_evento(
+                            usuario=request.user,
+                            tipo_evento='alcanzar_limite_canciones',
+                            objeto_tipo='cancion',
+                            metadata={'intentos': 1}
+                        )
+                        request.session[clave_sesion] = ahora_ts
+                    context = {
+                        'canciones_utilizadas': canciones_utilizadas(request.user),
+                        'limite_canciones': limite_canciones(request.user),
+                    }
+                    return render(request, 'canciones/limite_alcanzado.html', context)
+
+                cancion = form.save(commit=False)
+                cancion.propietario = request.user
+                cancion.save()
+
             registrar_evento(
                 usuario=request.user,
                 tipo_evento='crear_cancion',

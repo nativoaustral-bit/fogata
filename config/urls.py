@@ -22,6 +22,7 @@ urlpatterns = [
     path('recuperar-password/enviado/', core_views.FogataPasswordResetDoneView.as_view(), name='password_reset_done'),
     path('canciones/', include('apps.canciones.urls')),
     path('fogatas/', include('apps.fogatas.urls')),
+    path('pro/', core_views.pro_view, name='pro'),
 
     # Rutas públicas directas para Modo Invitado (Sesiones Compartidas)
     path('s/<str:token>/', fogatas_views.sesion_compartida_detalle, name='sesion_compartida_publica'),

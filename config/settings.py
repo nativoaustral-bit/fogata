@@ -72,6 +72,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'apps.core.context_processors.plan_context',
             ],
         },
     },
@@ -162,5 +163,12 @@ if not DEBUG:
 
 # Fase 7 — Fogata Control Center & Analítica de Comportamiento (Criterio 4)
 FOGATA_ANALYTICS_START_DATE = os.environ.get('FOGATA_ANALYTICS_START_DATE', '2026-09-28')
+
+# Fase 8 — Parámetros Comerciales y Límites Freemium
+FOGATA_FREE_MAX_SONGS = int(os.environ.get('FOGATA_FREE_MAX_SONGS', 10))
+FOGATA_FREE_MAX_FOGATAS = int(os.environ.get('FOGATA_FREE_MAX_FOGATAS', 1))
+FOGATA_PRO_SEMESTRAL_PRICE_CLP = int(os.environ.get('FOGATA_PRO_SEMESTRAL_PRICE_CLP', 5990))
+FOGATA_PRO_ANUAL_PRICE_CLP = int(os.environ.get('FOGATA_PRO_ANUAL_PRICE_CLP', 9990))
+
 
 

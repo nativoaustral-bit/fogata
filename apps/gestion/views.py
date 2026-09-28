@@ -23,9 +23,12 @@ from .metrics import (
     obtener_metricas_dashboard,
     obtener_metricas_canciones_detalle,
     obtener_metricas_fogatas_detalle,
+    obtener_metricas_comerciales,
 )
 from apps.canciones.models import Cancion
 from apps.fogatas.models import Fogata, SesionCompartida
+from apps.core.models import PerfilPiloto
+from apps.core.planes import obtener_estado_capacidad
 
 User = get_user_model()
 
@@ -50,6 +53,7 @@ def dashboard_view(request):
     de adopción, uso real, embudo de activación y actividad reciente (máx 50).
     """
     metricas = obtener_metricas_dashboard()
+    metricas_comerciales = obtener_metricas_comerciales()
 
     # Actividad reciente (máximo 50 eventos ordenados cronológicamente)
     eventos_recientes = (
@@ -59,6 +63,7 @@ def dashboard_view(request):
 
     context = {
         'm': metricas,
+        'c': metricas_comerciales,
         'eventos_recientes': eventos_recientes,
         'inicio_analitica': obtener_analytics_start_date_str(),
     }
@@ -207,6 +212,7 @@ def usuario_detalle_view(request, pk):
 
     context = {
         'u': usuario,
+        'capacidad': obtener_estado_capacidad(usuario),
         'total_canciones': total_canciones,
         'total_fogatas': total_fogatas,
         'total_sesiones': total_sesiones,
@@ -308,6 +314,42 @@ def usuario_enviar_reset_view(request, pk):
 
 
 @staff_required
+@require_POST
+def usuario_cambiar_plan_view(request, pk):
+    """
+    Modifica administrativamente el plan de una cuenta de usuario (GRATIS, PRO, PILOTO)
+    y registra auditoría administrativa 'cambiar_plan' (Criterios 17 y 18).
+    """
+    usuario = get_object_or_404(User.objects.select_related('perfil_piloto'), pk=pk)
+    nuevo_plan = request.POST.get('nuevo_plan', '').strip().upper()
+
+    planes_validos = ['GRATIS', 'PRO', 'PILOTO']
+    if nuevo_plan not in planes_validos:
+        messages.error(request, f"Plan '{nuevo_plan}' no es válido. Opciones: {', '.join(planes_validos)}.")
+        return redirect('gestion:usuario_detalle', pk=usuario.pk)
+
+    perfil, _ = PerfilPiloto.objects.get_or_create(user=usuario)
+    plan_anterior = perfil.tipo_cuenta or 'PILOTO'
+
+    if plan_anterior == nuevo_plan:
+        messages.info(request, f"El usuario ya posee el plan {nuevo_plan}.")
+        return redirect('gestion:usuario_detalle', pk=usuario.pk)
+
+    perfil.tipo_cuenta = nuevo_plan
+    perfil.save(update_fields=['tipo_cuenta'])
+
+    registrar_auditoria_admin(
+        admin=request.user,
+        usuario_afectado=usuario,
+        accion='cambiar_plan',
+        detalles=f"Cambio de plan: {plan_anterior} → {nuevo_plan} (por {request.user.email})"
+    )
+
+    messages.success(request, f"Plan de {usuario.email} actualizado exitosamente: {plan_anterior} → {nuevo_plan}.")
+    return redirect('gestion:usuario_detalle', pk=usuario.pk)
+
+
+@staff_required
 def actividad_lista_view(request):
     """
     Historial cronológico completo de eventos con paginación y filtro por tipo.
@@ -348,16 +390,18 @@ def fogatas_metricas_view(request):
 def metricas_detalladas_view(request):
     """
     Vista detallada de repertorios (distribución en buckets), retención 7 y 30 días,
-    y embudo completo de adopción.
+    embudo de adopción e indicadores comerciales Freemium (Fase 8).
     """
     periodo = request.GET.get('periodo', 'todo')
     metricas_canciones = obtener_metricas_canciones_detalle(periodo)
     metricas_generales = obtener_metricas_dashboard()
+    metricas_comerciales = obtener_metricas_comerciales()
 
     context = {
         'periodo': periodo,
         'mc': metricas_canciones,
         'mg': metricas_generales,
+        'comercial': metricas_comerciales,
         'inicio_analitica': obtener_analytics_start_date_str(),
     }
     return render(request, 'gestion/metricas.html', context)

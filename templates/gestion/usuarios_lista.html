@@ -53,6 +53,7 @@
       <tr>
         <th>Usuario</th>
         <th>Correo</th>
+        <th>Plan</th>
         <th>Registro</th>
         <th>Última Actividad</th>
         <th style="text-align: center;">Canciones</th>
@@ -74,6 +75,14 @@
           <a href="{% url 'gestion:usuario_detalle' pk=u.pk %}" style="color: #bbb; text-decoration: none;">
             {{ u.email }}
           </a>
+        </td>
+        <td>
+          <span style="font-size: 0.72rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; 
+            {% if u.perfil_piloto.tipo_cuenta == 'PRO' %}background: rgba(255,152,0,0.2); color: #ff9800; border: 1px solid rgba(255,152,0,0.4);
+            {% elif u.perfil_piloto.tipo_cuenta == 'GRATIS' %}background: rgba(76,175,80,0.15); color: #81c784; border: 1px solid rgba(76,175,80,0.3);
+            {% else %}background: rgba(255,255,255,0.06); color: #bbb; border: 1px solid #444;{% endif %}">
+            {{ u.perfil_piloto.tipo_cuenta|default:"PILOTO" }}
+          </span>
         </td>
         <td style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">
           {{ u.date_joined|date:"d/m/Y" }}

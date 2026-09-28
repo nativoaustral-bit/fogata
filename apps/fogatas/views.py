@@ -11,6 +11,7 @@ from apps.canciones.models import Cancion
 from apps.canciones.services import obtener_solo_letra
 from apps.canciones.views import obtener_parametros_musicales
 from apps.gestion.services import registrar_evento
+from apps.core.planes import puede_crear_fogata, fogatas_utilizadas, limite_fogatas, obtener_estado_capacidad
 
 
 
@@ -49,6 +50,7 @@ def lista(request):
     context = {
         'fogatas': fogatas,
         'total': fogatas.count(),
+        'capacidad': obtener_estado_capacidad(request.user),
     }
     return render(request, 'fogatas/lista.html', context)
 
@@ -76,13 +78,54 @@ def detalle(request, pk):
 def crear(request):
     """
     Crea una nueva Fogata perteneciente al usuario autenticado.
+    Protegido por límites comerciales Freemium (Fase 8).
     """
+    if not puede_crear_fogata(request.user):
+        clave_sesion = 'evento_limite_fogatas'
+        ahora_ts = timezone.now().timestamp()
+        ultima_alerta = request.session.get(clave_sesion)
+        if not ultima_alerta or (ahora_ts - float(ultima_alerta)) >= 300:
+            registrar_evento(
+                usuario=request.user,
+                tipo_evento='alcanzar_limite_fogatas',
+                objeto_tipo='fogata',
+                metadata={'intentos': 1}
+            )
+            request.session[clave_sesion] = ahora_ts
+
+        context = {
+            'fogatas_utilizadas': fogatas_utilizadas(request.user),
+            'limite_fogatas': limite_fogatas(request.user),
+        }
+        return render(request, 'fogatas/limite_alcanzado.html', context)
+
     if request.method == 'POST':
         form = FogataForm(request.POST)
         if form.is_valid():
-            fogata = form.save(commit=False)
-            fogata.propietario = request.user
-            fogata.save()
+            with transaction.atomic():
+                # Re-validación atómica con bloqueo ante peticiones concurrentes
+                if not puede_crear_fogata(request.user, bloquear=True):
+                    clave_sesion = 'evento_limite_fogatas'
+                    ahora_ts = timezone.now().timestamp()
+                    ultima_alerta = request.session.get(clave_sesion)
+                    if not ultima_alerta or (ahora_ts - float(ultima_alerta)) >= 300:
+                        registrar_evento(
+                            usuario=request.user,
+                            tipo_evento='alcanzar_limite_fogatas',
+                            objeto_tipo='fogata',
+                            metadata={'intentos': 1}
+                        )
+                        request.session[clave_sesion] = ahora_ts
+                    context = {
+                        'fogatas_utilizadas': fogatas_utilizadas(request.user),
+                        'limite_fogatas': limite_fogatas(request.user),
+                    }
+                    return render(request, 'fogatas/limite_alcanzado.html', context)
+
+                fogata = form.save(commit=False)
+                fogata.propietario = request.user
+                fogata.save()
+
             registrar_evento(
                 usuario=request.user,
                 tipo_evento='crear_fogata',

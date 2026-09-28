@@ -18,6 +18,70 @@
       📥 Exportar CSV
     </a>
   </div>
+<!-- SECCIÓN COMERCIAL Y MODELO FREEMIUM (FASE 8) -->
+<div style="margin-bottom: 28px;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; flex-wrap: wrap;">
+    <h2 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame); margin: 0;">
+      Métricas Comerciales y Modelo Freemium (Fase 8)
+    </h2>
+    <a href="{% url 'pro' %}" target="_blank" style="font-size: 0.82rem; color: #ff9800; text-decoration: none;">
+      Ver Landing /pro/ ↗
+    </a>
+  </div>
+
+  <div class="metric-grid">
+    <!-- PLANES -->
+    <div class="metric-card" style="border-left: 3px solid #81c784;">
+      <h3>Usuarios Gratis</h3>
+      <div class="metric-val" style="color: #81c784;">{{ c.total_gratis }}</div>
+      <div class="metric-sub">Plan base (máx 10 canciones / 1 Fogata)</div>
+    </div>
+
+    <div class="metric-card" style="border-left: 3px solid #ff9800;">
+      <h3>Usuarios Pro</h3>
+      <div class="metric-val" style="color: #ff9800;">{{ c.total_pro }}</div>
+      <div class="metric-sub">Capacidad ilimitada (activados administrativamente)</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>Usuarios Piloto</h3>
+      <div class="metric-val">{{ c.total_piloto }}</div>
+      <div class="metric-sub">Cuentas piloto históricas (ilimitadas sin cobro)</div>
+    </div>
+
+    <!-- SEÑAL DE CONVERSIÓN -->
+    <div class="metric-card" style="border-left: 3px solid var(--color-flame); background: rgba(255, 152, 0, 0.04);">
+      <h3 style="color: var(--color-flame-light);">Señales de Conversión 🔥</h3>
+      <div class="metric-val" style="color: var(--color-flame);">{{ c.total_senales_conversion }}</div>
+      <div class="metric-sub">{{ c.pct_senales_conversion }}% de usuarios Gratis con demanda activa de upgrade</div>
+    </div>
+
+    <!-- LÍMITES EN CUENTAS GRATIS -->
+    <div class="metric-card">
+      <h3>Gratis en 10/10 Canciones</h3>
+      <div class="metric-val">{{ c.gratis_10_canciones }}</div>
+      <div class="metric-sub">{{ c.gratis_8_9_canciones }} usuarios en 8–9 canciones (por alcanzar límite)</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>Gratis en 1/1 Fogata</h3>
+      <div class="metric-val">{{ c.gratis_1_fogata }}</div>
+      <div class="metric-sub">Cupo máximo de Fogatas simultáneas ocupado</div>
+    </div>
+
+    <!-- INTENCIÓN -->
+    <div class="metric-card">
+      <h3>Visitaron /pro/</h3>
+      <div class="metric-val">{{ c.total_vieron_pro }}</div>
+      <div class="metric-sub">Músicos que revisaron la comparativa Pro</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>Eventos de Límite</h3>
+      <div class="metric-val">{{ c.total_limite_canciones_evento|add:c.total_limite_fogatas_evento }}</div>
+      <div class="metric-sub">{{ c.total_limite_canciones_evento }} tope canciones · {{ c.total_limite_fogatas_evento }} tope fogatas</div>
+    </div>
+  </div>
 </div>
 
 <!-- SECCIÓN 1: PRODUCTO Y ADOPCIÓN -->

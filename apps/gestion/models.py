@@ -19,6 +19,9 @@ class EventoUso(models.Model):
         ('tocar_fogata', 'Uso de Modo Tocar (Fogata en atril)'),
         ('crear_sesion_compartida', 'Creación de sesión compartida'),
         ('abrir_sesion_compartida', 'Apertura de sesión compartida por invitado'),
+        ('ver_pro', 'Visualización de página Fogata Pro'),
+        ('alcanzar_limite_canciones', 'Intento de creación sobre límite de canciones'),
+        ('alcanzar_limite_fogatas', 'Intento de creación sobre límite de Fogatas'),
     ]
 
     usuario = models.ForeignKey(
@@ -82,6 +85,7 @@ class AuditoriaAdmin(models.Model):
         ('suspender_usuario', 'Suspensión de cuenta'),
         ('reactivar_usuario', 'Reactivación de cuenta'),
         ('enviar_reset_password', 'Envío de recuperación de contraseña'),
+        ('cambiar_plan', 'Cambio manual de plan'),
     ]
 
     admin = models.ForeignKey(

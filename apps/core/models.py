@@ -141,14 +141,31 @@ class PerfilPiloto(models.Model):
     TIPO_CUENTA_CHOICES = [
         ('PILOTO', 'Piloto'),
         ('ADMIN', 'Administrador'),
-        ('GRATIS', 'Gratis (Futuro)'),
-        ('PRO', 'Pro (Futuro)'),
+        ('GRATIS', 'Fogata Gratis'),
+        ('PRO', 'Fogata Pro'),
     ]
     tipo_cuenta = models.CharField(
         max_length=20,
         choices=TIPO_CUENTA_CHOICES,
         default='PILOTO',
         verbose_name='Modalidad / Tipo de cuenta'
+    )
+    # Campos de vigencia futura (Fase 8 - Criterio 27)
+    fecha_inicio_plan = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha inicio del plan'
+    )
+    fecha_fin_plan = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha fin del plan'
+    )
+    estado_suscripcion = models.CharField(
+        max_length=20,
+        default='ACTIVA',
+        blank=True,
+        verbose_name='Estado de suscripción'
     )
 
     class Meta:
@@ -157,3 +174,4 @@ class PerfilPiloto(models.Model):
 
     def __str__(self):
         return f"{self.user.email} [{self.tipo_cuenta} - {self.codigo_invitacion or 'Directo'}]"
+

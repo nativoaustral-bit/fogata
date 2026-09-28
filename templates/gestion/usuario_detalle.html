@@ -81,7 +81,12 @@
         {% endif %}
       </div>
       <div><span style="color: var(--text-muted);">Código de Invitación:</span> <code>{{ u.perfil_piloto.codigo_invitacion|default:"Directo" }}</code></div>
-      <div><span style="color: var(--text-muted);">Modalidad de Cuenta:</span> <strong style="color: var(--color-flame-light);">{{ u.perfil_piloto.get_tipo_cuenta_display|default:"PILOTO" }}</strong></div>
+      <div>
+        <span style="color: var(--text-muted);">Plan Comercial:</span>
+        <strong style="color: {% if capacidad.es_ilimitado %}#ff9800{% else %}#81c784{% endif %}; font-size: 0.95rem;">
+          {{ capacidad.tipo_cuenta }} ({{ capacidad.nombre_plan }})
+        </strong>
+      </div>
       <div><span style="color: var(--text-muted);">Privilegio Administrativo:</span> {% if u.is_staff %}<span style="color: #ff9800; font-weight: 700;">Staff / Admin</span>{% else %}Usuario Normal{% endif %}</div>
     </div>
   </div>
@@ -108,18 +113,70 @@
   </div>
 </div>
 
+<!-- GESTIÓN DE PLAN COMERCIAL (FASE 8) -->
+<div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 18px; margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+    <div>
+      <h2 style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame); margin: 0 0 4px 0;">
+        Plan Comercial y Capacidad (Fase 8)
+      </h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
+        Plan actual: <strong style="color: #ffffff;">{{ capacidad.tipo_cuenta }}</strong> &bull; Canciones: <strong>{{ capacidad.canciones_usadas }} / {% if capacidad.canciones_limite %}{{ capacidad.canciones_limite }}{% else %}∞{% endif %}</strong> &bull; Fogatas: <strong>{{ capacidad.fogatas_usadas }} / {% if capacidad.fogatas_limite %}{{ capacidad.fogatas_limite }}{% else %}∞{% endif %}</strong>
+      </p>
+    </div>
+    <div>
+      <form method="post" action="{% url 'gestion:usuario_cambiar_plan' pk=u.pk %}" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" onsubmit="return confirm('¿Confirmas cambiar el plan comercial de {{ u.email }}?');">
+        {% csrf_token %}
+        <label for="id_nuevo_plan" style="font-size: 0.82rem; color: var(--text-muted);">Cambiar a:</label>
+        <select name="nuevo_plan" id="id_nuevo_plan" class="form-input" style="padding: 5px 10px; font-size: 0.85rem; width: auto; background: #1a1a1a; color: #fff; border: 1px solid #444; border-radius: 4px;">
+          <option value="GRATIS" {% if capacidad.tipo_cuenta == 'GRATIS' %}selected{% endif %}>GRATIS (10 canciones / 1 Fogata)</option>
+          <option value="PRO" {% if capacidad.tipo_cuenta == 'PRO' %}selected{% endif %}>PRO (Ilimitado ∞)</option>
+          <option value="PILOTO" {% if capacidad.tipo_cuenta == 'PILOTO' %}selected{% endif %}>PILOTO (Ilimitado piloto)</option>
+        </select>
+        <button type="submit" class="btn btn-secondary btn-sm" style="padding: 6px 12px; font-size: 0.82rem;">
+          Actualizar Plan
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- TARJETAS DE USO -->
 <div class="metric-grid" style="margin-bottom: 24px;">
   <div class="metric-card">
     <h3>Canciones</h3>
-    <div class="metric-val">{{ total_canciones }}</div>
-    <div class="metric-sub">Guardadas en su biblioteca</div>
+    <div class="metric-val">
+      {% if capacidad.canciones_limite %}
+        {{ capacidad.canciones_usadas }} / {{ capacidad.canciones_limite }}
+      {% else %}
+        {{ capacidad.canciones_usadas }} / ∞
+      {% endif %}
+    </div>
+    <div class="metric-sub">
+      {% if capacidad.sobre_limite_canciones %}
+        <span style="color: #ff9800; font-weight: 600;">Límite alcanzado</span>
+      {% else %}
+        Guardadas en su biblioteca
+      {% endif %}
+    </div>
   </div>
 
   <div class="metric-card">
     <h3>Fogatas (Setlists)</h3>
-    <div class="metric-val">{{ total_fogatas }}</div>
-    <div class="metric-sub">Última: {{ ultima_fogata.nombre|default:"Ninguna"|truncatechars:20 }}</div>
+    <div class="metric-val">
+      {% if capacidad.fogatas_limite %}
+        {{ capacidad.fogatas_usadas }} / {{ capacidad.fogatas_limite }}
+      {% else %}
+        {{ capacidad.fogatas_usadas }} / ∞
+      {% endif %}
+    </div>
+    <div class="metric-sub">
+      {% if capacidad.sobre_limite_fogatas %}
+        <span style="color: #ff9800; font-weight: 600;">Límite alcanzado</span>
+      {% else %}
+        Última: {{ ultima_fogata.nombre|default:"Ninguna"|truncatechars:20 }}
+      {% endif %}
+    </div>
   </div>
 
   <div class="metric-card">

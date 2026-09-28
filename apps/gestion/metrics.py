@@ -355,3 +355,139 @@ def obtener_metricas_fogatas_detalle():
         'pct_sesiones_con_apertura': pct_sesiones_con_apertura,
         'promedio_aperturas_por_sesion': promedio_aperturas_por_sesion,
     }
+
+
+def obtener_metricas_comerciales():
+    """
+    Calcula indicadores comerciales del modelo Freemium (Fase 8):
+    - Conteo por planes: GRATIS, PRO, PILOTO
+    - Monitoreo de límites en cuentas GRATIS: 8-9 canciones, 10 canciones, 1 Fogata
+    - Intención comercial y eventos comerciales:
+        * vieron /pro/
+        * alcanzaron límite de canciones
+        * alcanzaron límite de Fogatas
+    - Señales de conversión
+    - Funnel comercial de conversión
+    """
+    from apps.core.models import PerfilPiloto
+    from django.conf import settings
+
+    max_canciones_gratis = getattr(settings, 'FOGATA_FREE_MAX_SONGS', 10)
+    max_fogatas_gratis = getattr(settings, 'FOGATA_FREE_MAX_FOGATAS', 1)
+
+    # Base usuarios no-staff
+    usuarios_non_staff = User.objects.filter(is_staff=False)
+    total_usuarios = usuarios_non_staff.count()
+
+    # Identificación por planes
+    cuentas_gratis_ids = set(
+        PerfilPiloto.objects.filter(user__is_staff=False, tipo_cuenta='GRATIS')
+        .values_list('user_id', flat=True)
+    )
+    cuentas_pro_ids = set(
+        PerfilPiloto.objects.filter(user__is_staff=False, tipo_cuenta='PRO')
+        .values_list('user_id', flat=True)
+    )
+    # PILOTO: cuentas explícitamente PILOTO o pre-existentes sin tipo_cuenta
+    cuentas_piloto_ids = set(
+        usuarios_non_staff.exclude(id__in=cuentas_gratis_ids.union(cuentas_pro_ids))
+        .values_list('id', flat=True)
+    )
+
+    total_gratis = len(cuentas_gratis_ids)
+    total_pro = len(cuentas_pro_ids)
+    total_piloto = len(cuentas_piloto_ids)
+
+    # Usuarios gratis con conteos de canciones y fogatas
+    usuarios_gratis_qs = usuarios_non_staff.filter(id__in=cuentas_gratis_ids).annotate(
+        num_canciones=Count('canciones', distinct=True),
+        num_fogatas=Count('fogatas', distinct=True)
+    )
+
+    # Límites
+    gratis_8_9_canciones = usuarios_gratis_qs.filter(num_canciones__gte=8, num_canciones__lt=max_canciones_gratis).count()
+    gratis_10_canciones = usuarios_gratis_qs.filter(num_canciones__gte=max_canciones_gratis).count()
+    gratis_1_fogata = usuarios_gratis_qs.filter(num_fogatas__gte=max_fogatas_gratis).count()
+
+    # Intención: usuarios únicos con eventos comerciales (order_by() limpia el Meta.ordering para DISTINCT)
+    usuarios_vieron_pro_ids = set(
+        EventoUso.objects.filter(tipo_evento='ver_pro', usuario__isnull=False)
+        .order_by().values_list('usuario_id', flat=True).distinct()
+    )
+    usuarios_limite_canciones_ids = set(
+        EventoUso.objects.filter(tipo_evento='alcanzar_limite_canciones', usuario__isnull=False)
+        .order_by().values_list('usuario_id', flat=True).distinct()
+    )
+    usuarios_limite_fogatas_ids = set(
+        EventoUso.objects.filter(tipo_evento='alcanzar_limite_fogatas', usuario__isnull=False)
+        .order_by().values_list('usuario_id', flat=True).distinct()
+    )
+
+    total_vieron_pro = len(usuarios_vieron_pro_ids)
+    total_limite_canciones_evento = len(usuarios_limite_canciones_ids)
+    total_limite_fogatas_evento = len(usuarios_limite_fogatas_ids)
+
+    # Señales de conversión (Criterio 23):
+    # Usuario Gratis que cumple al menos una:
+    # - 10 canciones
+    # - intenta crear canción 11 (evento alcanzar_limite_canciones)
+    # - intenta crear segunda Fogata (evento alcanzar_limite_fogatas)
+    # - visita página Pro después de alcanzar límite
+    ids_gratis_10 = set(usuarios_gratis_qs.filter(num_canciones__gte=max_canciones_gratis).values_list('id', flat=True))
+    ids_gratis_limite_canciones_evento = cuentas_gratis_ids.intersection(usuarios_limite_canciones_ids)
+    ids_gratis_limite_fogatas_evento = cuentas_gratis_ids.intersection(usuarios_limite_fogatas_ids)
+    ids_gratis_vieron_pro = cuentas_gratis_ids.intersection(usuarios_vieron_pro_ids)
+    ids_gratis_vieron_pro_en_limite = ids_gratis_vieron_pro.intersection(
+        ids_gratis_10.union(ids_gratis_limite_canciones_evento, ids_gratis_limite_fogatas_evento)
+    )
+
+    ids_senales_conversion = ids_gratis_10.union(
+        ids_gratis_limite_canciones_evento,
+        ids_gratis_limite_fogatas_evento,
+        ids_gratis_vieron_pro_en_limite
+    )
+    total_senales_conversion = len(ids_senales_conversion)
+    pct_senales_conversion = round(total_senales_conversion / total_gratis * 100, 1) if total_gratis > 0 else 0.0
+
+    # Funnel comercial (Criterio 28):
+    # 1. Usuario Gratis
+    # 2. Usuario activado (canción + modo tocar)
+    # 3. 8+ canciones
+    # 4. Límite alcanzado
+    # 5. Visitó Pro
+    # 6. PRO
+    ids_con_tocar = set(
+        EventoUso.objects.filter(tipo_evento__in=['tocar_cancion', 'tocar_fogata'])
+        .order_by().values_list('usuario_id', flat=True).distinct()
+    )
+    ids_gratis_con_cancion = set(usuarios_gratis_qs.filter(num_canciones__gt=0).values_list('id', flat=True))
+    ids_gratis_activados = ids_gratis_con_cancion.intersection(ids_con_tocar)
+
+    ids_gratis_8_mas = set(usuarios_gratis_qs.filter(num_canciones__gte=8).values_list('id', flat=True))
+    ids_gratis_limite_alcanzado = ids_gratis_10.union(ids_gratis_limite_canciones_evento, ids_gratis_limite_fogatas_evento)
+    ids_gratis_funnel_visito_pro = ids_gratis_limite_alcanzado.intersection(ids_gratis_vieron_pro)
+
+    funnel = [
+        {'etapa': 'Usuario Gratis', 'cantidad': total_gratis, 'pct': 100.0},
+        {'etapa': 'Usuario activado', 'cantidad': len(ids_gratis_activados), 'pct': round(len(ids_gratis_activados) / total_gratis * 100, 1) if total_gratis > 0 else 0.0},
+        {'etapa': '8+ canciones', 'cantidad': len(ids_gratis_8_mas), 'pct': round(len(ids_gratis_8_mas) / total_gratis * 100, 1) if total_gratis > 0 else 0.0},
+        {'etapa': 'Límite alcanzado', 'cantidad': len(ids_gratis_limite_alcanzado), 'pct': round(len(ids_gratis_limite_alcanzado) / total_gratis * 100, 1) if total_gratis > 0 else 0.0},
+        {'etapa': 'Visitó Pro', 'cantidad': len(ids_gratis_funnel_visito_pro), 'pct': round(len(ids_gratis_funnel_visito_pro) / total_gratis * 100, 1) if total_gratis > 0 else 0.0},
+        {'etapa': 'PRO', 'cantidad': total_pro, 'pct': round(total_pro / total_usuarios * 100, 1) if total_usuarios > 0 else 0.0},
+    ]
+
+    return {
+        'total_usuarios': total_usuarios,
+        'total_gratis': total_gratis,
+        'total_pro': total_pro,
+        'total_piloto': total_piloto,
+        'gratis_8_9_canciones': gratis_8_9_canciones,
+        'gratis_10_canciones': gratis_10_canciones,
+        'gratis_1_fogata': gratis_1_fogata,
+        'total_vieron_pro': total_vieron_pro,
+        'total_limite_canciones_evento': total_limite_canciones_evento,
+        'total_limite_fogatas_evento': total_limite_fogatas_evento,
+        'total_senales_conversion': total_senales_conversion,
+        'pct_senales_conversion': pct_senales_conversion,
+        'funnel': funnel,
+    }

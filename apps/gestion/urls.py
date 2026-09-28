@@ -10,6 +10,7 @@ urlpatterns = [
     path('usuarios/<int:pk>/suspender/', views.usuario_suspender_view, name='usuario_suspender'),
     path('usuarios/<int:pk>/reactivar/', views.usuario_reactivar_view, name='usuario_reactivar'),
     path('usuarios/<int:pk>/enviar-reset/', views.usuario_enviar_reset_view, name='usuario_enviar_reset'),
+    path('usuarios/<int:pk>/cambiar-plan/', views.usuario_cambiar_plan_view, name='usuario_cambiar_plan'),
     path('actividad/', views.actividad_lista_view, name='actividad_lista'),
     path('fogatas/', views.fogatas_metricas_view, name='fogatas_metricas'),
     path('metricas/', views.metricas_detalladas_view, name='metricas'),
