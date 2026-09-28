@@ -1,0 +1,104 @@
+{% extends 'gestion/base_gestion.html' %}
+
+{% block title %}Métricas Detalladas — Fogata Control Center{% endblock %}
+
+{% block content %}
+<div class="meta-notice">
+  <span>📈 <strong>Métricas Analíticas de Fogata:</strong> Evaluadas con base en comportamiento real desde {{ inicio_analitica }}</span>
+</div>
+
+<div style="margin-bottom: 20px;">
+  <h1 style="font-size: 1.4rem; margin: 0; color: #f5f5f5;">Métricas de Repertorio y Retención</h1>
+  <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Estudio del volumen de repertorio real de los músicos y retención a 7 y 30 días.</p>
+</div>
+
+<!-- SECCIÓN 1: DISTRIBUCIÓN DE REPERTORIO (BUCKETS) -->
+<div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; flex-wrap: wrap;">
+    <h2 style="font-size: 1rem; color: #f5f5f5; margin: 0;">Distribución de Repertorio por Usuario</h2>
+    <span style="font-size: 0.82rem; color: var(--text-muted);">
+      Promedio: <strong>{{ mc.promedio_por_usuario }}</strong> canciones por usuario
+    </span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <!-- BUCKET 0 -->
+    <div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+        <span style="color: var(--text-muted);">0 Canciones (Registrados sin cargar música)</span>
+        <span><strong>{{ mc.bucket_0 }}</strong> usuarios ({{ mc.pct_0 }}%)</span>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.05); height: 10px; border-radius: 5px; overflow: hidden;">
+        <div style="background: #e57373; height: 100%; width: {{ mc.pct_0 }}%;"></div>
+      </div>
+    </div>
+
+    <!-- BUCKET 1 - 5 -->
+    <div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+        <span style="color: #f5f5f5;">1 a 5 Canciones (Primeros ensayos / repertorio inicial)</span>
+        <span><strong>{{ mc.bucket_1_5 }}</strong> usuarios ({{ mc.pct_1_5 }}%)</span>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.05); height: 10px; border-radius: 5px; overflow: hidden;">
+        <div style="background: #ffb74d; height: 100%; width: {{ mc.pct_1_5 }}%;"></div>
+      </div>
+    </div>
+
+    <!-- BUCKET 6 - 20 -->
+    <div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+        <span style="color: #f5f5f5;">6 a 20 Canciones (Repertorio regular / Fogata activa)</span>
+        <span><strong>{{ mc.bucket_6_20 }}</strong> usuarios ({{ mc.pct_6_20 }}%)</span>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.05); height: 10px; border-radius: 5px; overflow: hidden;">
+        <div style="background: var(--color-flame); height: 100%; width: {{ mc.pct_6_20 }}%;"></div>
+      </div>
+    </div>
+
+    <!-- BUCKET > 20 -->
+    <div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+        <span style="color: #81c784;">Más de 20 Canciones (Músicos avanzados / power users)</span>
+        <span><strong>{{ mc.bucket_mas_20 }}</strong> usuarios ({{ mc.pct_mas_20 }}%)</span>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.05); height: 10px; border-radius: 5px; overflow: hidden;">
+        <div style="background: #4caf50; height: 100%; width: {{ mc.pct_mas_20 }}%;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN 2: RETENCIÓN 7 DÍAS Y 30 DÍAS -->
+<div style="margin-bottom: 24px;">
+  <h2 style="font-size: 1.1rem; color: #f5f5f5; margin-bottom: 12px;">Retención de Producto</h2>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+    <!-- RETENCIÓN 7 DÍAS -->
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 18px; border-left: 4px solid var(--color-flame);">
+      <h3 style="font-size: 0.95rem; margin: 0 0 6px 0; color: #f5f5f5;">Retención 7 Días</h3>
+      <div style="font-size: 2rem; font-weight: 700; color: var(--color-flame-light);">
+        {{ mg.retencion_7d.porcentaje }}%
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+        <strong>{{ mg.retencion_7d.texto }}</strong>
+      </div>
+      <p style="font-size: 0.78rem; color: #888; margin-top: 10px; line-height: 1.4;">
+        Mide usuarios registrados hace al menos 7 días que generaron alguna acción real de producto entre el día 1 y el día 7 posterior a su registro.
+      </p>
+    </div>
+
+    <!-- RETENCIÓN 30 DÍAS -->
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 18px; border-left: 4px solid #4caf50;">
+      <h3 style="font-size: 0.95rem; margin: 0 0 6px 0; color: #f5f5f5;">Retención 30 Días</h3>
+      <div style="font-size: 2rem; font-weight: 700; color: #81c784;">
+        {{ mg.retencion_30d.porcentaje }}%
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+        <strong>{{ mg.retencion_30d.texto }}</strong>
+      </div>
+      <p style="font-size: 0.78rem; color: #888; margin-top: 10px; line-height: 1.4;">
+        Mide usuarios registrados hace al menos 30 días que generaron alguna acción real de producto entre el día 8 y el día 30 posterior a su registro.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

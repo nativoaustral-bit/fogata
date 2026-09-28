@@ -1,0 +1,89 @@
+{% extends 'gestion/base_gestion.html' %}
+
+{% block title %}Métricas de Fogatas y Sesiones — Fogata Control Center{% endblock %}
+
+{% block content %}
+<div class="meta-notice">
+  <span>🔥 <strong>Métricas de uso de Fogatas:</strong> Medidas a partir de eventos registrados desde {{ inicio_analitica }}</span>
+  <span style="font-size: 0.78rem; opacity: 0.85;">Adopción real de repertorios y sesiones compartidas</span>
+</div>
+
+<div style="margin-bottom: 20px;">
+  <h1 style="font-size: 1.4rem; margin: 0; color: #f5f5f5;">Métricas de Fogatas (Setlists)</h1>
+  <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Comportamiento en vivo y uso de la función de armado de listas de temas.</p>
+</div>
+
+<!-- TARJETAS DE FOGATAS -->
+<div class="metric-grid" style="margin-bottom: 28px;">
+  <div class="metric-card">
+    <h3>Fogatas Totales</h3>
+    <div class="metric-val">{{ m.fogatas_totales }}</div>
+    <div class="metric-sub">+{{ m.fogatas_7d }} en 7d · +{{ m.fogatas_30d }} en 30d</div>
+  </div>
+
+  <div class="metric-card" style="border-left: 3px solid var(--color-flame);">
+    <h3>Fogatas Tocadas</h3>
+    <div class="metric-val" style="color: var(--color-flame);">{{ m.fogatas_tocadas_count }}</div>
+    <div class="metric-sub">Tocadas en atril · Uso medido desde el inicio de métricas</div>
+  </div>
+
+  <div class="metric-card">
+    <h3>Tasa de Uso Efectivo</h3>
+    <div class="metric-val" style="color: #81c784;">{{ m.pct_fogatas_tocadas }}%</div>
+    <div class="metric-sub">% de Fogatas creadas que fueron tocadas</div>
+  </div>
+
+  <div class="metric-card">
+    <h3>Fogatas No Tocadas</h3>
+    <div class="metric-val" style="color: var(--text-muted);">{{ m.fogatas_nunca_tocadas }}</div>
+    <div class="metric-sub">Aún sin eventos de atril registrados</div>
+  </div>
+
+  <div class="metric-card">
+    <h3>Fogatas Compartidas</h3>
+    <div class="metric-val">{{ m.fogatas_compartidas_count }}</div>
+    <div class="metric-sub">Han generado al menos 1 sesión compartida</div>
+  </div>
+</div>
+
+<!-- SECCIÓN: SESIONES COMPARTIDAS (INVITADOS) -->
+<div style="margin-bottom: 20px;">
+  <h2 style="font-size: 1.1rem; color: #f5f5f5; margin-bottom: 4px;">Sesiones Compartidas con Invitados</h2>
+  <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0;">Medición de alcance respetando la privacidad (cero fingerprinting ni cookies invasivas).</p>
+</div>
+
+<div class="metric-grid">
+  <div class="metric-card">
+    <h3>Sesiones Creadas</h3>
+    <div class="metric-val">{{ m.sesiones_totales }}</div>
+    <div class="metric-sub">Enlaces generados por los músicos</div>
+  </div>
+
+  <div class="metric-card" style="border-left: 3px solid #81c784;">
+    <h3>Sesiones con ≥1 Apertura</h3>
+    <div class="metric-val" style="color: #81c784;">{{ m.sesiones_con_apertura }}</div>
+    <div class="metric-sub">{{ m.pct_sesiones_con_apertura }}% de las sesiones compartidas fueron abiertas</div>
+  </div>
+
+  <div class="metric-card">
+    <h3>Total de Aperturas</h3>
+    <div class="metric-val" style="color: var(--color-flame);">{{ m.aperturas_totales }}</div>
+    <div class="metric-sub">Aperturas en la entrada principal /s/token/</div>
+  </div>
+
+  <div class="metric-card">
+    <h3>Promedio Aperturas</h3>
+    <div class="metric-val">{{ m.promedio_aperturas_por_sesion }}</div>
+    <div class="metric-sub">Aperturas por cada sesión generada</div>
+  </div>
+
+  <div class="metric-card">
+    <h3>Estado de Enlaces</h3>
+    <div style="font-size: 0.88rem; line-height: 1.6; margin-top: 6px;">
+      <div><span style="color: #81c784; font-weight: 600;">{{ m.sesiones_activas }}</span> activas vigentes</div>
+      <div><span style="color: var(--text-muted);">{{ m.sesiones_expiradas }}</span> expiradas</div>
+      <div><span style="color: #e57373;">{{ m.sesiones_revocadas }}</span> revocadas manualmente</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -29,4 +29,7 @@ urlpatterns = [
 
     # Panel de administración Django
     path('admin/', admin.site.urls),
+
+    # Fogata Control Center (Fase 7)
+    path('gestion/', include('apps.gestion.urls')),
 ]

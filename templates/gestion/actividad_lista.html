@@ -1,0 +1,98 @@
+{% extends 'gestion/base_gestion.html' %}
+
+{% block title %}Registro de Actividad — Fogata Control Center{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+  <div>
+    <h1 style="font-size: 1.4rem; margin: 0; color: #f5f5f5;">Historial de Actividad de Producto</h1>
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Total de eventos registrados: <strong>{{ total_eventos }}</strong></p>
+  </div>
+</div>
+
+<!-- FILTRO POR TIPO DE EVENTO -->
+<form method="get" action="{% url 'gestion:actividad_lista' %}" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+  <label for="id_tipo" style="font-size: 0.88rem; color: var(--text-muted);">Filtrar por acción:</label>
+  <select id="id_tipo" name="tipo" class="form-input" style="font-size: 0.88rem; padding: 7px 10px;">
+    <option value="">Todas las acciones</option>
+    {% for codigo, nombre in tipos_evento %}
+      <option value="{{ codigo }}" {% if tipo_filtro == codigo %}selected{% endif %}>{{ nombre }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary btn-sm" style="padding: 7px 14px;">Filtrar</button>
+  {% if tipo_filtro %}
+    <a href="{% url 'gestion:actividad_lista' %}" class="btn btn-secondary btn-sm" style="padding: 7px 12px;">Ver todos</a>
+  {% endif %}
+</form>
+
+<!-- TABLA DE EVENTOS -->
+<div class="table-container">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th style="width: 150px;">Fecha y Hora</th>
+        <th>Usuario</th>
+        <th>Acción</th>
+        <th>Tipo Objeto</th>
+        <th>ID Objeto</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ev in page_obj %}
+      <tr>
+        <td style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">
+          {{ ev.fecha|date:"d/m/Y H:i:s" }}
+        </td>
+        <td>
+          {% if ev.usuario %}
+            <a href="{% url 'gestion:usuario_detalle' pk=ev.usuario.pk %}" style="color: #f5f5f5; text-decoration: none;">
+              {{ ev.usuario.email }}
+            </a>
+          {% else %}
+            <span style="color: var(--text-muted); font-style: italic;">Invitado / Anónimo</span>
+          {% endif %}
+        </td>
+        <td>
+          <span style="color: {% if 'tocar' in ev.tipo_evento %}#ffb74d{% elif 'crear' in ev.tipo_evento %}#81c784{% elif 'login' in ev.tipo_evento %}#90caf9{% else %}#e0e0e0{% endif %}; font-weight: 500;">
+            {{ ev.get_tipo_evento_display }}
+          </span>
+        </td>
+        <td style="color: var(--text-muted); font-size: 0.82rem;">
+          {{ ev.objeto_tipo|title|default:"-" }}
+        </td>
+        <td style="color: var(--text-muted); font-size: 0.82rem;">
+          {{ ev.objeto_id|default:"-" }}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">
+          No se encontraron eventos registrados con los criterios seleccionados.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGINACIÓN -->
+{% if page_obj.has_other_pages %}
+<div class="pagination-bar">
+  <div>
+    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+  </div>
+  <div style="display: flex; gap: 6px;">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}" class="btn btn-secondary btn-action-sm">
+        ← Anterior
+      </a>
+    {% endif %}
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}" class="btn btn-secondary btn-action-sm">
+        Siguiente →
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

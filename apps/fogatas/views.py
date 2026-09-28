@@ -10,6 +10,7 @@ from .forms import FogataForm, AgregarCancionForm, CrearSesionCompartidaForm
 from apps.canciones.models import Cancion
 from apps.canciones.services import obtener_solo_letra
 from apps.canciones.views import obtener_parametros_musicales
+from apps.gestion.services import registrar_evento
 
 
 
@@ -82,6 +83,12 @@ def crear(request):
             fogata = form.save(commit=False)
             fogata.propietario = request.user
             fogata.save()
+            registrar_evento(
+                usuario=request.user,
+                tipo_evento='crear_fogata',
+                objeto_tipo='fogata',
+                objeto_id=fogata.pk
+            )
             return redirect('fogatas:detalle', pk=fogata.pk)
     else:
         form = FogataForm()
@@ -103,6 +110,12 @@ def editar(request, pk):
         form = FogataForm(request.POST, instance=fogata)
         if form.is_valid():
             fogata = form.save()
+            registrar_evento(
+                usuario=request.user,
+                tipo_evento='editar_fogata',
+                objeto_tipo='fogata',
+                objeto_id=fogata.pk
+            )
             return redirect('fogatas:detalle', pk=fogata.pk)
     else:
         form = FogataForm(instance=fogata)
@@ -157,6 +170,13 @@ def agregar_cancion(request, pk):
                 orden=siguiente_orden,
                 nota_sesion=nota_sesion
             )
+            registrar_evento(
+                usuario=request.user,
+                tipo_evento='editar_fogata',
+                objeto_tipo='fogata',
+                objeto_id=fogata.pk,
+                metadata={'accion_detalle': 'agregar_cancion'}
+            )
             return redirect('fogatas:detalle', pk=fogata.pk)
     else:
         form = AgregarCancionForm(fogata=fogata)
@@ -183,6 +203,14 @@ def quitar_cancion(request, fogata_pk, cancion_pk):
                 item.orden = i
                 item.save(update_fields=['orden'])
 
+        registrar_evento(
+            usuario=request.user,
+            tipo_evento='editar_fogata',
+            objeto_tipo='fogata',
+            objeto_id=fogata.pk,
+            metadata={'accion_detalle': 'quitar_cancion'}
+        )
+
     return redirect('fogatas:detalle', pk=fogata.pk)
 
 
@@ -207,6 +235,14 @@ def mover_cancion(request, fogata_pk, cancion_pk, direccion):
                 for i, item in enumerate(asociaciones, start=1):
                     item.orden = i
                     item.save(update_fields=['orden'])
+
+            registrar_evento(
+                usuario=request.user,
+                tipo_evento='editar_fogata',
+                objeto_tipo='fogata',
+                objeto_id=fogata.pk,
+                metadata={'accion_detalle': 'mover_cancion'}
+            )
 
     return redirect('fogatas:detalle', pk=fogata.pk)
 
@@ -240,6 +276,20 @@ def tocar_sesion(request, pk):
 
     anterior_pos = pos - 1 if pos > 1 else None
     siguiente_pos = pos + 1 if pos < len(items) else None
+
+    # Debounce de 15 min por sesión para evitar inflar tocar_fogata al pasar temas (Criterio 10)
+    clave_sesion = f'ultima_apertura_fogata_{fogata.pk}'
+    ultima_apertura = request.session.get(clave_sesion)
+    ahora_ts = timezone.now().timestamp()
+    if not ultima_apertura or (ahora_ts - float(ultima_apertura)) >= 900:
+        registrar_evento(
+            usuario=request.user,
+            tipo_evento='tocar_fogata',
+            objeto_tipo='fogata',
+            objeto_id=fogata.pk,
+            metadata={'total_canciones': len(items)}
+        )
+        request.session[clave_sesion] = ahora_ts
 
     semitonos, notacion = obtener_parametros_musicales(request)
 
@@ -279,6 +329,13 @@ def compartir_crear(request, pk):
             sesion = SesionCompartida.objects.create(
                 fogata=fogata,
                 expira_el=expira
+            )
+            registrar_evento(
+                usuario=request.user,
+                tipo_evento='crear_sesion_compartida',
+                objeto_tipo='sesion_compartida',
+                objeto_id=sesion.pk,
+                metadata={'duracion_horas': duracion}
             )
             return redirect('fogatas:compartir_exito', pk=fogata.pk, sesion_id=sesion.pk)
 
@@ -323,6 +380,7 @@ def sesion_compartida_detalle(request, token):
     Vista pública para invitados del setlist de la Fogata.
     Aplica HTTP 410 si ha expirado o revocado.
     Aplica cabeceras X-Robots-Tag y Cache-Control en todas las respuestas.
+    Registra apertura de sesión compartida por invitado (Criterio 11 y 12).
     """
     try:
         sesion = SesionCompartida.objects.select_related('fogata').get(token=token)
@@ -331,6 +389,14 @@ def sesion_compartida_detalle(request, token):
 
     if not sesion.esta_vigente():
         return respuesta_sesion_expirada(request)
+
+    # Registrar evento de apertura exclusivamente en la entrada principal /s/<token>/ (Criterio 11)
+    registrar_evento(
+        usuario=None,
+        tipo_evento='abrir_sesion_compartida',
+        objeto_tipo='sesion_compartida',
+        objeto_id=sesion.pk
+    )
 
     canciones_asociadas = sesion.fogata.canciones_asociadas.select_related('cancion').order_by('orden')
 

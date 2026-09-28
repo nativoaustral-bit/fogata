@@ -3,9 +3,11 @@ from django.db.models import Q
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.utils import timezone
 from .models import Cancion
 from .forms import CancionForm
 from .parser import reemplazar_acorde_en_contenido
+from apps.gestion.services import registrar_evento
 
 
 def obtener_parametros_musicales(request):
@@ -77,6 +79,12 @@ def crear(request):
             cancion = form.save(commit=False)
             cancion.propietario = request.user
             cancion.save()
+            registrar_evento(
+                usuario=request.user,
+                tipo_evento='crear_cancion',
+                objeto_tipo='cancion',
+                objeto_id=cancion.pk
+            )
             if request.POST.get('accion_guardar') == 'tocar':
                 return redirect('canciones:tocar', pk=cancion.pk)
             return redirect('canciones:detalle', pk=cancion.pk)
@@ -100,6 +108,12 @@ def editar(request, pk):
         form = CancionForm(request.POST, instance=cancion)
         if form.is_valid():
             cancion = form.save()
+            registrar_evento(
+                usuario=request.user,
+                tipo_evento='editar_cancion',
+                objeto_tipo='cancion',
+                objeto_id=cancion.pk
+            )
             if request.POST.get('accion_guardar') == 'tocar':
                 return redirect('canciones:tocar', pk=cancion.pk)
             return redirect('canciones:detalle', pk=cancion.pk)
@@ -134,9 +148,23 @@ def eliminar(request, pk):
 def tocar(request, pk):
     """
     Modo Músico / Pantalla de Atril para canción propia.
+    Debounce de 5 minutos por canción en la sesión para evitar spam por refresh (Criterio 9).
     """
     cancion = get_object_or_404(Cancion, pk=pk, propietario=request.user)
     semitonos, notacion = obtener_parametros_musicales(request)
+
+    clave_sesion = f'ultima_apertura_cancion_{cancion.pk}'
+    ultima_apertura = request.session.get(clave_sesion)
+    ahora_ts = timezone.now().timestamp()
+    if not ultima_apertura or (ahora_ts - float(ultima_apertura)) >= 300:
+        registrar_evento(
+            usuario=request.user,
+            tipo_evento='tocar_cancion',
+            objeto_tipo='cancion',
+            objeto_id=cancion.pk,
+            metadata={'origen': 'directo'}
+        )
+        request.session[clave_sesion] = ahora_ts
 
     context = {
         'cancion': cancion,
@@ -206,6 +234,12 @@ def guardar_edicion_acorde(request, pk):
 
     cancion.contenido = nuevo_contenido
     cancion.save(update_fields=['contenido', 'updated_at'])
+    registrar_evento(
+        usuario=request.user,
+        tipo_evento='editar_cancion',
+        objeto_tipo='cancion',
+        objeto_id=cancion.pk
+    )
 
     if modo == 'todos':
         msg = f"Se actualizaron todas las apariciones de «{texto_original}» por «{nuevo_acorde}»."

@@ -39,6 +39,11 @@
 
         <nav class="site-nav" aria-label="Navegación principal">
           {% if request.user.is_authenticated %}
+            {% if request.user.is_staff %}
+              <a href="{% url 'gestion:dashboard' %}" style="color: var(--color-flame); font-weight: 600;" title="Fogata Control Center">
+                Control Center
+              </a>
+            {% endif %}
             <a href="{% url 'canciones:lista' %}" class="{% if request.resolver_match.app_name == 'canciones' %}active{% endif %}">
               Canciones
             </a>

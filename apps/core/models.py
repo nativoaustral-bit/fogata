@@ -138,10 +138,22 @@ class PerfilPiloto(models.Model):
         auto_now_add=True,
         verbose_name='Registrado el'
     )
+    TIPO_CUENTA_CHOICES = [
+        ('PILOTO', 'Piloto'),
+        ('ADMIN', 'Administrador'),
+        ('GRATIS', 'Gratis (Futuro)'),
+        ('PRO', 'Pro (Futuro)'),
+    ]
+    tipo_cuenta = models.CharField(
+        max_length=20,
+        choices=TIPO_CUENTA_CHOICES,
+        default='PILOTO',
+        verbose_name='Modalidad / Tipo de cuenta'
+    )
 
     class Meta:
         verbose_name = 'Perfil de Piloto'
         verbose_name_plural = 'Perfiles de Piloto'
 
     def __str__(self):
-        return f"{self.user.email} [{self.codigo_invitacion or 'Directo'}]"
+        return f"{self.user.email} [{self.tipo_cuenta} - {self.codigo_invitacion or 'Directo'}]"

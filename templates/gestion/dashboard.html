@@ -1,0 +1,255 @@
+{% extends 'gestion/base_gestion.html' %}
+
+{% block title %}Dashboard — Fogata Control Center{% endblock %}
+
+{% block content %}
+<div class="meta-notice">
+  <span>📊 <strong>Analítica de uso activa desde:</strong> {{ inicio_analitica }} (Fase 7)</span>
+  <span style="font-size: 0.78rem; opacity: 0.85;">Comportamiento sin telemetría invasiva</span>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+  <div>
+    <h1 style="font-size: 1.5rem; margin: 0; color: #f5f5f5;">Panel General de Uso</h1>
+    <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">Visión agregada de adopción, retención y actividad en atril.</p>
+  </div>
+  <div>
+    <a href="{% url 'gestion:exportar_usuarios_csv' %}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+      📥 Exportar CSV
+    </a>
+  </div>
+</div>
+
+<!-- SECCIÓN 1: PRODUCTO Y ADOPCIÓN -->
+<div style="margin-bottom: 24px;">
+  <h2 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame); margin-bottom: 12px;">
+    Métricas de Producto
+  </h2>
+  <div class="metric-grid">
+    <div class="metric-card">
+      <h3>Usuarios Registrados</h3>
+      <div class="metric-val">{{ m.usuarios_totales }}</div>
+      <div class="metric-sub">+{{ m.usuarios_reg_7d }} en 7d · +{{ m.usuarios_reg_30d }} en 30d</div>
+    </div>
+
+    <div class="metric-card" style="border-left: 3px solid var(--color-flame);">
+      <h3>Usuarios Activados</h3>
+      <div class="metric-val" style="color: var(--color-flame-light);">{{ m.usuarios_activados_total }}</div>
+      <div class="metric-sub">{{ m.tasa_activacion_total }}% de los registrados (1+ canción y Modo Tocar)</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>WAU (Activos 7 Días)</h3>
+      <div class="metric-val">{{ m.wau }}</div>
+      <div class="metric-sub">Acción real de producto en últimos 7 días</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>MAU (Activos 30 Días)</h3>
+      <div class="metric-val">{{ m.mau }}</div>
+      <div class="metric-sub">DAU hoy: <strong>{{ m.dau }}</strong> · Inactivos 30d: {{ m.usuarios_sin_actividad_30d }}</div>
+    </div>
+
+    <div class="metric-card" style="border-left: 3px solid #4caf50;">
+      <h3>Recurrentes 30 Días</h3>
+      <div class="metric-val" style="color: #81c784;">{{ m.usuarios_recurrentes_30d }}</div>
+      <div class="metric-sub">Actividad real en ≥2 días distintos en el mes</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>Retención 7 Días</h3>
+      <div class="metric-val" style="font-size: 1.5rem;">{{ m.retencion_7d.porcentaje }}%</div>
+      <div class="metric-sub">{{ m.retencion_7d.texto }} (activos día 1–7)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN 2: USO Y CONTENIDO -->
+<div style="margin-bottom: 24px;">
+  <h2 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame); margin-bottom: 12px;">
+    Contenido y Uso de Atril
+  </h2>
+  <div class="metric-grid">
+    <div class="metric-card">
+      <h3>Canciones Totales</h3>
+      <div class="metric-val">{{ m.canciones_totales }}</div>
+      <div class="metric-sub">+{{ m.canciones_7d }} creadas últimos 7 días</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>Fogatas Totales</h3>
+      <div class="metric-val">{{ m.fogatas_totales }}</div>
+      <div class="metric-sub">+{{ m.fogatas_7d }} creadas últimos 7 días</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>Fogatas Tocadas</h3>
+      <div class="metric-val">{{ m.fogatas_tocadas_count }}</div>
+      <div class="metric-sub">Uso medido desde el inicio de métricas</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>Sesiones en Atril</h3>
+      <div class="metric-val">{{ m.sesiones_tocar_cancion|add:m.sesiones_tocar_fogata }}</div>
+      <div class="metric-sub">{{ m.sesiones_tocar_cancion }} canción · {{ m.sesiones_tocar_fogata }} fogata</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>Sesiones Compartidas</h3>
+      <div class="metric-val">{{ m.sesiones_compartidas_totales }}</div>
+      <div class="metric-sub">{{ m.sesiones_con_apertura_count }} con ≥1 apertura ({{ m.pct_sesiones_abiertas }}% usadas)</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>Aperturas Invitados</h3>
+      <div class="metric-val">{{ m.aperturas_sesion_compartida }}</div>
+      <div class="metric-sub">Total de aperturas en entrada principal</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN 3: EMBUDO DE ACTIVACIÓN -->
+<div style="margin-bottom: 30px;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px;">
+    <h2 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame); margin: 0;">
+      Embudo de Activación (Cohorte Fase 7)
+    </h2>
+    <span style="font-size: 0.78rem; color: var(--text-muted);">Usuarios registrados desde {{ inicio_analitica }} ({{ m.funnel.total_registrados }} usuarios)</span>
+  </div>
+
+  <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px;">
+    {% if m.funnel.total_registrados > 0 %}
+    <div class="funnel-step">
+      <div>
+        <strong>1. Cuenta Creada</strong>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Punto de partida del usuario</div>
+      </div>
+      <div>
+        <span style="font-weight: 700;">{{ m.funnel.total_registrados }}</span>
+        <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 6px;">(100%)</span>
+      </div>
+    </div>
+
+    <div class="funnel-step">
+      <div>
+        <strong>2. Primera Canción</strong>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Guardó al menos una canción en repertorio</div>
+      </div>
+      <div>
+        <span style="font-weight: 700;">{{ m.funnel.con_cancion }}</span>
+        <span style="font-size: 0.8rem; color: #ffb74d; margin-left: 6px;">({{ m.funnel.pct_cancion }}%)</span>
+      </div>
+    </div>
+
+    <div class="funnel-step">
+      <div>
+        <strong>3. Primer Modo Tocar</strong>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Abrió canción o setlist en pantalla de atril</div>
+      </div>
+      <div>
+        <span style="font-weight: 700;">{{ m.funnel.con_modo_tocar }}</span>
+        <span style="font-size: 0.8rem; color: #ffb74d; margin-left: 6px;">({{ m.funnel.pct_modo_tocar }}%)</span>
+      </div>
+    </div>
+
+    <div class="funnel-step">
+      <div>
+        <strong>4. Primera Fogata</strong>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Armó un setlist con canciones</div>
+      </div>
+      <div>
+        <span style="font-weight: 700;">{{ m.funnel.con_fogata }}</span>
+        <span style="font-size: 0.8rem; color: #ffb74d; margin-left: 6px;">({{ m.funnel.pct_fogata }}%)</span>
+      </div>
+    </div>
+
+    <div class="funnel-step">
+      <div>
+        <strong>5. Fogata Tocada</strong>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Ejecutó la sesión continua en vivo</div>
+      </div>
+      <div>
+        <span style="font-weight: 700;">{{ m.funnel.con_fogata_tocada }}</span>
+        <span style="font-size: 0.8rem; color: #ffb74d; margin-left: 6px;">({{ m.funnel.pct_fogata_tocada }}%)</span>
+      </div>
+    </div>
+
+    <div class="funnel-step" style="border-left-color: #4caf50;">
+      <div>
+        <strong>6. Sesión Compartida</strong>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Generó enlace temporal para invitados</div>
+      </div>
+      <div>
+        <span style="font-weight: 700;">{{ m.funnel.con_sesion_compartida }}</span>
+        <span style="font-size: 0.8rem; color: #81c784; margin-left: 6px;">({{ m.funnel.pct_sesion_compartida }}%)</span>
+      </div>
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; text-align: center; padding: 12px 0;">
+      No hay usuarios registrados a partir del inicio oficial de métricas ({{ inicio_analitica }}). Los usuarios históricos se visualizan en la base de datos de usuarios.
+    </p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- SECCIÓN 4: ACTIVIDAD RECIENTE -->
+<div>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+    <h2 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame); margin: 0;">
+      Actividad Reciente (Últimos {{ eventos_recientes|length }})
+    </h2>
+    <a href="{% url 'gestion:actividad_lista' %}" style="font-size: 0.82rem; color: var(--color-flame); text-decoration: underline;">
+      Ver historial completo →
+    </a>
+  </div>
+
+  <div class="table-container">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th style="width: 140px;">Fecha y Hora</th>
+          <th>Usuario</th>
+          <th>Acción</th>
+          <th>Objeto</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ev in eventos_recientes %}
+        <tr>
+          <td style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">
+            {{ ev.fecha|date:"d/m/Y H:i" }}
+          </td>
+          <td>
+            {% if ev.usuario %}
+              <a href="{% url 'gestion:usuario_detalle' pk=ev.usuario.pk %}" style="color: #f5f5f5; text-decoration: none;">
+                {{ ev.usuario.email }}
+              </a>
+            {% else %}
+              <span style="color: var(--text-muted); font-style: italic;">Invitado / Anónimo</span>
+            {% endif %}
+          </td>
+          <td>
+            <span style="color: {% if 'tocar' in ev.tipo_evento %}#ffb74d{% elif 'crear' in ev.tipo_evento %}#81c784{% elif 'login' in ev.tipo_evento %}#90caf9{% else %}#e0e0e0{% endif %}; font-weight: 500;">
+              {{ ev.get_tipo_evento_display }}
+            </span>
+          </td>
+          <td style="color: var(--text-muted); font-size: 0.82rem;">
+            {% if ev.objeto_tipo %}
+              {{ ev.objeto_tipo|title }} #{{ ev.objeto_id|default:"-" }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
+            Aún no se registran eventos desde el inicio de métricas.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

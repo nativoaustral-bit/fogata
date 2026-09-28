@@ -1,0 +1,135 @@
+{% extends 'gestion/base_gestion.html' %}
+
+{% block title %}Usuarios — Fogata Control Center{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+  <div>
+    <h1 style="font-size: 1.4rem; margin: 0; color: #f5f5f5;">Administración de Usuarios</h1>
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Total usuarios: <strong>{{ total_usuarios }}</strong></p>
+  </div>
+  <div>
+    <a href="{% url 'gestion:exportar_usuarios_csv' %}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+      📥 Exportar CSV
+    </a>
+  </div>
+</div>
+
+<!-- BARRA DE BÚSQUEDA Y FILTROS -->
+<form method="get" action="{% url 'gestion:usuarios_lista' %}" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+  <div style="flex: 1; min-width: 220px;">
+    <input type="text" name="q" value="{{ query }}" placeholder="Buscar por nombre o correo..." class="form-input" style="width: 100%; font-size: 0.88rem; padding: 7px 10px;">
+  </div>
+
+  <div>
+    <select name="estado" class="form-input" style="font-size: 0.88rem; padding: 7px 10px;">
+      <option value="todos" {% if filtro_estado == 'todos' %}selected{% endif %}>Todos los estados</option>
+      <option value="activos" {% if filtro_estado == 'activos' %}selected{% endif %}>Solo Activos</option>
+      <option value="suspendidos" {% if filtro_estado == 'suspendidos' %}selected{% endif %}>Solo Suspendidos</option>
+    </select>
+  </div>
+
+  <div>
+    <select name="filtro" class="form-input" style="font-size: 0.88rem; padding: 7px 10px;">
+      <option value="todos" {% if filtro_tipo == 'todos' %}selected{% endif %}>Todos los registros</option>
+      <option value="reg_7d" {% if filtro_tipo == 'reg_7d' %}selected{% endif %}>Registrados últimos 7 días</option>
+      <option value="reg_30d" {% if filtro_tipo == 'reg_30d' %}selected{% endif %}>Registrados últimos 30 días</option>
+      <option value="activos_30d" {% if filtro_tipo == 'activos_30d' %}selected{% endif %}>Activos últimos 30 días</option>
+      <option value="sin_actividad_30d" {% if filtro_tipo == 'sin_actividad_30d' %}selected{% endif %}>Sin actividad (30 días)</option>
+      <option value="activados" {% if filtro_tipo == 'activados' %}selected{% endif %}>Usuarios Activados (1+ canción & tocar)</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-sm" style="padding: 7px 14px;">Filtrar</button>
+  {% if query or filtro_estado != 'todos' or filtro_tipo != 'todos' %}
+    <a href="{% url 'gestion:usuarios_lista' %}" class="btn btn-secondary btn-sm" style="padding: 7px 12px;">Limpiar</a>
+  {% endif %}
+</form>
+
+<!-- TABLA DE USUARIOS -->
+<div class="table-container">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Usuario</th>
+        <th>Correo</th>
+        <th>Registro</th>
+        <th>Última Actividad</th>
+        <th style="text-align: center;">Canciones</th>
+        <th style="text-align: center;">Fogatas</th>
+        <th style="text-align: center;">Sesiones</th>
+        <th>Estado</th>
+        <th style="text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in page_obj %}
+      <tr>
+        <td style="font-weight: 500;">
+          <a href="{% url 'gestion:usuario_detalle' pk=u.pk %}" style="color: #f5f5f5; text-decoration: none;">
+            {{ u.first_name|default:"(Sin nombre)" }}
+          </a>
+        </td>
+        <td style="color: #bbb;">
+          <a href="{% url 'gestion:usuario_detalle' pk=u.pk %}" style="color: #bbb; text-decoration: none;">
+            {{ u.email }}
+          </a>
+        </td>
+        <td style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">
+          {{ u.date_joined|date:"d/m/Y" }}
+        </td>
+        <td style="font-size: 0.8rem; white-space: nowrap;">
+          {% if u.ultima_actividad %}
+            <span style="color: #81c784;">{{ u.ultima_actividad|date:"d/m/Y H:i" }}</span>
+          {% else %}
+            <span style="color: var(--text-muted); font-style: italic;">Sin eventos</span>
+          {% endif %}
+        </td>
+        <td style="text-align: center; font-weight: 600;">{{ u.num_canciones }}</td>
+        <td style="text-align: center; font-weight: 600;">{{ u.num_fogatas }}</td>
+        <td style="text-align: center; font-weight: 600;">{{ u.num_sesiones }}</td>
+        <td>
+          {% if u.is_active %}
+            <span class="badge-active">ACTIVO</span>
+          {% else %}
+            <span class="badge-suspended">SUSPENDIDO</span>
+          {% endif %}
+        </td>
+        <td style="text-align: right;">
+          <a href="{% url 'gestion:usuario_detalle' pk=u.pk %}" class="btn btn-secondary btn-action-sm">
+            Ficha →
+          </a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 30px;">
+          No se encontraron usuarios coincidentes con los filtros aplicados.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGINACIÓN -->
+{% if page_obj.has_other_pages %}
+<div class="pagination-bar">
+  <div>
+    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+  </div>
+  <div style="display: flex; gap: 6px;">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if filtro_estado != 'todos' %}&estado={{ filtro_estado }}{% endif %}{% if filtro_tipo != 'todos' %}&filtro={{ filtro_tipo }}{% endif %}" class="btn btn-secondary btn-action-sm">
+        ← Anterior
+      </a>
+    {% endif %}
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if filtro_estado != 'todos' %}&estado={{ filtro_estado }}{% endif %}{% if filtro_tipo != 'todos' %}&filtro={{ filtro_tipo }}{% endif %}" class="btn btn-secondary btn-action-sm">
+        Siguiente →
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -11,6 +11,7 @@ from .models import Invitacion
 from .forms import RegistroForm, LoginForm
 from apps.canciones.models import Cancion
 from apps.fogatas.models import Fogata
+from apps.gestion.services import registrar_evento
 
 
 def home(request):
@@ -77,9 +78,11 @@ def registro_view(request):
                         user=user,
                         codigo_invitacion=codigo
                     )
+                    registrar_evento(usuario=user, tipo_evento='registro', objeto_tipo='usuario', objeto_id=user.id)
 
                 # Iniciar sesión automáticamente
                 auth_login(request, user, backend='apps.core.backends.EmailAuthBackend')
+                registrar_evento(usuario=user, tipo_evento='login', objeto_tipo='usuario', objeto_id=user.id)
                 messages.success(request, f"¡Bienvenido a Fogata, {user.first_name}!")
                 return redirect('core:home')
             except ValueError as e:
@@ -109,6 +112,7 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             auth_login(request, user, backend='apps.core.backends.EmailAuthBackend')
+            registrar_evento(usuario=user, tipo_evento='login', objeto_tipo='usuario', objeto_id=user.id)
             if next_url and next_url.startswith('/'):
                 return redirect(next_url)
             return redirect('core:home')

@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.core.apps.CoreConfig',
     'apps.canciones.apps.CancionesConfig',
     'apps.fogatas.apps.FogatasConfig',
+    'apps.gestion.apps.GestionConfig',
 ]
 
 MIDDLEWARE = [
@@ -158,4 +159,8 @@ if not DEBUG:
     SESSION_COOKIE_HTTPONLY = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
+
+# Fase 7 — Fogata Control Center & Analítica de Comportamiento (Criterio 4)
+FOGATA_ANALYTICS_START_DATE = os.environ.get('FOGATA_ANALYTICS_START_DATE', '2026-09-28')
+
 
