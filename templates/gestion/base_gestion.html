@@ -77,6 +77,11 @@
       border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 105px;
+      box-sizing: border-box;
     }
     .metric-card h3 {
       font-size: 0.8rem;
@@ -159,6 +164,20 @@
       padding: 4px 8px;
       font-size: 0.78rem;
       border-radius: 4px;
+    }
+    @media (max-width: 768px) {
+      .metric-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+      }
+      .admin-header .container {
+        flex-direction: column;
+        align-items: flex-start !important;
+      }
+      .admin-nav {
+        margin-top: 8px;
+        width: 100%;
+      }
     }
   </style>
   {% block extra_head %}{% endblock %}
