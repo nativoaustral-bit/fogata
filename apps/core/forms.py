@@ -33,16 +33,6 @@ class RegistroForm(forms.Form):
             'autocomplete': 'email'
         })
     )
-    codigo_invitacion = forms.CharField(
-        max_length=32,
-        required=True,
-        label='Código de invitación',
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Ej: HUMM2026',
-            'style': 'text-transform: uppercase;'
-        })
-    )
     password = forms.CharField(
         label='Contraseña',
         required=True,
@@ -72,27 +62,6 @@ class RegistroForm(forms.Form):
         if User.objects.filter(username=email).exists() or User.objects.filter(email__iexact=email).exists():
             raise ValidationError("Ya existe una cuenta registrada con este correo electrónico.")
         return email
-
-    def clean_codigo_invitacion(self):
-        codigo = self.cleaned_data.get('codigo_invitacion', '').strip().upper()
-        if not codigo:
-            raise ValidationError("El código de invitación es obligatorio.")
-
-        try:
-            inv = Invitacion.objects.get(codigo=codigo)
-        except Invitacion.DoesNotExist:
-            raise ValidationError("El código de invitación no existe.")
-
-        if not inv.activa:
-            raise ValidationError("Este código de invitación está desactivado.")
-
-        if inv.expira_el and timezone.now() >= inv.expira_el:
-            raise ValidationError("Este código de invitación ha expirado.")
-
-        if inv.max_usos is not None and inv.usos_actuales >= inv.max_usos:
-            raise ValidationError("Este código de invitación ha agotado todos sus cupos disponibles.")
-
-        return codigo
 
     def clean(self):
         cleaned_data = super().clean()

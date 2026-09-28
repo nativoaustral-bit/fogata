@@ -218,7 +218,6 @@ class IdentidadNormalizadaYAutenticacionTest(TestCase):
     def test_registro_normaliza_email_a_minusculas_y_asigna_username(self):
         """Registro con Rodrigo@Correo.CL se almacena como rodrigo@correo.cl en email y username."""
         res = self.client.post(reverse('registro'), {
-            'codigo_invitacion': 'PILOTO2026',
             'nombre': 'Rodrigo',
             'email': 'Rodrigo@Correo.CL',
             'password': 'MiPasswordSegura123!',
@@ -231,14 +230,14 @@ class IdentidadNormalizadaYAutenticacionTest(TestCase):
         self.assertEqual(usuario.email, 'rodrigo@correo.cl')
         self.assertTrue(usuario.check_password('MiPasswordSegura123!'))
 
-        # Perfil piloto registrado
-        self.assertTrue(PerfilPiloto.objects.filter(user=usuario, codigo_invitacion='PILOTO2026').exists())
+        # Perfil registrado en modalidad GRATIS
+        self.assertTrue(PerfilPiloto.objects.filter(user=usuario).exists())
+        self.assertEqual(usuario.perfil_piloto.tipo_cuenta, 'GRATIS')
 
     def test_no_permite_registro_duplicado_insensible_a_mayusculas(self):
         """Habiendo registrado Rodrigo@Correo.cl, no se permite registrar posteriormente rodrigo@correo.cl."""
         # Primer registro
         self.client.post(reverse('registro'), {
-            'codigo_invitacion': 'PILOTO2026',
             'nombre': 'Rodrigo',
             'email': 'Rodrigo@Correo.cl',
             'password': 'Password123!',
@@ -248,10 +247,8 @@ class IdentidadNormalizadaYAutenticacionTest(TestCase):
         # Desloguear para simular segundo visitante no autenticado
         self.client.logout()
 
-        # Segundo registro con diferente capitalización y nueva invitación
-        inv2 = Invitacion.objects.create(codigo='OTRO2026')
+        # Segundo registro con diferente capitalización
         res_dup = self.client.post(reverse('registro'), {
-            'codigo_invitacion': 'OTRO2026',
             'nombre': 'Rodrigo Clon',
             'email': 'RODRIGO@correo.cl',
             'password': 'Password123!',
@@ -362,22 +359,21 @@ class InvitacionesConcurrenciaYLimitesTest(TransactionTestCase):
             Invitacion.consumir_codigo('INACTIVA')
         self.assertIn("desactivado", str(ctx.exception).lower())
 
-    def test_registro_no_confia_en_query_string(self):
-        """GET con ?codigo=ABC123 precarga el campo, pero un POST con código falso es rechazado en servidor."""
-        res_get = self.client.get(reverse('registro') + '?codigo=FALSO123')
+    def test_registro_libre_sin_codigo_crea_cuenta_gratis(self):
+        """El formulario de registro no requiere código y crea cuenta en modalidad GRATIS."""
+        res_get = self.client.get(reverse('registro'))
         self.assertEqual(res_get.status_code, 200)
-        self.assertContains(res_get, 'value="FALSO123"')
+        self.assertNotContains(res_get, 'id_codigo_invitacion')
 
-        # POST con ese código inexistente
         res_post = self.client.post(reverse('registro'), {
-            'codigo_invitacion': 'FALSO123',
-            'nombre': 'Tester',
-            'email': 'test@fake.cl',
+            'nombre': 'Músico Abierto',
+            'email': 'abierto@fogata.app',
             'password': 'Password123!',
             'password_confirm': 'Password123!'
         })
-        self.assertEqual(res_post.status_code, 200)
-        self.assertContains(res_post, "El código de invitación no existe.")
+        self.assertEqual(res_post.status_code, 302)
+        user = User.objects.get(email='abierto@fogata.app')
+        self.assertEqual(user.perfil_piloto.tipo_cuenta, 'GRATIS')
 
 
 class SesionLogoutYCachePrivadaTest(TestCase):

@@ -51,19 +51,6 @@
       </div>
 
       <div class="form-group" style="margin-bottom: 16px;">
-        <label for="id_codigo_invitacion" style="display: block; font-size: 0.9rem; font-weight: 600; color: #f5f5f5; margin-bottom: 6px;">
-          Código de invitación
-        </label>
-        {{ form.codigo_invitacion }}
-        <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 4px;">
-          Proporcionado por el equipo de Humm para el piloto privado.
-        </p>
-        {% if form.codigo_invitacion.errors %}
-          <p style="color: #ff5252; font-size: 0.82rem; margin-top: 4px;">{{ form.codigo_invitacion.errors.0 }}</p>
-        {% endif %}
-      </div>
-
-      <div class="form-group" style="margin-bottom: 16px;">
         <label for="id_password" style="display: block; font-size: 0.9rem; font-weight: 600; color: #f5f5f5; margin-bottom: 6px;">
           Contraseña
         </label>

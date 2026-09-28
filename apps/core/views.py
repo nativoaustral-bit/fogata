@@ -48,9 +48,9 @@ def home(request):
 
 def registro_view(request):
     """
-    Registro por invitación para el piloto multiusuario de Fogata.
-    Valida código de invitación con protección de concurrencia y crea cuenta
-    con correo electrónico normalizado como identificador.
+    Registro libre de cuentas para Fogata (Plan Gratis).
+    Crea la cuenta con correo electrónico normalizado como identificador
+    y perfil asignado en modalidad GRATIS.
     """
     if request.user.is_authenticated:
         return redirect('core:home')
@@ -58,47 +58,35 @@ def registro_view(request):
     if request.method == 'POST':
         form = RegistroForm(request.POST)
         if form.is_valid():
-            codigo = form.cleaned_data['codigo_invitacion']
             email = form.cleaned_data['email']
             nombre = form.cleaned_data['nombre']
             password = form.cleaned_data['password']
 
-            try:
-                from django.db import transaction
-                from .models import PerfilPiloto
+            from django.db import transaction
+            from .models import PerfilPiloto
 
-                with transaction.atomic():
-                    # Consumo atómico con select_for_update (Criterio 4)
-                    Invitacion.consumir_codigo(codigo)
+            with transaction.atomic():
+                # Crear usuario con username y email idénticos (normalizados)
+                user = User.objects.create_user(
+                    username=email,
+                    email=email,
+                    password=password,
+                    first_name=nombre
+                )
+                PerfilPiloto.objects.create(
+                    user=user,
+                    codigo_invitacion='',
+                    tipo_cuenta='GRATIS'
+                )
+                registrar_evento(usuario=user, tipo_evento='registro', objeto_tipo='usuario', objeto_id=user.id)
 
-                    # Crear usuario con username y email idénticos
-                    user = User.objects.create_user(
-                        username=email,
-                        email=email,
-                        password=password,
-                        first_name=nombre
-                    )
-                    PerfilPiloto.objects.create(
-                        user=user,
-                        codigo_invitacion=codigo,
-                        tipo_cuenta='GRATIS'
-                    )
-                    registrar_evento(usuario=user, tipo_evento='registro', objeto_tipo='usuario', objeto_id=user.id)
-
-                # Iniciar sesión automáticamente
-                auth_login(request, user, backend='apps.core.backends.EmailAuthBackend')
-                registrar_evento(usuario=user, tipo_evento='login', objeto_tipo='usuario', objeto_id=user.id)
-                messages.success(request, f"¡Bienvenido a Fogata, {user.first_name}!")
-                return redirect('core:home')
-            except ValueError as e:
-                form.add_error('codigo_invitacion', str(e))
+            # Iniciar sesión automáticamente
+            auth_login(request, user, backend='apps.core.backends.EmailAuthBackend')
+            registrar_evento(usuario=user, tipo_evento='login', objeto_tipo='usuario', objeto_id=user.id)
+            messages.success(request, f"¡Bienvenido a Fogata, {user.first_name}!")
+            return redirect('core:home')
     else:
-        # Soporta precarga desde query string ?codigo=ABC123 sin confiar ciegamente en él
-        codigo_inicial = request.GET.get('codigo', '').strip().upper()
-        initial_data = {}
-        if codigo_inicial:
-            initial_data['codigo_invitacion'] = codigo_inicial
-        form = RegistroForm(initial=initial_data)
+        form = RegistroForm()
 
     return render(request, 'core/registro.html', {'form': form})
 
