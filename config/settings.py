@@ -170,5 +170,56 @@ FOGATA_FREE_MAX_FOGATAS = int(os.environ.get('FOGATA_FREE_MAX_FOGATAS', 1))
 FOGATA_PRO_SEMESTRAL_PRICE_CLP = int(os.environ.get('FOGATA_PRO_SEMESTRAL_PRICE_CLP', 5990))
 FOGATA_PRO_ANUAL_PRICE_CLP = int(os.environ.get('FOGATA_PRO_ANUAL_PRICE_CLP', 9990))
 
+# Observabilidad técnica y logging seguro (Incidencia de Producción - Correo)
+log_dir_env = os.environ.get('DJANGO_LOG_DIR')
+LOG_DIR = Path(log_dir_env) if log_dir_env else (BASE_DIR.parent / 'logs' if not DEBUG else BASE_DIR / 'logs')
+try:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    LOG_DIR = BASE_DIR
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} [{name}] {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(LOG_DIR / 'fogata.log'),
+            'maxBytes': 5 * 1024 * 1024,
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+    },
+    'loggers': {
+        'django.contrib.auth': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.core.mail': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'apps.core': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
 
 

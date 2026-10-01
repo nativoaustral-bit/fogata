@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.models import User
@@ -136,11 +137,29 @@ def logout_view(request):
 # Recuperación de Contraseña (Flujo Ciego)
 # ==========================================
 
+logger = logging.getLogger('django.contrib.auth')
+
+
 class FogataPasswordResetView(auth_views.PasswordResetView):
     template_name = 'core/password_reset.html'
     email_template_name = 'core/password_reset_email.html'
     subject_template_name = 'core/password_reset_subject.txt'
     success_url = reverse_lazy('core:password_reset_done')
+
+    def form_valid(self, form):
+        email = form.cleaned_data.get('email', '')
+        # Registro técnico para observabilidad de fallos sin violar la respuesta ciega ni exponer datos sensibles
+        users = list(form.get_users(email))
+        if users:
+            logger.info("Recuperación de contraseña: solicitud recibida para cuenta existente (%d usuario(s)). Iniciando despacho SMTP...", len(users))
+        else:
+            logger.info("Recuperación de contraseña: solicitud recibida para correo no registrado. Manteniendo respuesta ciega.")
+        try:
+            return super().form_valid(form)
+        except Exception as e:
+            logger.error("Error en despacho de correo de recuperación de contraseña: %s: %s", type(e).__name__, str(e))
+            # Garantizar que la respuesta al usuario continúe siendo ciega e idéntica
+            return redirect(self.success_url)
 
 
 class FogataPasswordResetDoneView(auth_views.PasswordResetDoneView):
