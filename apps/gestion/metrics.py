@@ -521,6 +521,7 @@ def obtener_metricas_comerciales():
         user__is_staff=False
     ).count()
 
+    conversion_gratis_pro = round((pro_pagados_activos / (total_gratis + pro_pagados_activos) * 100), 2) if (total_gratis + pro_pagados_activos) > 0 else 0.0
     ingresos_totales_fmt = f"{ingresos_totales:,}".replace(",", ".")
     ingresos_30d_fmt = f"{ingresos_30d:,}".replace(",", ".")
 
