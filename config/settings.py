@@ -178,6 +178,8 @@ FLOW_SECRET_KEY = os.environ.get('FLOW_SECRET_KEY', '')
 _default_flow_base = 'https://sandbox.flow.cl/api' if FLOW_ENVIRONMENT == 'sandbox' else 'https://www.flow.cl/api'
 FLOW_BASE_URL = os.environ.get('FLOW_BASE_URL', _default_flow_base)
 FLOW_PAYMENT_TIMEOUT = int(os.environ.get('FLOW_PAYMENT_TIMEOUT', 3600))
+FLOW_HTTP_TIMEOUT = int(os.environ.get('FLOW_HTTP_TIMEOUT', 15))
+FLOW_CONFIRMATION_TIMEOUT = int(os.environ.get('FLOW_CONFIRMATION_TIMEOUT', 7))
 FOGATA_PAYMENTS_ENABLED = os.environ.get('FOGATA_PAYMENTS_ENABLED', 'False').lower() in ('true', '1')
 
 # Observabilidad técnica y logging seguro (Incidencia de Producción - Correo)

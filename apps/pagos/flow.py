@@ -39,8 +39,7 @@ class FlowClient:
     def __init__(self, api_key=None, secret_key=None, base_url=None, environment=None, timeout_segundos=6):
         self.environment = environment or getattr(settings, 'FLOW_ENVIRONMENT', 'sandbox').lower()
         self.api_key = api_key or getattr(settings, 'FLOW_API_KEY', '')
-        self.secret_key = secret_key or getattr(settings, 'FLOW_SECRET_KEY', '')
-        self.timeout_segundos = timeout_segundos
+        self.timeout_segundos = timeout_segundos or getattr(settings, 'FLOW_HTTP_TIMEOUT', 15)
 
         default_base = 'https://sandbox.flow.cl/api' if self.environment == 'sandbox' else 'https://www.flow.cl/api'
         self.base_url = (base_url or getattr(settings, 'FLOW_BASE_URL', default_base)).rstrip('/')
@@ -122,10 +121,11 @@ class FlowClient:
             logger.error("Error de conectividad al llamar Flow /payment/create: %s", str(e))
             raise FlowNetworkError(f"Error de conexión con Flow: {str(e)}")
 
-    def obtener_estado_pago(self, token: str) -> dict:
+    def obtener_estado_pago(self, token: str, timeout: int = None) -> dict:
         """
         Llama al endpoint /payment/getStatus de Flow.
         Utiliza GET con parámetros firmados apiKey, token y s.
+        Usa timeout controlado de 7s por defecto para responder oportunamente en el callback.
         """
         if not self.api_key or not self.secret_key:
             raise FlowError("Credenciales de Flow no configuradas.")
@@ -147,8 +147,9 @@ class FlowClient:
             method='GET'
         )
 
+        timeout_efectivo = timeout or getattr(settings, 'FLOW_CONFIRMATION_TIMEOUT', 7)
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout_segundos) as response:
+            with urllib.request.urlopen(req, timeout=timeout_efectivo) as response:
                 status_code = response.getcode()
                 body = response.read().decode('utf-8')
                 data = json.loads(body)
