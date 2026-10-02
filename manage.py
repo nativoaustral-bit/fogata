@@ -2,6 +2,23 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+    # Cargar variables de entorno (servidor HostGator o local)
+    base_dir = Path(__file__).resolve().parent
+    env_candidates = [
+        Path('/home1/paulocis/apps/fogata/secrets/.env'),
+        base_dir.parent / 'secrets' / '.env',
+        base_dir / '.env',
+    ]
+    for env_path in env_candidates:
+        if env_path.exists():
+            load_dotenv(env_path)
+            break
+except ImportError:
+    pass
 
 
 def main():
