@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.utils import timezone
 from apps.canciones.models import Cancion
 from apps.fogatas.models import Fogata
 
@@ -8,6 +9,8 @@ def obtener_tipo_cuenta(user) -> str:
     Retorna la modalidad o tipo de cuenta efectivo del usuario:
     - 'ADMIN': Si el usuario es staff o superusuario.
     - 'PILOTO', 'PRO', 'GRATIS': Según PerfilPiloto.tipo_cuenta.
+      Si el usuario es 'PRO' pero su fecha_fin_plan ya venció, se degrada
+      inmediatamente a 'GRATIS' en tiempo real (defensa en profundidad).
     - 'ANONIMO': Si el usuario no está autenticado.
     """
     if not user or not getattr(user, 'is_authenticated', False):
@@ -17,6 +20,10 @@ def obtener_tipo_cuenta(user) -> str:
 
     perfil = getattr(user, 'perfil_piloto', None)
     if perfil and perfil.tipo_cuenta:
+        if perfil.tipo_cuenta == 'PRO':
+            if perfil.fecha_fin_plan and perfil.fecha_fin_plan <= timezone.now():
+                return 'GRATIS'
+            return 'PRO'
         return perfil.tipo_cuenta
 
     return 'PILOTO'

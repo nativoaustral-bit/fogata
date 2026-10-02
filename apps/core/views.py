@@ -275,6 +275,10 @@ def pro_view(request):
 
     precio_sem = getattr(settings, 'FOGATA_PRO_SEMESTRAL_PRICE_CLP', 5990)
     precio_anu = getattr(settings, 'FOGATA_PRO_ANUAL_PRICE_CLP', 9990)
+    pagos_habilitados = getattr(settings, 'FOGATA_PAYMENTS_ENABLED', False)
+
+    import secrets
+    checkout_request_id = secrets.token_hex(16)
 
     context = {
         'precio_semestral': f"{precio_sem:,}".replace(",", "."),
@@ -283,6 +287,8 @@ def pro_view(request):
         'max_fogatas_gratis': getattr(settings, 'FOGATA_FREE_MAX_FOGATAS', 1),
         'capacidad': estado_capacidad,
         'origen': origen,
+        'pagos_habilitados': pagos_habilitados,
+        'checkout_request_id': checkout_request_id,
     }
     return render(request, 'core/pro.html', context)
 

@@ -200,6 +200,7 @@
           <a href="{% url 'gestion:actividad_lista' %}" class="{% if request.resolver_match.url_name == 'actividad_lista' %}active{% endif %}">Actividad</a>
           <a href="{% url 'gestion:fogatas_metricas' %}" class="{% if request.resolver_match.url_name == 'fogatas_metricas' %}active{% endif %}">Fogatas</a>
           <a href="{% url 'gestion:metricas' %}" class="{% if request.resolver_match.url_name == 'metricas' %}active{% endif %}">Métricas</a>
+          <a href="{% url 'gestion:pagos_lista' %}" class="{% if 'pagos' in request.resolver_match.url_name %}active{% endif %}">Pagos</a>
           <span style="color: #444;">|</span>
           <a href="{% url 'core:home' %}" style="color: #bbb;" title="Volver a la aplicación">← Fogata</a>
           <a href="/admin/" target="_blank" style="color: #888;" title="Django Admin Técnico">Django Admin ↗</a>

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'apps.canciones.apps.CancionesConfig',
     'apps.fogatas.apps.FogatasConfig',
     'apps.gestion.apps.GestionConfig',
+    'apps.pagos.apps.PagosConfig',
 ]
 
 MIDDLEWARE = [
@@ -170,6 +171,15 @@ FOGATA_FREE_MAX_FOGATAS = int(os.environ.get('FOGATA_FREE_MAX_FOGATAS', 1))
 FOGATA_PRO_SEMESTRAL_PRICE_CLP = int(os.environ.get('FOGATA_PRO_SEMESTRAL_PRICE_CLP', 5990))
 FOGATA_PRO_ANUAL_PRICE_CLP = int(os.environ.get('FOGATA_PRO_ANUAL_PRICE_CLP', 9990))
 
+# Fase 9 — Pasarela Comercial Flow Chile (Ajustes 7, 8 y 9)
+FLOW_ENVIRONMENT = os.environ.get('FLOW_ENVIRONMENT', 'sandbox').lower()
+FLOW_API_KEY = os.environ.get('FLOW_API_KEY', '')
+FLOW_SECRET_KEY = os.environ.get('FLOW_SECRET_KEY', '')
+_default_flow_base = 'https://sandbox.flow.cl/api' if FLOW_ENVIRONMENT == 'sandbox' else 'https://www.flow.cl/api'
+FLOW_BASE_URL = os.environ.get('FLOW_BASE_URL', _default_flow_base)
+FLOW_PAYMENT_TIMEOUT = int(os.environ.get('FLOW_PAYMENT_TIMEOUT', 3600))
+FOGATA_PAYMENTS_ENABLED = os.environ.get('FOGATA_PAYMENTS_ENABLED', 'False').lower() in ('true', '1')
+
 # Observabilidad técnica y logging seguro (Incidencia de Producción - Correo)
 log_dir_env = os.environ.get('DJANGO_LOG_DIR')
 LOG_DIR = Path(log_dir_env) if log_dir_env else (BASE_DIR.parent / 'logs' if not DEBUG else BASE_DIR / 'logs')
@@ -214,6 +224,11 @@ LOGGING = {
             'propagate': False,
         },
         'apps.core': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'apps.pagos': {
             'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': False,

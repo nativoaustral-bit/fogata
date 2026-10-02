@@ -1,5 +1,5 @@
 from datetime import timedelta
-from django.db.models import Count, Max, Q, F
+from django.db.models import Count, Max, Q, F, Sum
 from django.db.models.functions import TruncDate
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -374,6 +374,7 @@ def obtener_metricas_comerciales():
 
     max_canciones_gratis = getattr(settings, 'FOGATA_FREE_MAX_SONGS', 10)
     max_fogatas_gratis = getattr(settings, 'FOGATA_FREE_MAX_FOGATAS', 1)
+    ahora = timezone.now()
 
     # Base usuarios no-staff
     usuarios_non_staff = User.objects.filter(is_staff=False)
@@ -476,6 +477,52 @@ def obtener_metricas_comerciales():
         {'etapa': 'PRO', 'cantidad': total_pro, 'pct': round(total_pro / total_usuarios * 100, 1) if total_usuarios > 0 else 0.0},
     ]
 
+    # Métricas de pagos y suscripciones comerciales reales (Fase 9)
+    from apps.pagos.models import OrdenPago
+
+    # Órdenes de pago reales confirmadas en ambiente de PRODUCCIÓN (Ajuste 8 y 25)
+    ordenes_pagadas_prod = OrdenPago.objects.filter(
+        ambiente=OrdenPago.AMBIENTE_PRODUCTION,
+        estado=OrdenPago.ESTADO_PAGADA
+    )
+
+    ventas_totales = ordenes_pagadas_prod.count()
+    hace_30_dias = ahora - timedelta(days=30)
+    ventas_30d = ordenes_pagadas_prod.filter(pagada_el__gte=hace_30_dias).count()
+
+    ingresos_totales = ordenes_pagadas_prod.aggregate(s=Sum('monto'))['s'] or 0
+    ingresos_30d = ordenes_pagadas_prod.filter(pagada_el__gte=hace_30_dias).aggregate(s=Sum('monto'))['s'] or 0
+
+    # Distinción de planes: Semestral vs Anual
+    ventas_semestral = ordenes_pagadas_prod.filter(plan=OrdenPago.PLAN_PRO_6M).count()
+    ventas_anual = ordenes_pagadas_prod.filter(plan=OrdenPago.PLAN_PRO_12M).count()
+    pct_ventas_semestral = round(ventas_semestral / ventas_totales * 100, 1) if ventas_totales > 0 else 0.0
+    pct_ventas_anual = round(ventas_anual / ventas_totales * 100, 1) if ventas_totales > 0 else 0.0
+
+    # Distinción estricta: PRO activo total vs PRO pagado activo (Ajuste 10)
+    pro_activos_totales = PerfilPiloto.objects.filter(
+        tipo_cuenta='PRO',
+        user__is_staff=False
+    ).filter(
+        Q(fecha_fin_plan__isnull=True) | Q(fecha_fin_plan__gt=ahora)
+    ).count()
+
+    ids_usuarios_con_pago_activo = set(
+        ordenes_pagadas_prod.filter(
+            fecha_fin_plan__gt=ahora
+        ).values_list('usuario_id', flat=True)
+    )
+    pro_pagados_activos = len(ids_usuarios_con_pago_activo)
+
+    pro_vencidos = PerfilPiloto.objects.filter(
+        tipo_cuenta='PRO',
+        fecha_fin_plan__isnull=False,
+        fecha_fin_plan__lte=ahora,
+        user__is_staff=False
+    ).count()
+
+    conversion_gratis_pro = round((pro_pagados_activos / (total_gratis + pro_pagados_activos) * 100), 2) if (total_gratis + pro_pagados_activos) > 0 else 0.0
+
     return {
         'total_usuarios': total_usuarios,
         'total_gratis': total_gratis,
@@ -490,4 +537,17 @@ def obtener_metricas_comerciales():
         'total_senales_conversion': total_senales_conversion,
         'pct_senales_conversion': pct_senales_conversion,
         'funnel': funnel,
+        # Nuevas métricas comerciales Fase 9
+        'ventas_totales': ventas_totales,
+        'ventas_30d': ventas_30d,
+        'ingresos_totales': ingresos_totales,
+        'ingresos_30d': ingresos_30d,
+        'pro_activos_totales': pro_activos_totales,
+        'pro_pagados_activos': pro_pagados_activos,
+        'pro_vencidos': pro_vencidos,
+        'conversion_gratis_pro': conversion_gratis_pro,
+        'ventas_semestral': ventas_semestral,
+        'ventas_anual': ventas_anual,
+        'pct_ventas_semestral': pct_ventas_semestral,
+        'pct_ventas_anual': pct_ventas_anual,
     }

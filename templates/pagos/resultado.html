@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Resultado del Pago — Fogata{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 640px; padding: 40px 16px 80px; text-align: center;">
+  <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 14px; padding: 36px 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+    
+    {% if es_pagada %}
+      <!-- PAGO APROBADO Y CONFIRMADO -->
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(76, 175, 80, 0.15); border: 2px solid #4caf50; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #81c784; margin-bottom: 20px;">
+        ✓
+      </div>
+      <h1 style="font-size: 1.8rem; font-weight: 800; color: #f5f5f5; margin-bottom: 12px;">
+        🔥 ¡Ya eres Fogata Pro!
+      </h1>
+      <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+        Tu repertorio ahora puede seguir creciendo sin límites. Todas tus canciones y setlists están listos para tu próximo ensayo o concierto.
+      </p>
+
+      <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 18px; margin-bottom: 28px; text-align: left; font-size: 0.88rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: var(--text-muted);">Plan contratado:</span>
+          <strong style="color: #f5f5f5;">{{ orden.plan_nombre_legible }}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: var(--text-muted);">Monto pagado:</span>
+          <strong style="color: #81c784;">${{ orden.monto }} {{ orden.moneda }}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: var(--text-muted);">Orden de compra:</span>
+          <span style="font-family: monospace; color: #ccc;">{{ orden.commerce_order }}</span>
+        </div>
+        {% if orden.fecha_fin_plan %}
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Acceso vigente hasta:</span>
+          <strong style="color: var(--color-flame);">{{ orden.fecha_fin_plan|date:"d/m/Y" }}</strong>
+        </div>
+        {% endif %}
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="{% url 'canciones:lista' %}" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
+          Volver a Fogata
+        </a>
+        <a href="{% url 'pagos:mi_cuenta' %}" class="btn btn-secondary" style="padding: 10px 18px;">
+          Ver mi cuenta
+        </a>
+      </div>
+
+    {% elif es_pendiente %}
+      <!-- PAGO PENDIENTE -->
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(255, 152, 0, 0.15); border: 2px solid #ff9800; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #ffb74d; margin-bottom: 20px;">
+        ⏳
+      </div>
+      <h1 style="font-size: 1.8rem; font-weight: 800; color: #f5f5f5; margin-bottom: 12px;">
+        Estamos confirmando tu pago.
+      </h1>
+      <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+        La pasarela está validando la transacción con tu medio de pago. Puedes volver a revisar en unos momentos.
+      </p>
+
+      <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 18px; margin-bottom: 28px; text-align: left; font-size: 0.88rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: var(--text-muted);">Orden:</span>
+          <span style="font-family: monospace; color: #ccc;">{{ orden.commerce_order }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Monto:</span>
+          <strong>${{ orden.monto }} {{ orden.moneda }}</strong>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="{% url 'pagos:resultado' orden.commerce_order %}" class="btn btn-primary" style="padding: 10px 20px;">
+          Actualizar estado
+        </a>
+        <a href="{% url 'pagos:mi_cuenta' %}" class="btn btn-secondary" style="padding: 10px 18px;">
+          Ir a mi cuenta
+        </a>
+      </div>
+
+    {% elif es_rechazada %}
+      <!-- PAGO RECHAZADO -->
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(244, 67, 54, 0.15); border: 2px solid #f44336; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #e57373; margin-bottom: 20px;">
+        ✕
+      </div>
+      <h1 style="font-size: 1.8rem; font-weight: 800; color: #f5f5f5; margin-bottom: 12px;">
+        El pago no pudo completarse.
+      </h1>
+      <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+        Tu medio de pago rechazó la transacción o no fue autorizada. Tu cuenta no ha sido modificada.
+      </p>
+
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="{% url 'pro' %}" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
+          Intentar nuevamente
+        </a>
+        <a href="{% url 'canciones:lista' %}" class="btn btn-secondary" style="padding: 10px 18px;">
+          Volver a mis canciones
+        </a>
+      </div>
+
+    {% elif es_anulada %}
+      <!-- PAGO ANULADO -->
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); border: 2px solid #666; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #aaa; margin-bottom: 20px;">
+        ⊘
+      </div>
+      <h1 style="font-size: 1.8rem; font-weight: 800; color: #f5f5f5; margin-bottom: 12px;">
+        El pago fue cancelado.
+      </h1>
+      <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+        La operación fue cancelada en la pasarela o expiró el tiempo de sesión. Tu cuenta continúa igual.
+      </p>
+
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="{% url 'pro' %}" class="btn btn-primary" style="padding: 10px 24px;">
+          Elegir plan
+        </a>
+        <a href="{% url 'canciones:lista' %}" class="btn btn-secondary" style="padding: 10px 18px;">
+          Volver a Fogata
+        </a>
+      </div>
+
+    {% else %}
+      <!-- ERROR TÉCNICO / VALIDACIÓN -->
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(244, 67, 54, 0.15); border: 2px solid #f44336; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #ff5252; margin-bottom: 20px;">
+        ⚠
+      </div>
+      <h1 style="font-size: 1.8rem; font-weight: 800; color: #f5f5f5; margin-bottom: 12px;">
+        Incidencia técnica temporal
+      </h1>
+      <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+        Ocurrió una inconsistencia técnica al verificar el pago con la pasarela. Tu cuenta no ha sido modificada. Si el cargo fue realizado en tu banco, nuestro sistema conciliará automáticamente la orden.
+      </p>
+
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="{% url 'pagos:mi_cuenta' %}" class="btn btn-secondary" style="padding: 10px 18px;">
+          Revisar mi cuenta
+        </a>
+        <a href="{% url 'canciones:lista' %}" class="btn btn-primary" style="padding: 10px 20px;">
+          Volver a Fogata
+        </a>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

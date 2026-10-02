@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.urls import path, include
 from apps.fogatas import views as fogatas_views
 from apps.core import views as core_views
+from apps.pagos import views as pagos_views
 
 urlpatterns = [
     # PWA canónicas en la raíz (Fase 5)
@@ -23,6 +24,8 @@ urlpatterns = [
     path('canciones/', include('apps.canciones.urls')),
     path('fogatas/', include('apps.fogatas.urls')),
     path('pro/', core_views.pro_view, name='pro'),
+    path('pagos/', include('apps.pagos.urls')),
+    path('cuenta/', pagos_views.mi_cuenta_view, name='mi_cuenta'),
 
     # Rutas públicas directas para Modo Invitado (Sesiones Compartidas)
     path('s/<str:token>/', fogatas_views.sesion_compartida_detalle, name='sesion_compartida_publica'),

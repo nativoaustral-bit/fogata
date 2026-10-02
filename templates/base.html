@@ -54,6 +54,9 @@
               <span>Plan: {{ nombre_plan_usuario }}</span>
               {% if not es_plan_pro %}<span style="color: var(--color-flame);">🔥</span>{% endif %}
             </a>
+            <a href="{% url 'mi_cuenta' %}" class="{% if request.resolver_match.url_name == 'mi_cuenta' %}active{% endif %}" style="font-size: 0.88rem;">
+              Cuenta
+            </a>
             <form method="post" action="{% url 'core:logout' %}" style="display: inline; margin-left: 6px;">
               {% csrf_token %}
               <button type="submit" class="btn btn-secondary btn-sm" style="padding: 5px 10px; font-size: 0.82rem;" title="Cerrar sesión de {{ request.user.email }}">

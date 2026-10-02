@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import PasswordResetForm
 from django.core.paginator import Paginator
-from django.db.models import Count, Max, Q, F
+from django.db.models import Count, Max, Q, F, Sum
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -478,3 +478,62 @@ def exportar_usuarios_csv_view(request):
         ])
 
     return response
+
+
+@staff_required
+def pagos_lista_view(request):
+    """
+    Módulo de Pagos de Fogata Control Center (Fase 9).
+    Despliega órdenes de pago con filtros por estado, ambiente, búsqueda
+    y métricas clave de recaudación. Inmutable (sin edición arbitraria desde UI).
+    """
+    from apps.pagos.models import OrdenPago
+
+    query = request.GET.get('q', '').strip()
+    filtro_estado = request.GET.get('estado', 'todos').strip()
+    filtro_ambiente = request.GET.get('ambiente', 'todos').strip()
+
+    ordenes_qs = OrdenPago.objects.select_related('usuario').order_by('-creada_el')
+
+    if query:
+        ordenes_qs = ordenes_qs.filter(
+            Q(commerce_order__icontains=query) |
+            Q(usuario__email__icontains=query) |
+            Q(flow_order__icontains=query)
+        )
+
+    if filtro_estado != 'todos':
+        if filtro_estado == 'ERROR':
+            ordenes_qs = ordenes_qs.filter(estado__in=[OrdenPago.ESTADO_ERROR_TECNICO, OrdenPago.ESTADO_ERROR_VALIDACION])
+        else:
+            ordenes_qs = ordenes_qs.filter(estado=filtro_estado)
+
+    if filtro_ambiente != 'todos':
+        ordenes_qs = ordenes_qs.filter(ambiente=filtro_ambiente)
+
+    # Resumen rápido
+    total_ordenes = ordenes_qs.count()
+    pagadas_count = OrdenPago.objects.filter(estado=OrdenPago.ESTADO_PAGADA).count()
+    pendientes_count = OrdenPago.objects.filter(estado=OrdenPago.ESTADO_PENDIENTE).count()
+    ingresos_reales = OrdenPago.objects.filter(
+        ambiente=OrdenPago.AMBIENTE_PRODUCTION,
+        estado=OrdenPago.ESTADO_PAGADA
+    ).aggregate(s=Sum('monto'))['s'] or 0
+
+    paginator = Paginator(ordenes_qs, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj': page_obj,
+        'ordenes': page_obj.object_list,
+        'query': query,
+        'filtro_estado': filtro_estado,
+        'filtro_ambiente': filtro_ambiente,
+        'total_ordenes': total_ordenes,
+        'pagadas_count': pagadas_count,
+        'pendientes_count': pendientes_count,
+        'ingresos_reales': ingresos_reales,
+    }
+    return render(request, 'gestion/pagos.html', context)
+

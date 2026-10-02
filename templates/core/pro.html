@@ -4,12 +4,12 @@
 {% block title %}Fogata Pro — Todo tu repertorio sin límites{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 860px; padding: 30px 16px 60px;">
+<div class="container" style="max-width: 960px; padding: 30px 16px 60px;">
   <!-- CABECERA PRINCIPAL -->
-  <div style="text-align: center; margin-bottom: 40px;">
+  <div style="text-align: center; margin-bottom: 36px;">
     <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 152, 0, 0.12); border: 1px solid rgba(255, 152, 0, 0.35); padding: 4px 14px; border-radius: 20px; font-size: 0.85rem; color: var(--color-flame); margin-bottom: 16px;">
       <span>🔥</span>
-      <span style="font-weight: 600;">Plan de expansión para músicos</span>
+      <span style="font-weight: 600;">Elegir Pro</span>
     </div>
     <h1 style="font-size: 2.2rem; font-weight: 800; color: #f5f5f5; margin-bottom: 12px; line-height: 1.2;">
       Todo tu repertorio. Todas tus Fogatas.<br>
@@ -28,17 +28,28 @@
       <span style="color: var(--text-muted); margin-left: 8px;">
         ({{ capacidad.canciones_usadas }}{% if capacidad.canciones_limite %}/{{ capacidad.canciones_limite }}{% else %}/∞{% endif %} canciones · {{ capacidad.fogatas_usadas }}{% if capacidad.fogatas_limite %}/{{ capacidad.fogatas_limite }}{% else %}/∞{% endif %} Fogatas)
       </span>
+      {% if user.perfil_piloto.fecha_fin_plan %}
+        <span style="display: block; font-size: 0.8rem; color: #ffb74d; margin-top: 4px;">
+          Activo hasta el {{ user.perfil_piloto.fecha_fin_plan|date:"d/m/Y" }}. Al renovar, tus días restantes se conservan intactos.
+        </span>
+      {% endif %}
     </div>
     {% endif %}
   </div>
 
+  <!-- AVISO DE CONDICIONES COMERCIALES TRANSPARENTES -->
+  <div style="background: rgba(255, 152, 0, 0.08); border: 1px solid rgba(255, 152, 0, 0.25); border-radius: 8px; padding: 12px 18px; text-align: center; margin-bottom: 32px; font-size: 0.9rem; color: #ffb74d;">
+    <strong>Pago único por el período seleccionado. No se renueva automáticamente.</strong>
+  </div>
+
   <!-- COMPARATIVA DE PLANES -->
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 40px;">
+    
     <!-- TARJETA GRATIS -->
     <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 28px 24px; display: flex; flex-direction: column;">
       <div style="margin-bottom: 16px;">
         <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);">Para empezar</span>
-        <h2 style="font-size: 1.6rem; color: #f5f5f5; margin: 4px 0;">Fogata Gratis</h2>
+        <h2 style="font-size: 1.5rem; color: #f5f5f5; margin: 4px 0;">Fogata Gratis</h2>
         <div style="font-size: 1.8rem; font-weight: 800; color: #f5f5f5; margin-top: 8px;">$0 <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-muted);">para siempre</span></div>
       </div>
 
@@ -51,8 +62,7 @@
         <li><span style="color: #81c784; margin-right: 8px;">✓</span> <strong>{{ max_fogatas_gratis }} Fogata</strong> activa (reutilizable)</li>
         <li><span style="color: #81c784; margin-right: 8px;">✓</span> Modo Tocar con atril continuo</li>
         <li><span style="color: #81c784; margin-right: 8px;">✓</span> Auto-scroll y transposición</li>
-        <li><span style="color: #81c784; margin-right: 8px;">✓</span> C ↔ Do y diagramas interactivos</li>
-        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Compartir sesiones con invitados</li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Diagramas y sesiones compartidas</li>
       </ul>
 
       <div>
@@ -68,17 +78,63 @@
       </div>
     </div>
 
-    <!-- TARJETA PRO (DESTACADA) -->
+    <!-- TARJETA PRO SEMESTRAL -->
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 28px 24px; display: flex; flex-direction: column;">
+      <div style="margin-bottom: 16px;">
+        <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame);">🔥 Pro Semestral</span>
+        <h2 style="font-size: 1.5rem; color: #f5f5f5; margin: 4px 0;">6 meses de acceso</h2>
+        <div style="font-size: 1.8rem; font-weight: 800; color: #f5f5f5; margin-top: 8px;">
+          ${{ precio_semestral }} <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-muted);">CLP</span>
+        </div>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 24px;">
+        Medio año para tocar, ensayar y ampliar tu biblioteca sin preocuparte de límites.
+      </p>
+
+      <ul style="list-style: none; padding: 0; margin: 0 0 24px; font-size: 0.92rem; line-height: 2; flex: 1;">
+        <li><span style="color: var(--color-flame); font-weight: 800; margin-right: 8px;">★</span> <strong>Canciones ilimitadas</strong></li>
+        <li><span style="color: var(--color-flame); font-weight: 800; margin-right: 8px;">★</span> <strong>Fogatas ilimitadas</strong></li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Acceso por 6 meses calendario</li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Pago único sin autorrenovación</li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Pago seguro mediante Flow Chile</li>
+      </ul>
+
+      <div>
+        {% if pagos_habilitados %}
+          {% if user.is_authenticated %}
+            <form method="post" action="{% url 'pagos:crear_pago' %}">
+              {% csrf_token %}
+              <input type="hidden" name="plan" value="PRO_6M">
+              <input type="hidden" name="checkout_request_id" value="{{ checkout_request_id }}">
+              <button type="submit" class="btn btn-secondary" style="width: 100%; padding: 12px; font-weight: 700;">
+                {% if user.perfil_piloto.tipo_cuenta == 'PRO' %}Renovar Semestral{% else %}Elegir Semestral{% endif %}
+              </button>
+            </form>
+          {% else %}
+            <a href="{% url 'core:login' %}?next={% url 'pro' %}" class="btn btn-secondary" style="width: 100%; text-align: center; display: block; padding: 12px; font-weight: 700;">
+              Elegir Semestral
+            </a>
+          {% endif %}
+        {% else %}
+          <button type="button" class="btn btn-secondary" style="width: 100%; padding: 12px; opacity: 0.7;" disabled>
+            Próximamente
+          </button>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- TARJETA PRO ANUAL (DESTACADA) -->
     <div style="background: linear-gradient(180deg, rgba(255, 152, 0, 0.08) 0%, var(--bg-surface) 100%); border: 2px solid var(--color-flame); border-radius: 12px; padding: 28px 24px; display: flex; flex-direction: column; position: relative;">
       <div style="position: absolute; top: -12px; right: 20px; background: var(--color-flame); color: #121212; font-weight: 800; font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
-        Recomendado
+        Mejor valor
       </div>
 
       <div style="margin-bottom: 16px;">
-        <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame);">Músicos y bandas</span>
-        <h2 style="font-size: 1.6rem; color: #f5f5f5; margin: 4px 0;">Fogata Pro</h2>
+        <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame);">🔥 Pro Anual</span>
+        <h2 style="font-size: 1.5rem; color: #f5f5f5; margin: 4px 0;">12 meses de acceso</h2>
         <div style="font-size: 1.8rem; font-weight: 800; color: #f5f5f5; margin-top: 8px;">
-          ${{ precio_anual }} <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-muted);">/ año</span>
+          ${{ precio_anual }} <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-muted);">CLP</span>
         </div>
         <div style="font-size: 0.82rem; color: #81c784; font-weight: 600; margin-top: 2px;">
           Equivale a menos de $1.000 al mes
@@ -86,39 +142,41 @@
       </div>
 
       <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 24px;">
-        Todo tu repertorio completo, listas para cada evento y la tranquilidad de no preocuparte por el espacio.
+        Un año completo de tranquilidad para tocar en vivo, conciertos, eventos y ensayos.
       </p>
 
       <ul style="list-style: none; padding: 0; margin: 0 0 24px; font-size: 0.92rem; line-height: 2; flex: 1;">
         <li><span style="color: var(--color-flame); font-weight: 800; margin-right: 8px;">★</span> <strong>Canciones ilimitadas</strong></li>
-        <li><span style="color: var(--color-flame); font-weight: 800; margin-right: 8px;">★</span> <strong>Fogatas (setlists) ilimitadas</strong></li>
-        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Todas las funciones musicales incluidas</li>
-        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Múltiples sesiones compartidas simultáneas</li>
+        <li><span style="color: var(--color-flame); font-weight: 800; margin-right: 8px;">★</span> <strong>Fogatas ilimitadas</strong></li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Acceso por 12 meses calendario</li>
+        <li><span style="color: #81c784; margin-right: 8px;">✓</span> Pago único sin autorrenovación</li>
         <li><span style="color: #81c784; margin-right: 8px;">✓</span> Soporte técnico preferente</li>
       </ul>
 
-      <!-- OPCIÓN SEMESTRAL ALTERNATIVA -->
-      <div style="border-top: 1px solid var(--border-color); padding-top: 14px; margin-bottom: 16px; font-size: 0.82rem; color: var(--text-muted); text-align: center;">
-        Opción semestral: <strong>${{ precio_semestral }} / 6 meses</strong>
-      </div>
-
       <div>
-        {% if capacidad and capacidad.es_ilimitado and capacidad.tipo_cuenta != 'GRATIS' %}
-          <div style="text-align: center; padding: 12px; background: rgba(76, 175, 80, 0.15); border: 1px solid rgba(76, 175, 80, 0.4); border-radius: 6px; color: #81c784; font-weight: 700; font-size: 0.9rem;">
-            ✓ Tienes acceso Pro habilitado
-          </div>
+        {% if pagos_habilitados %}
+          {% if user.is_authenticated %}
+            <form method="post" action="{% url 'pagos:crear_pago' %}">
+              {% csrf_token %}
+              <input type="hidden" name="plan" value="PRO_12M">
+              <input type="hidden" name="checkout_request_id" value="{{ checkout_request_id }}">
+              <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 700;">
+                {% if user.perfil_piloto.tipo_cuenta == 'PRO' %}Renovar Anual{% else %}Elegir Anual{% endif %}
+              </button>
+            </form>
+          {% else %}
+            <a href="{% url 'core:login' %}?next={% url 'pro' %}" class="btn btn-primary" style="width: 100%; text-align: center; display: block; padding: 12px; font-weight: 700;">
+              Elegir Anual
+            </a>
+          {% endif %}
         {% else %}
-          <div style="text-align: center;">
-            <button type="button" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 700; opacity: 0.9;" disabled>
-              Próximamente disponible
-            </button>
-            <span style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-top: 8px;">
-              Los pagos en línea se habilitarán próximamente. Si necesitas ampliar tu cuenta para el piloto, contáctanos.
-            </span>
-          </div>
+          <button type="button" class="btn btn-primary" style="width: 100%; padding: 12px; opacity: 0.7;" disabled>
+            Próximamente
+          </button>
         {% endif %}
       </div>
     </div>
+
   </div>
 
   <!-- PREGUNTAS FRECUENTES TRANSPARENTES -->
@@ -126,23 +184,30 @@
     <h3 style="font-size: 1.1rem; color: #f5f5f5; margin-bottom: 16px;">Preguntas Frecuentes</h3>
     
     <div style="margin-bottom: 14px;">
-      <h4 style="font-size: 0.92rem; color: var(--color-flame); margin-bottom: 4px;">¿Qué ocurre con mis canciones si alcanzo el límite de 10?</h4>
+      <h4 style="font-size: 0.92rem; color: var(--color-flame); margin-bottom: 4px;">¿Cómo funciona el pago y qué medios de pago aceptan?</h4>
       <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0; line-height: 1.5;">
-        Tus 10 canciones permanecen siempre disponibles para ver, tocar, editar y compartir. Nada se bloquea ni se borra. Simplemente necesitarás Fogata Pro cuando quieras seguir incorporando temas a tu biblioteca.
+        Los pagos se procesan de manera cifrada y segura a través de <strong>Flow Chile</strong>. Puedes pagar con Webpay Plus (Tarjetas de Débito y Crédito Visa/Mastercard), OnePay, Servipag, Mach y transferencia bancaria.
       </p>
     </div>
 
     <div style="margin-bottom: 14px;">
-      <h4 style="font-size: 0.92rem; color: var(--color-flame); margin-bottom: 4px;">¿Qué significa que Fogata Gratis incluya 1 Fogata?</h4>
+      <h4 style="font-size: 0.92rem; color: var(--color-flame); margin-bottom: 4px;">¿El pago se cobra de forma automática al vencer?</h4>
       <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0; line-height: 1.5;">
-        Significa que puedes mantener 1 setlist activo a la vez. Puedes cambiarle las canciones, reordenarlas, renombrarla y reutilizarla todas las veces que quieras. Con Pro puedes guardar múltiples setlists simultáneos (ej: "Acústico", "Rock", "Misa").
+        <strong>No.</strong> No realizamos cobros automáticos recurrentes en tu tarjeta. Tú decides cuándo renovar tu período de acceso.
+      </p>
+    </div>
+
+    <div style="margin-bottom: 14px;">
+      <h4 style="font-size: 0.92rem; color: var(--color-flame); margin-bottom: 4px;">¿Qué ocurre si renuevo antes de que venza mi plan actual?</h4>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0; line-height: 1.5;">
+        No pierdes ningún día. El nuevo período de 6 o 12 meses se suma automáticamente a partir de tu fecha de vencimiento actual.
       </p>
     </div>
 
     <div>
-      <h4 style="font-size: 0.92rem; color: var(--color-flame); margin-bottom: 4px;">¿Mis invitados necesitan pagar para ver mis letras?</h4>
+      <h4 style="font-size: 0.92rem; color: var(--color-flame); margin-bottom: 4px;">¿Qué ocurre con mis canciones si vence mi plan?</h4>
       <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0; line-height: 1.5;">
-        No, jamás. Los invitados acceden 100% gratis mediante tu link temporal o código QR, sin necesidad de registrarse ni instalar aplicaciones.
+        Absolutamente nada se borra ni se bloquea. Puedes seguir viendo, editando y tocando todas tus canciones y Fogatas existentes. Únicamente no podrás crear canciones adicionales hasta renovar tu suscripción.
       </p>
     </div>
   </div>

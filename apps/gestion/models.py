@@ -22,6 +22,11 @@ class EventoUso(models.Model):
         ('ver_pro', 'Visualización de página Fogata Pro'),
         ('alcanzar_limite_canciones', 'Intento de creación sobre límite de canciones'),
         ('alcanzar_limite_fogatas', 'Intento de creación sobre límite de Fogatas'),
+        ('iniciar_pago', 'Inicio de checkout Flow'),
+        ('pago_confirmado', 'Confirmación de pago aprobado Flow'),
+        ('pago_rechazado', 'Notificación de pago rechazado Flow'),
+        ('upgrade_pro', 'Primera activación de Fogata Pro'),
+        ('renovacion_pro', 'Renovación de vigencia Fogata Pro'),
     ]
 
     usuario = models.ForeignKey(

@@ -44,6 +44,11 @@ METADATA_WHITELIST = {
     'ver_pro': {'origen'},
     'alcanzar_limite_canciones': {'total_actual'},
     'alcanzar_limite_fogatas': {'total_actual'},
+    'iniciar_pago': {'plan', 'monto'},
+    'pago_confirmado': {'plan'},
+    'pago_rechazado': {'plan'},
+    'upgrade_pro': {'plan', 'meses'},
+    'renovacion_pro': {'plan', 'meses'},
 }
 
 # Palabras prohibidas que jamás deben ingresar a metadata
