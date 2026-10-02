@@ -39,6 +39,7 @@ class FlowClient:
     def __init__(self, api_key=None, secret_key=None, base_url=None, environment=None, timeout_segundos=6):
         self.environment = environment or getattr(settings, 'FLOW_ENVIRONMENT', 'sandbox').lower()
         self.api_key = api_key or getattr(settings, 'FLOW_API_KEY', '')
+        self.secret_key = secret_key or getattr(settings, 'FLOW_SECRET_KEY', '')
         self.timeout_segundos = timeout_segundos or getattr(settings, 'FLOW_HTTP_TIMEOUT', 15)
 
         default_base = 'https://sandbox.flow.cl/api' if self.environment == 'sandbox' else 'https://www.flow.cl/api'
