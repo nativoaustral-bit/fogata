@@ -210,6 +210,9 @@ def usuario_detalle_view(request, pk):
     # Auditorías administrativas aplicadas a este usuario
     auditorias = AuditoriaAdmin.objects.filter(usuario_afectado=usuario).select_related('admin').order_by('-fecha')
 
+    # Órdenes de pago del usuario (Fase 9)
+    ordenes_usuario = usuario.ordenes_pago.all().order_by('-creada_el')[:10]
+
     context = {
         'u': usuario,
         'capacidad': obtener_estado_capacidad(usuario),
@@ -224,6 +227,7 @@ def usuario_detalle_view(request, pk):
         'canciones_meta': canciones_meta,
         'eventos_usuario': eventos_usuario,
         'auditorias': auditorias,
+        'ordenes_usuario': ordenes_usuario,
         'inicio_analitica': obtener_analytics_start_date_str(),
     }
     return render(request, 'gestion/usuario_detalle.html', context)
@@ -513,12 +517,17 @@ def pagos_lista_view(request):
 
     # Resumen rápido
     total_ordenes = ordenes_qs.count()
+    pagadas_prod_count = OrdenPago.objects.filter(
+        ambiente=OrdenPago.AMBIENTE_PRODUCTION,
+        estado=OrdenPago.ESTADO_PAGADA
+    ).count()
     pagadas_count = OrdenPago.objects.filter(estado=OrdenPago.ESTADO_PAGADA).count()
     pendientes_count = OrdenPago.objects.filter(estado=OrdenPago.ESTADO_PENDIENTE).count()
     ingresos_reales = OrdenPago.objects.filter(
         ambiente=OrdenPago.AMBIENTE_PRODUCTION,
         estado=OrdenPago.ESTADO_PAGADA
     ).aggregate(s=Sum('monto'))['s'] or 0
+    ingresos_reales_fmt = f"{ingresos_reales:,}".replace(",", ".")
 
     paginator = Paginator(ordenes_qs, 25)
     page_number = request.GET.get('page')
@@ -531,9 +540,11 @@ def pagos_lista_view(request):
         'filtro_estado': filtro_estado,
         'filtro_ambiente': filtro_ambiente,
         'total_ordenes': total_ordenes,
+        'pagadas_prod_count': pagadas_prod_count,
         'pagadas_count': pagadas_count,
         'pendientes_count': pendientes_count,
         'ingresos_reales': ingresos_reales,
+        'ingresos_reales_fmt': ingresos_reales_fmt,
     }
     return render(request, 'gestion/pagos.html', context)
 

@@ -183,3 +183,7 @@ class OrdenPago(models.Model):
             if p == self.plan:
                 return label
         return self.plan
+
+    @property
+    def monto_formateado(self) -> str:
+        return f"{self.monto:,}".replace(",", ".")

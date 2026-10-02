@@ -20,18 +20,48 @@
   </div>
 </div>
 
-<!-- SECCIÓN COMERCIAL Y MODELO FREEMIUM (FASE 8) -->
+<!-- SECCIÓN COMERCIAL Y MODELO FREEMIUM (FASES 8 Y 9) -->
 <div style="margin-bottom: 28px;">
-  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; flex-wrap: wrap;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
     <h2 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame); margin: 0;">
-      Métricas Comerciales y Modelo Freemium (Fase 8)
+      Métricas Comerciales y Ventas Pro (Fases 8 y 9)
     </h2>
-    <a href="{% url 'pro' %}" target="_blank" style="font-size: 0.82rem; color: #ff9800; text-decoration: none;">
-      Ver Landing /pro/ ↗
-    </a>
+    <div style="display: flex; gap: 14px; align-items: center;">
+      <a href="{% url 'gestion:pagos_lista' %}" style="font-size: 0.82rem; color: #81c784; text-decoration: none; font-weight: 600;">
+        💳 Ver Órdenes de Pago ({{ c.ventas_totales }} ventas) ↗
+      </a>
+      <a href="{% url 'pro' %}" target="_blank" style="font-size: 0.82rem; color: #ff9800; text-decoration: none;">
+        Ver Landing /pro/ ↗
+      </a>
+    </div>
   </div>
 
   <div class="metric-grid">
+    <!-- INGRESOS Y VENTAS REALES FASE 9 -->
+    <div class="metric-card" style="border-left: 3px solid #81c784; background: rgba(76, 175, 80, 0.05);">
+      <h3 style="color: #81c784;">Ingresos Reales (Producción)</h3>
+      <div class="metric-val" style="color: #81c784;">${{ c.ingresos_totales_fmt|default:c.ingresos_totales|default:0 }} CLP</div>
+      <div class="metric-sub">${{ c.ingresos_30d_fmt|default:c.ingresos_30d|default:0 }} CLP últimos 30 días</div>
+    </div>
+
+    <div class="metric-card" style="border-left: 3px solid #81c784; background: rgba(76, 175, 80, 0.05);">
+      <h3 style="color: #81c784;">Ventas Pagadas</h3>
+      <div class="metric-val" style="color: #81c784;">{{ c.ventas_totales }}</div>
+      <div class="metric-sub">{{ c.ventas_30d }} en últimos 30 días ({{ c.ventas_semestral }} sem / {{ c.ventas_anual }} an)</div>
+    </div>
+
+    <div class="metric-card" style="border-left: 3px solid #ff9800;">
+      <h3 style="color: #ff9800;">PRO Pagados Activos</h3>
+      <div class="metric-val" style="color: #ff9800;">{{ c.pro_pagados_activos }}</div>
+      <div class="metric-sub">{{ c.pro_activos_totales }} PRO totales activos en plataforma</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>Conversión a Pago</h3>
+      <div class="metric-val">{{ c.conversion_gratis_pro }}%</div>
+      <div class="metric-sub">Usuarios Gratis activos convertidos a Pro</div>
+    </div>
+
     <!-- PLANES -->
     <div class="metric-card" style="border-left: 3px solid #81c784;">
       <h3>Usuarios Gratis</h3>
@@ -40,9 +70,9 @@
     </div>
 
     <div class="metric-card" style="border-left: 3px solid #ff9800;">
-      <h3>Usuarios Pro</h3>
+      <h3>Usuarios Pro Totales</h3>
       <div class="metric-val" style="color: #ff9800;">{{ c.total_pro }}</div>
-      <div class="metric-sub">Capacidad ilimitada (activados administrativamente)</div>
+      <div class="metric-sub">Capacidad ilimitada activa en la plataforma</div>
     </div>
 
     <div class="metric-card">

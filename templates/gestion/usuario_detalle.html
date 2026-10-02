@@ -262,6 +262,66 @@
   </div>
 </div>
 
+<!-- HISTORIAL DE PAGOS Y SUSCRIPCIONES (FASE 9) -->
+<div style="margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px;">
+    <h2 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame); margin: 0;">
+      Historial de Pagos y Suscripción (Fase 9)
+    </h2>
+    <a href="{% url 'gestion:pagos_lista' %}?q={{ u.email }}" style="font-size: 0.82rem; color: #81c784; text-decoration: none;">
+      Ver en Módulo Pagos ↗
+    </a>
+  </div>
+  <div class="table-container">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Commerce Order</th>
+          <th>Flow Order</th>
+          <th>Plan</th>
+          <th>Monto</th>
+          <th>Ambiente</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ord in ordenes_usuario %}
+        <tr>
+          <td style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">{{ ord.creada_el|date:"d/m/Y H:i" }}</td>
+          <td style="font-family: monospace; font-size: 0.82rem; color: #ddd;">{{ ord.commerce_order }}</td>
+          <td style="font-family: monospace; font-size: 0.82rem; color: var(--text-muted);">{{ ord.flow_order|default:"—" }}</td>
+          <td style="font-size: 0.84rem;">{{ ord.plan_nombre_legible }}</td>
+          <td style="font-weight: 600; color: #f5f5f5;">${{ ord.monto_formateado }} {{ ord.moneda }}</td>
+          <td>
+            {% if ord.ambiente == 'PRODUCTION' %}
+              <span class="badge-active" style="font-size: 0.72rem;">PROD</span>
+            {% else %}
+              <span style="font-size: 0.72rem; color: #ffb74d;">SANDBOX</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if ord.estado == 'PAGADA' %}
+              <span class="badge-active">✓ PAGADA</span>
+            {% elif ord.estado == 'PENDIENTE' %}
+              <span style="color: #ffb74d;">⏳ PENDIENTE</span>
+            {% else %}
+              <span style="color: #e57373;">{{ ord.estado }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 18px;">
+            Este usuario no registra órdenes de pago iniciadas ni completadas.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <!-- AUDITORÍA ADMINISTRATIVA APLICADA A ESTE USUARIO -->
 <div>
   <h2 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-flame); margin-bottom: 10px;">

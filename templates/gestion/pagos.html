@@ -3,7 +3,7 @@
 
 {% block title %}Órdenes de Pago — Fogata Control Center{% endblock %}
 
-{% block gestion_content %}
+{% block content %}
 <div style="margin-bottom: 24px;">
   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
     <div>
@@ -16,18 +16,18 @@
 
   <!-- TARJETAS DE RESUMEN FINANCIERO -->
   <div class="metric-grid">
-    <div class="metric-card">
-      <h3>Ingresos Reales (Producción)</h3>
-      <div class="metric-val" style="color: #81c784;">${{ ingresos_reales|default:0 }} CLP</div>
+    <div class="metric-card" style="border-left: 3px solid #81c784; background: rgba(76, 175, 80, 0.04);">
+      <h3 style="color: #81c784;">Ingresos Reales (Producción)</h3>
+      <div class="metric-val" style="color: #81c784;">${{ ingresos_reales_fmt|default:ingresos_reales|default:0 }} CLP</div>
       <div class="metric-sub">Órdenes PAGADA en ambiente real</div>
     </div>
-    <div class="metric-card">
-      <h3>Órdenes Pagadas</h3>
-      <div class="metric-val" style="color: #81c784;">{{ pagadas_count }}</div>
-      <div class="metric-sub">Ventas confirmadas (Total)</div>
+    <div class="metric-card" style="border-left: 3px solid #81c784;">
+      <h3 style="color: #81c784;">Ventas Producción</h3>
+      <div class="metric-val" style="color: #81c784;">{{ pagadas_prod_count|default:0 }}</div>
+      <div class="metric-sub">{{ pagadas_count }} ventas pagadas totales (incluye Sandbox)</div>
     </div>
-    <div class="metric-card">
-      <h3>Órdenes Pendientes</h3>
+    <div class="metric-card" style="border-left: 3px solid #ffb74d;">
+      <h3 style="color: #ffb74d;">Órdenes Pendientes</h3>
       <div class="metric-val" style="color: #ffb74d;">{{ pendientes_count }}</div>
       <div class="metric-sub">Esperando confirmación Flow</div>
     </div>
@@ -114,7 +114,7 @@
               {% endif %}
             </td>
             <td style="font-weight: 600; white-space: nowrap; color: #f5f5f5;">
-              ${{ ord.monto }} {{ ord.moneda }}
+              ${{ ord.monto_formateado }} {{ ord.moneda }}
             </td>
             <td>
               {% if ord.ambiente == 'PRODUCTION' %}

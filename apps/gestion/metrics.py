@@ -521,7 +521,8 @@ def obtener_metricas_comerciales():
         user__is_staff=False
     ).count()
 
-    conversion_gratis_pro = round((pro_pagados_activos / (total_gratis + pro_pagados_activos) * 100), 2) if (total_gratis + pro_pagados_activos) > 0 else 0.0
+    ingresos_totales_fmt = f"{ingresos_totales:,}".replace(",", ".")
+    ingresos_30d_fmt = f"{ingresos_30d:,}".replace(",", ".")
 
     return {
         'total_usuarios': total_usuarios,
@@ -541,7 +542,9 @@ def obtener_metricas_comerciales():
         'ventas_totales': ventas_totales,
         'ventas_30d': ventas_30d,
         'ingresos_totales': ingresos_totales,
+        'ingresos_totales_fmt': ingresos_totales_fmt,
         'ingresos_30d': ingresos_30d,
+        'ingresos_30d_fmt': ingresos_30d_fmt,
         'pro_activos_totales': pro_activos_totales,
         'pro_pagados_activos': pro_pagados_activos,
         'pro_vencidos': pro_vencidos,
