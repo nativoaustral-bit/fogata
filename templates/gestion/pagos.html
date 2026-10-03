@@ -12,6 +12,11 @@
         Registro transaccional inmutable. Las métricas financieras computan exclusivamente pagos en <strong>Producción</strong>.
       </p>
     </div>
+    <div>
+      <a href="{% url 'gestion:pagos_limpiar_sandbox' %}" class="btn btn-warning btn-sm" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: rgba(255, 152, 0, 0.15); color: #ffb74d; border: 1px solid rgba(255, 152, 0, 0.4);">
+        🧹 Limpiar órdenes Sandbox
+      </a>
+    </div>
   </div>
 
   <!-- TARJETAS DE RESUMEN FINANCIERO -->
@@ -85,6 +90,7 @@
             <th>Monto</th>
             <th>Ambiente</th>
             <th>Estado</th>
+            <th style="text-align: right;">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -150,10 +156,21 @@
                 </span>
               {% endif %}
             </td>
+            <td style="text-align: right; white-space: nowrap;">
+              {% if ord.ambiente == 'SANDBOX' %}
+                <a href="{% url 'gestion:pago_eliminar_sandbox' ord.pk %}" class="btn btn-action-sm" style="background: rgba(244,67,54,0.15); color: #ff5252; border: 1px solid rgba(244,67,54,0.3);" title="Eliminar orden de prueba">
+                  🗑️ Eliminar
+                </a>
+              {% else %}
+                <span style="font-size: 0.75rem; color: #81c784; padding: 2px 6px;" title="Orden de Producción: Inmutable por trazabilidad contable">
+                  🔒 Inmutable
+                </span>
+              {% endif %}
+            </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="8" style="text-align: center; padding: 36px 16px; color: var(--text-muted);">
+            <td colspan="9" style="text-align: center; padding: 36px 16px; color: var(--text-muted);">
               No se encontraron órdenes de pago con los criterios seleccionados.
             </td>
           </tr>

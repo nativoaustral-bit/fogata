@@ -1,0 +1,144 @@
+{% extends 'gestion/base_gestion.html' %}
+
+{% block title %}Mantenimiento de Datos — Fogata Control Center{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+    <div>
+      <h1 style="font-size: 1.6rem; color: #f5f5f5; margin: 0 0 4px 0;">Mantenimiento y Limpieza Segura (Fase 10)</h1>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0;">
+        Herramientas de depuración controlada para operar en Producción. Los datos de prueba pueden eliminarse; los registros comerciales reales conservan trazabilidad inmutable.
+      </p>
+    </div>
+    <div>
+      <a href="{% url 'gestion:mantenimiento_dry_run' %}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: rgba(255, 152, 0, 0.12); color: #ffb74d; border: 1px solid rgba(255, 152, 0, 0.3);">
+        🔍 Simulación de Limpieza (Dry Run)
+      </a>
+    </div>
+  </div>
+
+  <!-- TARJETAS DE INDICADORES DE MANTENIMIENTO -->
+  <div class="metric-grid">
+    <div class="metric-card" style="border-left: 3px solid #ff9800;">
+      <h3>Usuarios de Prueba Eliminables</h3>
+      <div class="metric-val" style="color: #ffb74d;">{{ m.usuarios_prueba_eliminables }}</div>
+      <div class="metric-sub">Cuentas sin órdenes en Producción</div>
+    </div>
+
+    <div class="metric-card" style="border-left: 3px solid #ffb74d;">
+      <h3>Órdenes Sandbox</h3>
+      <div class="metric-val" style="color: #ffb74d;">{{ m.ordenes_sandbox }}</div>
+      <div class="metric-sub">Registros de prueba de Flow</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>Eventos de Cuentas de Prueba</h3>
+      <div class="metric-val">{{ m.eventos_prueba }}</div>
+      <div class="metric-sub">Actividad no financiera descartable</div>
+    </div>
+
+    <div class="metric-card">
+      <h3>Usuarios Desactivados</h3>
+      <div class="metric-val">{{ m.usuarios_desactivados }}</div>
+      <div class="metric-sub">Cuentas suspendidas administrativamente</div>
+    </div>
+
+    <!-- PROTECCIÓN DE PRODUCCIÓN -->
+    <div class="metric-card" style="border-left: 3px solid #81c784; background: rgba(76, 175, 80, 0.04);">
+      <h3 style="color: #81c784;">Órdenes Producción (Protegidas)</h3>
+      <div class="metric-val" style="color: #81c784;">{{ m.ordenes_prod_protegidas }}</div>
+      <div class="metric-sub">Inmutables · Bloqueadas contra borrado</div>
+    </div>
+
+    <div class="metric-card" style="border-left: 3px solid #81c784; background: rgba(76, 175, 80, 0.04);">
+      <h3 style="color: #81c784;">Ingresos Reales Protegidos</h3>
+      <div class="metric-val" style="color: #81c784;">${{ m.ingresos_prod_protegidos|default:0 }} CLP</div>
+      <div class="metric-sub">Trazabilidad contable legal 100% garantizada</div>
+    </div>
+  </div>
+
+  <!-- SECCIONES DE ACCIÓN ESPECÍFICA -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-top: 24px;">
+
+    <!-- 1. USUARIOS DE PRUEBA -->
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span style="font-size: 1.2rem;">👥</span>
+          <h2 style="font-size: 1.1rem; color: #f5f5f5; margin: 0;">Administración de Usuarios</h2>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 16px;">
+          Revisa individualmente las cuentas de prueba, desactiva accesos o elimina cuentas de prueba con todo su repertorio asociado (canciones, fogatas y actividad).
+        </p>
+      </div>
+      <div>
+        <a href="{% url 'gestion:usuarios_lista' %}?filtro=prueba" class="btn btn-primary btn-sm" style="display: inline-block; width: 100%; text-align: center; padding: 8px 14px;">
+          Revisar usuarios de prueba ({{ m.usuarios_prueba_eliminables }}) →
+        </a>
+      </div>
+    </div>
+
+    <!-- 2. ÓRDENES SANDBOX -->
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span style="font-size: 1.2rem;">💳</span>
+          <h2 style="font-size: 1.1rem; color: #f5f5f5; margin: 0;">Órdenes Sandbox</h2>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 16px;">
+          Limpia las órdenes transaccionales de prueba generadas con Flow Sandbox. Las órdenes de producción y la recaudación real no sufren ningún cambio.
+        </p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <a href="{% url 'gestion:pagos_lista' %}?ambiente=SANDBOX" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center; padding: 8px 12px;">
+          Ver en tabla
+        </a>
+        <a href="{% url 'gestion:pagos_limpiar_sandbox' %}" class="btn btn-warning btn-sm" style="flex: 1.2; text-align: center; padding: 8px 12px; background: rgba(255,152,0,0.2); color: #ffb74d; border: 1px solid rgba(255,152,0,0.4);">
+          Limpiar órdenes Sandbox ({{ m.ordenes_sandbox }})
+        </a>
+      </div>
+    </div>
+
+    <!-- 3. ACTIVIDAD DE PRUEBA -->
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span style="font-size: 1.2rem;">📊</span>
+          <h2 style="font-size: 1.1rem; color: #f5f5f5; margin: 0;">Actividad Operativa de Prueba</h2>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 16px;">
+          Depura eventos analíticos generados durante pruebas técnicas. Los eventos de pagos reales, upgrades Pro y usuarios con compras se conservan íntegramente.
+        </p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <a href="{% url 'gestion:actividad_lista' %}" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center; padding: 8px 12px;">
+          Ver registros
+        </a>
+        <a href="{% url 'gestion:actividad_limpiar_prueba' %}" class="btn btn-secondary btn-sm" style="flex: 1.2; text-align: center; padding: 8px 12px;">
+          Depurar actividad ({{ m.eventos_prueba }})
+        </a>
+      </div>
+    </div>
+
+    <!-- 4. DRY RUN MASIVO -->
+    <div style="background: var(--bg-surface); border: 1px solid rgba(255, 152, 0, 0.3); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span style="font-size: 1.2rem;">🔍</span>
+          <h2 style="font-size: 1.1rem; color: #ffb74d; margin: 0;">Dry Run de Limpieza</h2>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 16px;">
+          Simula de forma segura el impacto de una depuración masiva antes de ejecutar cualquier cambio permanente. Visualiza conteos exactos con 0 impacto en producción.
+        </p>
+      </div>
+      <div>
+        <a href="{% url 'gestion:mantenimiento_dry_run' %}" class="btn btn-secondary btn-sm" style="display: block; width: 100%; text-align: center; padding: 8px 14px; background: rgba(255, 152, 0, 0.15); color: #ffb74d; border: 1px solid rgba(255, 152, 0, 0.4);">
+          Abrir simulador Dry Run →
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

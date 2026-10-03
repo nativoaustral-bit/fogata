@@ -1,0 +1,52 @@
+{% extends 'gestion/base_gestion.html' %}
+
+{% block title %}Eliminar Orden de Prueba — Fogata Control Center{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 24px auto;">
+  <div style="margin-bottom: 20px;">
+    <a href="{% url 'gestion:pagos_lista' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.88rem;">
+      ← Volver al Módulo de Pagos
+    </a>
+  </div>
+
+  <div style="background: var(--bg-surface); border: 1px solid rgba(255, 152, 0, 0.4); border-radius: 8px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <span style="font-size: 1.8rem;">🗑️</span>
+      <div>
+        <h1 style="font-size: 1.3rem; color: #ffb74d; margin: 0;">Eliminar Orden de Prueba Sandbox</h1>
+        <div style="font-family: monospace; font-size: 0.88rem; color: #bbb; margin-top: 2px;">{{ orden.commerce_order }}</div>
+      </div>
+    </div>
+
+    <div style="background: #141414; border: 1px solid var(--border-color); border-radius: 6px; padding: 14px 16px; margin-bottom: 20px; font-size: 0.9rem; line-height: 1.8;">
+      <div><strong>Usuario:</strong> {{ orden.usuario.email }}</div>
+      <div><strong>Plan:</strong> {{ orden.plan_nombre_legible }}</div>
+      <div><strong>Monto:</strong> ${{ orden.monto_formateado }} {{ orden.moneda }}</div>
+      <div><strong>Estado:</strong> {{ orden.estado }}</div>
+      <div><strong>Ambiente:</strong> <span style="color: #ffb74d; font-weight: 600;">SANDBOX (Pruebas)</span></div>
+      <div><strong>Fecha:</strong> {{ orden.creada_el|date:"d/m/Y H:i" }}</div>
+    </div>
+
+    <div style="background: rgba(76, 175, 80, 0.08); border-left: 4px solid #4caf50; padding: 10px 14px; border-radius: 4px; margin-bottom: 16px; font-size: 0.85rem; color: #81c784;">
+      ✓ Esta orden no corresponde a un ingreso real. Los pagos de <strong>Producción</strong> no serán modificados.
+    </div>
+
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">
+      Esta acción eliminará permanentemente este registro transaccional de pruebas de la base de datos.
+    </p>
+
+    <form method="post" action="{% url 'gestion:pago_eliminar_sandbox' orden.pk %}">
+      {% csrf_token %}
+      <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <button type="submit" class="btn btn-danger" style="background: #d32f2f; border: 1px solid #f44336; color: #fff; padding: 9px 18px; font-weight: 600; border-radius: 4px; cursor: pointer;">
+          Confirmar eliminación de orden Sandbox
+        </button>
+        <a href="{% url 'gestion:pagos_lista' %}" class="btn btn-secondary" style="padding: 9px 16px;">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

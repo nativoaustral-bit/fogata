@@ -32,6 +32,10 @@
   <div>
     <select name="filtro" class="form-input" style="font-size: 0.88rem; padding: 7px 10px;">
       <option value="todos" {% if filtro_tipo == 'todos' %}selected{% endif %}>Todos los registros</option>
+      <option value="prueba" {% if filtro_tipo == 'prueba' %}selected{% endif %}>Solo Cuentas de Prueba (Eliminables)</option>
+      <option value="con_pagos" {% if filtro_tipo == 'con_pagos' %}selected{% endif %}>Solo Cuentas con Pagos Reales</option>
+      <option value="piloto" {% if filtro_tipo == 'piloto' %}selected{% endif %}>Solo Cuentas Piloto</option>
+      <option value="staff" {% if filtro_tipo == 'staff' %}selected{% endif %}>Solo Cuentas Staff</option>
       <option value="reg_7d" {% if filtro_tipo == 'reg_7d' %}selected{% endif %}>Registrados últimos 7 días</option>
       <option value="reg_30d" {% if filtro_tipo == 'reg_30d' %}selected{% endif %}>Registrados últimos 30 días</option>
       <option value="activos_30d" {% if filtro_tipo == 'activos_30d' %}selected{% endif %}>Activos últimos 30 días</option>
@@ -51,30 +55,32 @@
   <table class="admin-table">
     <thead>
       <tr>
-        <th>Usuario</th>
-        <th>Correo</th>
-        <th>Plan</th>
+        <th>Email / Usuario</th>
+        <th>Tipo</th>
+        <th>Estado</th>
         <th>Registro</th>
         <th>Última Actividad</th>
         <th style="text-align: center;">Canciones</th>
         <th style="text-align: center;">Fogatas</th>
-        <th style="text-align: center;">Sesiones</th>
-        <th>Estado</th>
-        <th style="text-align: right;">Acciones</th>
+        <th style="text-align: center;" title="Pagos Sandbox">Sandbox</th>
+        <th style="text-align: center;" title="Pagos Producción">Prod</th>
+        <th style="text-align: center;">Historial Real</th>
+        <th style="text-align: right; min-width: 170px;">Acciones</th>
       </tr>
     </thead>
     <tbody>
       {% for u in page_obj %}
       <tr>
-        <td style="font-weight: 500;">
-          <a href="{% url 'gestion:usuario_detalle' pk=u.pk %}" style="color: #f5f5f5; text-decoration: none;">
-            {{ u.first_name|default:"(Sin nombre)" }}
-          </a>
-        </td>
-        <td style="color: #bbb;">
-          <a href="{% url 'gestion:usuario_detalle' pk=u.pk %}" style="color: #bbb; text-decoration: none;">
+        <td>
+          <a href="{% url 'gestion:usuario_detalle' pk=u.pk %}" style="color: #64b5f6; font-weight: 500; text-decoration: none;">
             {{ u.email }}
           </a>
+          {% if u.first_name %}
+            <div style="font-size: 0.78rem; color: var(--text-muted);">{{ u.first_name }} {{ u.last_name }}</div>
+          {% endif %}
+          {% if u.is_staff %}
+            <span style="font-size: 0.68rem; background: rgba(255,152,0,0.2); color: #ff9800; padding: 1px 4px; border-radius: 2px;">STAFF</span>
+          {% endif %}
         </td>
         <td>
           <span style="font-size: 0.72rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; 
@@ -83,6 +89,13 @@
             {% else %}background: rgba(255,255,255,0.06); color: #bbb; border: 1px solid #444;{% endif %}">
             {{ u.perfil_piloto.tipo_cuenta|default:"PILOTO" }}
           </span>
+        </td>
+        <td>
+          {% if u.is_active %}
+            <span class="badge-active">ACTIVO</span>
+          {% else %}
+            <span class="badge-suspended">DESACTIVADO</span>
+          {% endif %}
         </td>
         <td style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">
           {{ u.date_joined|date:"d/m/Y" }}
@@ -96,23 +109,68 @@
         </td>
         <td style="text-align: center; font-weight: 600;">{{ u.num_canciones }}</td>
         <td style="text-align: center; font-weight: 600;">{{ u.num_fogatas }}</td>
-        <td style="text-align: center; font-weight: 600;">{{ u.num_sesiones }}</td>
-        <td>
-          {% if u.is_active %}
-            <span class="badge-active">ACTIVO</span>
+        <td style="text-align: center; font-size: 0.84rem;">
+          {% if u.pagos_sandbox > 0 %}
+            <span style="color: #ffb74d; font-weight: 600;">{{ u.pagos_sandbox }}</span>
           {% else %}
-            <span class="badge-suspended">SUSPENDIDO</span>
+            <span style="color: var(--text-muted);">0</span>
           {% endif %}
         </td>
-        <td style="text-align: right;">
-          <a href="{% url 'gestion:usuario_detalle' pk=u.pk %}" class="btn btn-secondary btn-action-sm">
-            Ficha →
-          </a>
+        <td style="text-align: center; font-size: 0.84rem;">
+          {% if u.pagos_prod > 0 %}
+            <span style="color: #81c784; font-weight: 700;">{{ u.pagos_prod }}</span>
+          {% else %}
+            <span style="color: var(--text-muted);">0</span>
+          {% endif %}
+        </td>
+        <td style="text-align: center;">
+          {% if u.tiene_pagos_reales %}
+            <span class="badge-active" title="Usuario con compras confirmadas en Producción">✓ Real</span>
+          {% else %}
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Sin pagos</span>
+          {% endif %}
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          <div style="display: inline-flex; gap: 4px; align-items: center;">
+            <a href="{% url 'gestion:usuario_detalle' pk=u.pk %}" class="btn btn-secondary btn-action-sm" title="Ver ficha completa">
+              Ficha
+            </a>
+
+            <!-- ACCIÓN A: DESACTIVAR / REACTIVAR -->
+            {% if u.pk != request.user.pk and not u.is_superuser %}
+              {% if u.is_active %}
+                <form method="post" action="{% url 'gestion:usuario_suspender' pk=u.pk %}" style="display: inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="btn btn-warning btn-action-sm" style="background: rgba(255,152,0,0.15); color: #ffb74d; border: 1px solid rgba(255,152,0,0.3);" title="Desactivar acceso">
+                    Desactivar
+                  </button>
+                </form>
+              {% else %}
+                <form method="post" action="{% url 'gestion:usuario_reactivar' pk=u.pk %}" style="display: inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="btn btn-action-sm" style="background: rgba(76,175,80,0.15); color: #81c784; border: 1px solid rgba(76,175,80,0.3);" title="Reactivar acceso">
+                    Reactivar
+                  </button>
+                </form>
+              {% endif %}
+            {% endif %}
+
+            <!-- ACCIÓN B: ELIMINAR USUARIO DE PRUEBA -->
+            {% if not u.tiene_pagos_reales and not u.is_superuser and u.pk != request.user.pk %}
+              <a href="{% url 'gestion:usuario_eliminar' pk=u.pk %}" class="btn btn-action-sm" style="background: rgba(244,67,54,0.15); color: #ff5252; border: 1px solid rgba(244,67,54,0.3);" title="Eliminar usuario de prueba">
+                🗑️
+              </a>
+            {% elif u.tiene_pagos_reales %}
+              <span style="font-size: 0.72rem; color: #81c784; padding: 2px 4px;" title="Protegido por pagos reales en Producción">🔒</span>
+            {% endif %}
+          </div>
         </td>
       </tr>
       {% empty %}
       <tr>
-        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 30px;">
+        <td colspan="11" style="text-align: center; color: var(--text-muted); padding: 30px;">
           No se encontraron usuarios coincidentes con los filtros aplicados.
         </td>
       </tr>

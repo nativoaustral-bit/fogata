@@ -2,8 +2,8 @@ import logging
 import json
 from django.db import transaction
 from django.utils import timezone
-from .models import EventoUso, AuditoriaAdmin
-from .constants import METADATA_WHITELIST, FORBIDDEN_METADATA_KEYS
+from ..models import EventoUso, AuditoriaAdmin
+from ..constants import METADATA_WHITELIST, FORBIDDEN_METADATA_KEYS
 
 logger = logging.getLogger(__name__)
 

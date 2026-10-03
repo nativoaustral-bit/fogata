@@ -58,6 +58,19 @@
           </button>
         </form>
       {% endif %}
+
+      <!-- ELIMINAR USUARIO DE PRUEBA O PROTECCIÓN DE PRODUCCIÓN (FASE 10) -->
+      {% if u.pk != request.user.pk and not u.is_superuser %}
+        {% if tiene_pagos_reales %}
+          <span style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; background: rgba(76,175,80,0.12); color: #81c784; border: 1px solid rgba(76,175,80,0.3);" title="Cuenta protegida por transacciones reales en Producción">
+            🔒 Protegido (Pagos reales)
+          </span>
+        {% else %}
+          <a href="{% url 'gestion:usuario_eliminar' pk=u.pk %}" class="btn btn-sm" style="background: rgba(244,67,54,0.15); color: #ff5252; border: 1px solid rgba(244,67,54,0.3); padding: 6px 12px; text-decoration: none; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 4px;" title="Eliminar usuario de prueba">
+            🗑️ Eliminar Usuario de Prueba
+          </a>
+        {% endif %}
+      {% endif %}
     </div>
   </div>
 </div>

@@ -8,20 +8,70 @@
     <h1 style="font-size: 1.4rem; margin: 0; color: #f5f5f5;">Historial de Actividad de Producto</h1>
     <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Total de eventos registrados: <strong>{{ total_eventos }}</strong></p>
   </div>
+  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+    {% if usuario_filtrado %}
+      {% if usuario_filtrado_puede_limpiar %}
+        <form method="post" action="{% url 'gestion:actividad_limpiar_usuario' usuario_filtrado.pk %}" onsubmit="return confirm('¿Confirmas eliminar toda la actividad operativa de {{ usuario_filtrado.email }}?');">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-sm" style="background: rgba(244,67,54,0.2); color: #ff5252; border: 1px solid rgba(244,67,54,0.4);">
+            🗑️ Eliminar actividad de este usuario
+          </button>
+        </form>
+      {% else %}
+        <span style="font-size: 0.82rem; color: #81c784; background: rgba(76,175,80,0.1); padding: 5px 10px; border-radius: 4px; border: 1px solid rgba(76,175,80,0.25);" title="Usuario con pagos reales: actividad inmutable">
+          🔒 Actividad protegida por pagos reales
+        </span>
+      {% endif %}
+    {% endif %}
+
+    <a href="{% url 'gestion:actividad_limpiar_prueba' %}" class="btn btn-warning btn-sm" style="background: rgba(255,152,0,0.15); color: #ffb74d; border: 1px solid rgba(255,152,0,0.3); padding: 7px 14px;">
+      🧹 Limpiar actividad de cuentas de prueba
+    </a>
+  </div>
 </div>
 
-<!-- FILTRO POR TIPO DE EVENTO -->
-<form method="get" action="{% url 'gestion:actividad_lista' %}" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-  <label for="id_tipo" style="font-size: 0.88rem; color: var(--text-muted);">Filtrar por acción:</label>
-  <select id="id_tipo" name="tipo" class="form-input" style="font-size: 0.88rem; padding: 7px 10px;">
-    <option value="">Todas las acciones</option>
-    {% for codigo, nombre in tipos_evento %}
-      <option value="{{ codigo }}" {% if tipo_filtro == codigo %}selected{% endif %}>{{ nombre }}</option>
-    {% endfor %}
-  </select>
-  <button type="submit" class="btn btn-primary btn-sm" style="padding: 7px 14px;">Filtrar</button>
-  {% if tipo_filtro %}
-    <a href="{% url 'gestion:actividad_lista' %}" class="btn btn-secondary btn-sm" style="padding: 7px 12px;">Ver todos</a>
+<!-- FILTROS AVANZADOS DE ACTIVIDAD (FASE 10) -->
+<form method="get" action="{% url 'gestion:actividad_lista' %}" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; margin-bottom: 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+  <div style="flex: 1; min-width: 180px;">
+    <input type="text" name="q" value="{{ q_usuario }}" placeholder="Buscar por email de usuario..." class="form-input" style="width: 100%; font-size: 0.85rem; padding: 6px 10px;">
+  </div>
+
+  <div>
+    <select name="tipo" class="form-input" style="font-size: 0.85rem; padding: 6px 10px;">
+      <option value="">Todas las acciones</option>
+      {% for codigo, nombre in tipos_evento %}
+        <option value="{{ codigo }}" {% if tipo_filtro == codigo %}selected{% endif %}>{{ nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <input type="date" name="desde" value="{{ fecha_desde }}" class="form-input" style="font-size: 0.85rem; padding: 6px 8px;" title="Fecha Desde">
+  </div>
+
+  <div>
+    <input type="date" name="hasta" value="{{ fecha_hasta }}" class="form-input" style="font-size: 0.85rem; padding: 6px 8px;" title="Fecha Hasta">
+  </div>
+
+  <div>
+    <select name="piloto" class="form-input" style="font-size: 0.85rem; padding: 6px 8px;">
+      <option value="">Cuentas: Todas</option>
+      <option value="si" {% if filtro_piloto == 'si' %}selected{% endif %}>Solo Piloto</option>
+      <option value="no" {% if filtro_piloto == 'no' %}selected{% endif %}>Excluir Piloto</option>
+    </select>
+  </div>
+
+  <div>
+    <select name="staff" class="form-input" style="font-size: 0.85rem; padding: 6px 8px;">
+      <option value="">Staff: Todos</option>
+      <option value="si" {% if filtro_staff == 'si' %}selected{% endif %}>Solo Staff</option>
+      <option value="no" {% if filtro_staff == 'no' %}selected{% endif %}>Excluir Staff</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-sm" style="padding: 6px 14px;">Filtrar</button>
+  {% if q_usuario or tipo_filtro or fecha_desde or fecha_hasta or filtro_piloto or filtro_staff %}
+    <a href="{% url 'gestion:actividad_lista' %}" class="btn btn-secondary btn-sm" style="padding: 6px 12px;">Limpiar</a>
   {% endif %}
 </form>
 
@@ -32,6 +82,7 @@
       <tr>
         <th style="width: 150px;">Fecha y Hora</th>
         <th>Usuario</th>
+        <th>Tipo Cuenta</th>
         <th>Acción</th>
         <th>Tipo Objeto</th>
         <th>ID Objeto</th>
@@ -45,15 +96,27 @@
         </td>
         <td>
           {% if ev.usuario %}
-            <a href="{% url 'gestion:usuario_detalle' pk=ev.usuario.pk %}" style="color: #f5f5f5; text-decoration: none;">
+            <a href="{% url 'gestion:usuario_detalle' pk=ev.usuario.pk %}" style="color: #64b5f6; text-decoration: none; font-weight: 500;">
               {{ ev.usuario.email }}
             </a>
+            {% if ev.usuario.is_staff %}
+              <span style="font-size: 0.68rem; background: rgba(255,152,0,0.2); color: #ff9800; padding: 1px 4px; border-radius: 2px; margin-left: 4px;">STAFF</span>
+            {% endif %}
           {% else %}
             <span style="color: var(--text-muted); font-style: italic;">Invitado / Anónimo</span>
           {% endif %}
         </td>
         <td>
-          <span style="color: {% if 'tocar' in ev.tipo_evento %}#ffb74d{% elif 'crear' in ev.tipo_evento %}#81c784{% elif 'login' in ev.tipo_evento %}#90caf9{% else %}#e0e0e0{% endif %}; font-weight: 500;">
+          {% if ev.usuario and ev.usuario.perfil_piloto %}
+            <span style="font-size: 0.72rem; padding: 2px 6px; border-radius: 3px; background: rgba(255,255,255,0.06); color: #ccc;">
+              {{ ev.usuario.perfil_piloto.tipo_cuenta }}
+            </span>
+          {% else %}
+            <span style="color: var(--text-muted); font-size: 0.75rem;">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <span style="color: {% if 'pago' in ev.tipo_evento or 'upgrade' in ev.tipo_evento %}#81c784; font-weight: 700;{% elif 'tocar' in ev.tipo_evento %}#ffb74d{% elif 'crear' in ev.tipo_evento %}#81c784{% elif 'login' in ev.tipo_evento %}#90caf9{% else %}#e0e0e0{% endif %};">
             {{ ev.get_tipo_evento_display }}
           </span>
         </td>
@@ -66,7 +129,7 @@
       </tr>
       {% empty %}
       <tr>
-        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">
+        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
           No se encontraron eventos registrados con los criterios seleccionados.
         </td>
       </tr>
@@ -79,16 +142,16 @@
 {% if page_obj.has_other_pages %}
 <div class="pagination-bar">
   <div>
-    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} eventos)
   </div>
   <div style="display: flex; gap: 6px;">
     {% if page_obj.has_previous %}
-      <a href="?page={{ page_obj.previous_page_number }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}" class="btn btn-secondary btn-action-sm">
+      <a href="?page={{ page_obj.previous_page_number }}{% if q_usuario %}&q={{ q_usuario }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if fecha_desde %}&desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&hasta={{ fecha_hasta }}{% endif %}{% if filtro_piloto %}&piloto={{ filtro_piloto }}{% endif %}{% if filtro_staff %}&staff={{ filtro_staff }}{% endif %}" class="btn btn-secondary btn-action-sm">
         ← Anterior
       </a>
     {% endif %}
     {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}" class="btn btn-secondary btn-action-sm">
+      <a href="?page={{ page_obj.next_page_number }}{% if q_usuario %}&q={{ q_usuario }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if fecha_desde %}&desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&hasta={{ fecha_hasta }}{% endif %}{% if filtro_piloto %}&piloto={{ filtro_piloto }}{% endif %}{% if filtro_staff %}&staff={{ filtro_staff }}{% endif %}" class="btn btn-secondary btn-action-sm">
         Siguiente →
       </a>
     {% endif %}

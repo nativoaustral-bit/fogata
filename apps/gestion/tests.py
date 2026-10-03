@@ -445,3 +445,389 @@ class AdministracionAuditoriaYCSVTests(TestCase):
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
 
+
+class Fase10LimpiezaSeguraTests(TestCase):
+    """
+    Suite obligatoria de 15 pruebas para la Fase 10:
+    Limpieza y administración segura de usuarios y datos de prueba.
+    """
+    def setUp(self):
+        from apps.pagos.models import OrdenPago
+        self.OrdenPago = OrdenPago
+
+        # Superadministrador
+        self.superadmin = User.objects.create_superuser(
+            username='superadmin@humm.cl',
+            email='superadmin@humm.cl',
+            password='PassSuperAdmin123!'
+        )
+
+        # Staff administrador regular
+        self.admin = User.objects.create_user(
+            username='staff@humm.cl',
+            email='staff@humm.cl',
+            password='PassStaff123!',
+            is_staff=True
+        )
+
+        # Cliente autenticado como staff
+        self.client = Client()
+        self.client.login(username='staff@humm.cl', password='PassStaff123!')
+
+    def test_01_eliminar_usuario_sin_pagos(self):
+        """1. Eliminar usuario sin pagos."""
+        from apps.gestion.services import puede_eliminar_usuario, eliminar_usuario_prueba
+
+        u_test = User.objects.create_user(username='test_sin_pagos@humm.cl', email='test_sin_pagos@humm.cl', password='Pass123!')
+        puede, motivo = puede_eliminar_usuario(u_test, admin_usuario=self.admin)
+        self.assertTrue(puede)
+        self.assertEqual(motivo, "")
+
+        u_id = u_test.pk
+        resumen = eliminar_usuario_prueba(u_test, admin_responsable=self.admin)
+        self.assertIsInstance(resumen, dict)
+        self.assertFalse(User.objects.filter(pk=u_id).exists())
+        self.assertTrue(AuditoriaAdmin.objects.filter(accion='suspender_usuario').exists())
+
+    def test_02_eliminar_usuario_con_datos_asociados(self):
+        """2. Eliminar usuario con datos asociados (canciones, fogatas, relaciones, sesiones, eventos)."""
+        from apps.gestion.services import obtener_resumen_dependencias_usuario, eliminar_usuario_prueba
+
+        u = User.objects.create_user(username='test_datos@humm.cl', email='test_datos@humm.cl', password='Pass123!')
+        c1 = Cancion.objects.create(propietario=u, titulo='C1', contenido='...')
+        c2 = Cancion.objects.create(propietario=u, titulo='C2', contenido='...')
+        f = Fogata.objects.create(propietario=u, nombre='F1')
+        FogataCancion.objects.create(fogata=f, cancion=c1, orden=1)
+        SesionCompartida.objects.create(fogata=f)
+        EventoUso.objects.create(usuario=u, tipo_evento='crear_cancion')
+        EventoUso.objects.create(usuario=u, tipo_evento='tocar_cancion')
+
+        resumen = obtener_resumen_dependencias_usuario(u)
+        self.assertEqual(resumen['canciones_count'], 2)
+        self.assertEqual(resumen['fogatas_count'], 1)
+        self.assertEqual(resumen['sesiones_compartidas_count'], 1)
+        self.assertEqual(resumen['eventos_count'], 2)
+
+        u_id = u.pk
+        res = eliminar_usuario_prueba(u, admin_responsable=self.admin)
+        self.assertIsInstance(res, dict)
+        self.assertFalse(User.objects.filter(pk=u_id).exists())
+        self.assertEqual(Cancion.objects.filter(propietario_id=u_id).count(), 0)
+        self.assertEqual(Fogata.objects.filter(propietario_id=u_id).count(), 0)
+        self.assertEqual(SesionCompartida.objects.filter(fogata__propietario_id=u_id).count(), 0)
+
+    def test_03_eliminar_usuario_con_ordenes_sandbox(self):
+        """3. Eliminar usuario con órdenes Sandbox."""
+        from apps.gestion.services import puede_eliminar_usuario, eliminar_usuario_prueba
+
+        u = User.objects.create_user(username='test_sandbox@humm.cl', email='test_sandbox@humm.cl', password='Pass123!')
+        ord_s = self.OrdenPago.objects.create(
+            usuario=u,
+            monto=5990,
+            estado=self.OrdenPago.ESTADO_PAGADA,
+            ambiente=self.OrdenPago.AMBIENTE_SANDBOX,
+            commerce_order='TEST-SBX-01',
+            flow_order=1001
+        )
+
+        puede, motivo = puede_eliminar_usuario(u, admin_usuario=self.admin)
+        self.assertTrue(puede)
+
+        u_id = u.pk
+        ord_s_pk = ord_s.pk
+        res = eliminar_usuario_prueba(u, admin_responsable=self.admin)
+        self.assertIsInstance(res, dict)
+        self.assertFalse(User.objects.filter(pk=u_id).exists())
+        self.assertFalse(self.OrdenPago.objects.filter(pk=ord_s_pk).exists())
+
+    def test_04_bloquear_eliminacion_si_posee_pago_production_pagada(self):
+        """4. Bloquear eliminación si posee pago Production PAGADA (servicio y view)."""
+        from apps.gestion.services import puede_eliminar_usuario, eliminar_usuario_prueba
+
+        u_prod = User.objects.create_user(username='cliente_real@humm.cl', email='cliente_real@humm.cl', password='Pass123!')
+        self.OrdenPago.objects.create(
+            usuario=u_prod,
+            monto=5990,
+            estado=self.OrdenPago.ESTADO_PAGADA,
+            ambiente=self.OrdenPago.AMBIENTE_PRODUCTION,
+            commerce_order='FOGATA-PROD-01',
+            flow_order=2001
+        )
+
+        # A nivel de servicio
+        puede, motivo = puede_eliminar_usuario(u_prod, admin_usuario=self.admin)
+        self.assertFalse(puede)
+        self.assertIn("producción", motivo.lower())
+
+        from django.core.exceptions import PermissionDenied
+        with self.assertRaises(PermissionDenied):
+            eliminar_usuario_prueba(u_prod, admin_responsable=self.admin)
+        self.assertTrue(User.objects.filter(pk=u_prod.pk).exists())
+
+        # A nivel de vista HTTP POST
+        url = reverse('gestion:usuario_eliminar', args=[u_prod.pk])
+        resp = self.client.post(url, {'confirmacion': 'ELIMINAR'})
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(User.objects.filter(pk=u_prod.pk).exists())
+
+    def test_05_desactivar_usuario_con_pago_production(self):
+        """5. Desactivar usuario con pago Production."""
+        u_prod = User.objects.create_user(username='cliente_suspendible@humm.cl', email='cliente_suspendible@humm.cl', password='Pass123!')
+        self.OrdenPago.objects.create(
+            usuario=u_prod,
+            monto=5990,
+            estado=self.OrdenPago.ESTADO_PAGADA,
+            ambiente=self.OrdenPago.AMBIENTE_PRODUCTION,
+            commerce_order='FOGATA-PROD-02',
+            flow_order=2002
+        )
+
+        url = reverse('gestion:usuario_suspender', args=[u_prod.pk])
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, 302)
+
+        u_prod.refresh_from_db()
+        self.assertFalse(u_prod.is_active)
+        # El usuario y su orden siguen intactos
+        self.assertTrue(self.OrdenPago.objects.filter(commerce_order='FOGATA-PROD-02').exists())
+
+    def test_06_reactivar_usuario(self):
+        """6. Reactivar usuario."""
+        u = User.objects.create_user(username='desactivado@humm.cl', email='desactivado@humm.cl', password='Pass123!', is_active=False)
+
+        url = reverse('gestion:usuario_reactivar', args=[u.pk])
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, 302)
+
+        u.refresh_from_db()
+        self.assertTrue(u.is_active)
+
+    def test_07_eliminar_orden_sandbox_individual(self):
+        """7. Eliminar una orden Sandbox individual y proteger Production."""
+        from django.core.exceptions import PermissionDenied
+        from apps.gestion.services import eliminar_orden_sandbox
+
+        u = User.objects.create_user(username='u_ordenes@humm.cl', email='u_ordenes@humm.cl', password='Pass123!')
+        ord_sbx = self.OrdenPago.objects.create(
+            usuario=u,
+            monto=5990,
+            estado=self.OrdenPago.ESTADO_PAGADA,
+            ambiente=self.OrdenPago.AMBIENTE_SANDBOX,
+            commerce_order='SBX-INDIVIDUAL-1'
+        )
+        ord_prod = self.OrdenPago.objects.create(
+            usuario=u,
+            monto=5990,
+            estado=self.OrdenPago.ESTADO_PAGADA,
+            ambiente=self.OrdenPago.AMBIENTE_PRODUCTION,
+            commerce_order='PROD-INDIVIDUAL-1'
+        )
+
+        # Eliminar sandbox vía endpoint
+        url_sbx = reverse('gestion:pago_eliminar_sandbox', args=[ord_sbx.pk])
+        resp = self.client.post(url_sbx)
+        self.assertEqual(resp.status_code, 302)
+        self.assertFalse(self.OrdenPago.objects.filter(pk=ord_sbx.pk).exists())
+
+        # Intentar eliminar Production vía servicio -> debe fallar con PermissionDenied
+        with self.assertRaises(PermissionDenied):
+            eliminar_orden_sandbox(ord_prod, admin_responsable=self.admin)
+        self.assertTrue(self.OrdenPago.objects.filter(pk=ord_prod.pk).exists())
+
+        # Intentar eliminar Production vía endpoint -> debe redirigir con error sin borrar
+        url_prod = reverse('gestion:pago_eliminar_sandbox', args=[ord_prod.pk])
+        resp_prod = self.client.post(url_prod)
+        self.assertEqual(resp_prod.status_code, 302)
+        self.assertTrue(self.OrdenPago.objects.filter(pk=ord_prod.pk).exists())
+
+    def test_08_eliminacion_masiva_sandbox(self):
+        """8. Eliminación masiva Sandbox."""
+        from apps.gestion.services import limpiar_ordenes_sandbox
+
+        u = User.objects.create_user(username='u_masivo@humm.cl', email='u_masivo@humm.cl', password='Pass123!')
+        for i in range(3):
+            self.OrdenPago.objects.create(
+                usuario=u,
+                monto=5990,
+                estado=self.OrdenPago.ESTADO_PAGADA,
+                ambiente=self.OrdenPago.AMBIENTE_SANDBOX,
+                commerce_order=f'SBX-MASIVO-{i}'
+            )
+
+        ord_prod = self.OrdenPago.objects.create(
+            usuario=u,
+            monto=5990,
+            estado=self.OrdenPago.ESTADO_PAGADA,
+            ambiente=self.OrdenPago.AMBIENTE_PRODUCTION,
+            commerce_order='PROD-INTACTA-1'
+        )
+
+        cant = limpiar_ordenes_sandbox(admin_responsable=self.admin)
+        self.assertEqual(cant, 3)
+        self.assertEqual(self.OrdenPago.objects.filter(ambiente=self.OrdenPago.AMBIENTE_SANDBOX).count(), 0)
+        self.assertTrue(self.OrdenPago.objects.filter(pk=ord_prod.pk).exists())
+
+    def test_09_garantizar_que_ninguna_orden_production_sea_eliminada(self):
+        """9. Garantizar que ninguna orden Production sea eliminada en ninguna limpieza."""
+        from apps.gestion.services import (
+            limpiar_ordenes_sandbox,
+            limpiar_actividad_prueba,
+            ejecutar_limpieza_masiva_usuarios_prueba
+        )
+
+        u_prod = User.objects.create_user(username='u_intocable@humm.cl', email='u_intocable@humm.cl', password='Pass123!')
+        p1 = self.OrdenPago.objects.create(
+            usuario=u_prod, monto=5990, estado=self.OrdenPago.ESTADO_PAGADA,
+            ambiente=self.OrdenPago.AMBIENTE_PRODUCTION, commerce_order='PROD-SAFE-1'
+        )
+        p2 = self.OrdenPago.objects.create(
+            usuario=u_prod, monto=5990, estado=self.OrdenPago.ESTADO_PENDIENTE,
+            ambiente=self.OrdenPago.AMBIENTE_PRODUCTION, commerce_order='PROD-SAFE-2'
+        )
+
+        # Limpiezas sucesivas
+        limpiar_ordenes_sandbox(admin_responsable=self.admin)
+        limpiar_actividad_prueba(admin_responsable=self.admin)
+        ejecutar_limpieza_masiva_usuarios_prueba(admin_responsable=self.admin)
+
+        # Ambas órdenes Production existen
+        self.assertEqual(self.OrdenPago.objects.filter(ambiente=self.OrdenPago.AMBIENTE_PRODUCTION).count(), 2)
+        self.assertTrue(self.OrdenPago.objects.filter(pk=p1.pk).exists())
+        self.assertTrue(self.OrdenPago.objects.filter(pk=p2.pk).exists())
+
+    def test_10_limpiar_actividad_cuenta_prueba(self):
+        """10. Limpiar actividad de cuenta de prueba (individual y masiva)."""
+        from apps.gestion.services import limpiar_actividad_usuario, limpiar_actividad_prueba
+
+        u_prueba = User.objects.create_user(username='u_act_prueba@humm.cl', email='u_act_prueba@humm.cl', password='Pass123!')
+        EventoUso.objects.create(usuario=u_prueba, tipo_evento='login')
+        EventoUso.objects.create(usuario=u_prueba, tipo_evento='crear_cancion')
+
+        u_real = User.objects.create_user(username='u_act_real@humm.cl', email='u_act_real@humm.cl', password='Pass123!')
+        self.OrdenPago.objects.create(
+            usuario=u_real, monto=5990, estado=self.OrdenPago.ESTADO_PAGADA,
+            ambiente=self.OrdenPago.AMBIENTE_PRODUCTION, commerce_order='PROD-AUDIT-1'
+        )
+        ev_real = EventoUso.objects.create(usuario=u_real, tipo_evento='crear_cancion')
+
+        # Limpiar usuario individual
+        cant = limpiar_actividad_usuario(u_prueba, admin_responsable=self.admin)
+        self.assertEqual(cant, 2)
+        self.assertEqual(EventoUso.objects.filter(usuario=u_prueba).count(), 0)
+        # Evento del usuario real intacto
+        self.assertEqual(EventoUso.objects.filter(usuario=u_real).count(), 1)
+
+        # Limpieza masiva de actividad
+        EventoUso.objects.create(usuario=u_prueba, tipo_evento='tocar_cancion')
+        cant2 = limpiar_actividad_prueba(admin_responsable=self.admin)
+        self.assertGreaterEqual(cant2, 1)
+        self.assertEqual(EventoUso.objects.filter(usuario=u_prueba).count(), 0)
+        self.assertTrue(EventoUso.objects.filter(pk=ev_real.pk).exists())
+
+    def test_11_impedir_eliminacion_superuser_conectado(self):
+        """11. Impedir eliminación del superuser conectado o cuenta administrativa."""
+        from apps.gestion.services import puede_eliminar_usuario
+
+        # Staff intenta eliminarse a sí mismo
+        puede_self, motivo_self = puede_eliminar_usuario(self.admin, admin_usuario=self.admin)
+        self.assertFalse(puede_self)
+        self.assertIn("propia cuenta", motivo_self.lower())
+
+        # Staff intenta eliminar al superusuario
+        puede_super, motivo_super = puede_eliminar_usuario(self.superadmin, admin_usuario=self.admin)
+        self.assertFalse(puede_super)
+        self.assertIn("administrador principal", motivo_super.lower())
+
+    def test_12_csrf_y_post_obligatorio(self):
+        """12. CSRF y POST obligatorio en acciones destructivas."""
+        u_test = User.objects.create_user(username='u_test_csrf@humm.cl', email='u_test_csrf@humm.cl', password='Pass123!')
+
+        # GET a usuario_eliminar NO elimina al usuario
+        url = reverse('gestion:usuario_eliminar', args=[u_test.pk])
+        resp_get = self.client.get(url)
+        self.assertEqual(resp_get.status_code, 200)
+        self.assertTrue(User.objects.filter(pk=u_test.pk).exists())
+
+        # POST sin palabra clave 'ELIMINAR' no elimina
+        resp_post_invalido = self.client.post(url, {'confirmacion': 'borrar'})
+        self.assertEqual(resp_post_invalido.status_code, 200)
+        self.assertTrue(User.objects.filter(pk=u_test.pk).exists())
+
+        # POST correcto con 'ELIMINAR' sí elimina
+        resp_post_valido = self.client.post(url, {'confirmacion': 'ELIMINAR'})
+        self.assertEqual(resp_post_valido.status_code, 302)
+        self.assertFalse(User.objects.filter(pk=u_test.pk).exists())
+
+    def test_13_aislamiento_entre_usuarios(self):
+        """13. Aislamiento entre usuarios (otros usuarios conservan todos sus datos)."""
+        from apps.gestion.services import eliminar_usuario_prueba
+
+        u_a = User.objects.create_user(username='u_a@humm.cl', email='u_a@humm.cl', password='Pass123!')
+        u_b = User.objects.create_user(username='u_b@humm.cl', email='u_b@humm.cl', password='Pass123!')
+
+        c_a = Cancion.objects.create(propietario=u_a, titulo='Cancion A')
+        f_a = Fogata.objects.create(propietario=u_a, nombre='Fogata A')
+
+        c_b = Cancion.objects.create(propietario=u_b, titulo='Cancion B')
+        f_b = Fogata.objects.create(propietario=u_b, nombre='Fogata B')
+
+        res = eliminar_usuario_prueba(u_a, admin_responsable=self.admin)
+        self.assertIsInstance(res, dict)
+
+        # Usuario B y sus datos están 100% intactos
+        self.assertTrue(User.objects.filter(pk=u_b.pk).exists())
+        self.assertTrue(Cancion.objects.filter(pk=c_b.pk).exists())
+        self.assertTrue(Fogata.objects.filter(pk=f_b.pk).exists())
+
+    def test_14_dry_run_produce_conteos_correctos(self):
+        """14. Dry-run produce conteos correctos sin modificar DB."""
+        from apps.gestion.services import obtener_dry_run_limpieza_usuarios
+
+        u_dry = User.objects.create_user(username='u_dry@humm.cl', email='u_dry@humm.cl', password='Pass123!')
+        Cancion.objects.create(propietario=u_dry, titulo='Cancion Dry')
+        Fogata.objects.create(propietario=u_dry, nombre='Fogata Dry')
+        EventoUso.objects.create(usuario=u_dry, tipo_evento='crear_cancion')
+
+        dry = obtener_dry_run_limpieza_usuarios()
+        self.assertGreaterEqual(dry['usuarios_count'], 1)
+        self.assertGreaterEqual(dry['canciones_count'], 1)
+        self.assertGreaterEqual(dry['fogatas_count'], 1)
+        self.assertEqual(dry['ordenes_prod_afectadas'], 0)
+        self.assertEqual(dry['ingresos_prod_afectados'], 0)
+
+        # Verificar que la DB no se modificó
+        self.assertTrue(User.objects.filter(pk=u_dry.pk).exists())
+
+    def test_15_metricas_financieras_production_permanecen_identicas(self):
+        """15. Métricas financieras Production permanecen idénticas antes y después de limpieza."""
+        from apps.gestion.metrics import obtener_metricas_comerciales
+        from apps.gestion.services import limpiar_ordenes_sandbox, ejecutar_limpieza_masiva_usuarios_prueba
+
+        u_real = User.objects.create_user(username='u_comercial@humm.cl', email='u_comercial@humm.cl', password='Pass123!')
+        self.OrdenPago.objects.create(
+            usuario=u_real, monto=5990, estado=self.OrdenPago.ESTADO_PAGADA,
+            ambiente=self.OrdenPago.AMBIENTE_PRODUCTION, commerce_order='PROD-METRIC-1'
+        )
+
+        u_test = User.objects.create_user(username='u_test_sbx@humm.cl', email='u_test_sbx@humm.cl', password='Pass123!')
+        self.OrdenPago.objects.create(
+            usuario=u_test, monto=5990, estado=self.OrdenPago.ESTADO_PAGADA,
+            ambiente=self.OrdenPago.AMBIENTE_SANDBOX, commerce_order='SBX-METRIC-1'
+        )
+
+        metricas_pre = obtener_metricas_comerciales()
+        self.assertEqual(metricas_pre['ingresos_totales'], 5990)
+        self.assertEqual(metricas_pre['ventas_totales'], 1)
+
+        # Ejecutar limpiezas
+        limpiar_ordenes_sandbox(admin_responsable=self.admin)
+        ejecutar_limpieza_masiva_usuarios_prueba(admin_responsable=self.admin)
+
+        metricas_post = obtener_metricas_comerciales()
+        self.assertEqual(metricas_post['ingresos_totales'], 5990)
+        self.assertEqual(metricas_post['ventas_totales'], 1)
+        self.assertEqual(metricas_pre['ingresos_totales'], metricas_post['ingresos_totales'])
+        self.assertEqual(metricas_pre['ventas_totales'], metricas_post['ventas_totales'])
+
+
+
