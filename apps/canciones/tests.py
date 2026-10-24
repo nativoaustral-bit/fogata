@@ -16,7 +16,8 @@ from .parser import (
     transponer_y_formatear_token,
     transponer_acorde_str,
     transponer_tonalidad,
-    determinar_preferencia_alteraciones
+    determinar_preferencia_alteraciones,
+    sanitizar_contenido_musical
 )
 
 
@@ -1332,6 +1333,95 @@ class DiagramasBatchTest(TestCase):
         self.assertNotIn('const ', js)
         self.assertNotIn('let ', js)
         self.assertNotIn('=>', js)
+
+
+class SanitizacionYCasosEspecialesAcordesTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='musico_sanitizado@fogata.app',
+            email='musico_sanitizado@fogata.app',
+            password='password123'
+        )
+
+    def test_sanitizacion_caracteres_invisibles_zero_width(self):
+        """
+        Verifica que caracteres invisibles (U+200B a U+200D, U+FEFF, U+2060, etc.)
+        y espacios tipográficos sean eliminados/normalizados sin alterar la alineación.
+        """
+        linea_sucia = "\u200bF                     Am"
+        lineas = parse_cancion(linea_sucia)
+        self.assertEqual(len(lineas), 1)
+        lm = lineas[0]
+        self.assertEqual(lm.tipo, 'acordes')
+        self.assertEqual(len(lm.tokens_acorde), 2)
+        tokens = [t.texto_original for t in lm.tokens_acorde]
+        self.assertEqual(tokens, ['F', 'Am'])
+
+    def test_linea_mixta_con_intro_o_seccion_y_acordes(self):
+        """
+        Verifica que líneas que inician con [Intro], Intro:, [Solo], etc., seguidas
+        de acordes, no sean tragadas como sección vacía de acordes.
+        """
+        linea_intro = "[Intro] F  Am  F  Am"
+        lineas = parse_cancion(linea_intro)
+        self.assertEqual(len(lineas), 1)
+        lm = lineas[0]
+        self.assertEqual(lm.tipo, 'acordes')
+        self.assertEqual(len(lm.tokens_acorde), 4)
+        tokens = [t.texto_original for t in lm.tokens_acorde]
+        self.assertEqual(tokens, ['F', 'Am', 'F', 'Am'])
+
+        # Sección pura sin acordes debe mantenerse como tipo 'seccion'
+        linea_seccion_pura = "[Intro]"
+        lm_pura = parse_cancion(linea_seccion_pura)[0]
+        self.assertEqual(lm_pura.tipo, 'seccion')
+        self.assertEqual(len(lm_pura.tokens_acorde), 0)
+
+    def test_anotaciones_musicales_repeticiones_en_linea_acordes(self):
+        """
+        Verifica que (bis), (x2), (2x), repite no penalicen el ratio de acordes.
+        """
+        linea_bis = "F    Am (bis)"
+        lm = parse_cancion(linea_bis)[0]
+        self.assertEqual(lm.tipo, 'acordes')
+        self.assertEqual(len(lm.tokens_acorde), 2)
+        self.assertEqual([t.texto_original for t in lm.tokens_acorde], ['F', 'Am'])
+
+        linea_latina = "Fa   La (x2)"
+        lm_lat = parse_cancion(linea_latina)[0]
+        self.assertEqual(lm_lat.tipo, 'acordes')
+        self.assertEqual(len(lm_lat.tokens_acorde), 2)
+        self.assertEqual([t.texto_original for t in lm_lat.tokens_acorde], ['Fa', 'La'])
+
+    def test_acordes_entre_parentesis(self):
+        """
+        Verifica que acordes opcionales o de paso entre paréntesis (F), (Am) sean reconocidos.
+        """
+        linea = "C  G  (Am)  F"
+        lm = parse_cancion(linea)[0]
+        self.assertEqual(lm.tipo, 'acordes')
+        self.assertEqual(len(lm.tokens_acorde), 4)
+        self.assertEqual([t.texto_original for t in lm.tokens_acorde], ['C', 'G', 'Am', 'F'])
+
+        linea_parentesis = "(F)  (Am)"
+        lm_par = parse_cancion(linea_parentesis)[0]
+        self.assertEqual(lm_par.tipo, 'acordes')
+        self.assertEqual(len(lm_par.tokens_acorde), 2)
+        self.assertEqual([t.texto_original for t in lm_par.tokens_acorde], ['F', 'Am'])
+
+    def test_guardado_modelo_sanitiza_automaticamente(self):
+        """
+        Verifica que Cancion.save() limpie automáticamente caracteres invisibles en base de datos.
+        """
+        contenido_con_zw = "\u200bF    Am\n\u200bState of love"
+        cancion = Cancion.objects.create(
+            propietario=self.user,
+            titulo="Canción Test Sanitizada",
+            contenido=contenido_con_zw
+        )
+        self.assertNotIn('\u200b', cancion.contenido)
+        self.assertEqual(cancion.contenido, "F    Am\nState of love")
+
 
 
 

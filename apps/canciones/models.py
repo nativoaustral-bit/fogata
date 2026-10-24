@@ -72,3 +72,9 @@ class Cancion(models.Model):
 
     def get_tocar_url(self):
         return reverse('canciones:tocar', args=[self.pk])
+
+    def save(self, *args, **kwargs):
+        if self.contenido:
+            from apps.canciones.parser import sanitizar_contenido_musical
+            self.contenido = sanitizar_contenido_musical(self.contenido)
+        super().save(*args, **kwargs)

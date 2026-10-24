@@ -93,12 +93,45 @@ REGEX_ACORDE_EMBEBIDO = re.compile(
     rf'\[(?P<contenido>(?:{PATRON_RAIZ})(?:{PATRON_ACCIDENTAL})?(?:{PATRON_MODIFICADOR})?(?:{PATRON_BAJO})?)\]'
 )
 
+# Sanitización de caracteres invisibles y normalización de espacios
+REGEX_CARACTERES_INVISIBLES = re.compile(r'[\u200b\u200c\u200d\ufeff\u2060\u00ad\u200e\u200f]')
+REGEX_ESPACIOS_TIPOGRAFICOS = re.compile(r'[\u00a0\u202f\u2000-\u200a\u3000]')
+
+
+def sanitizar_contenido_musical(texto: str) -> str:
+    """
+    Sanitiza y normaliza el texto musical:
+    1. Elimina caracteres invisibles de ancho cero (U+200B a U+200D, U+FEFF, U+2060, U+00AD, etc.)
+       que se cuelan frecuentemente al copiar y pegar acordes desde sitios web y aplicaciones.
+    2. Normaliza espacios tipográficos y no rompibles (U+00A0, U+202F, etc.) a espacios ASCII
+       estándar para preservar la alineación monospace exacta.
+    3. Mantiene intactos saltos de línea y espaciado horizontal visible.
+    """
+    if not texto:
+        return ""
+    texto = REGEX_CARACTERES_INVISIBLES.sub('', texto)
+    texto = REGEX_ESPACIOS_TIPOGRAFICOS.sub(' ', texto)
+    return texto
+
+
 # Encabezados de sección universales (independientes del idioma)
+# Requieren fin de línea para no tragarse acordes en líneas mixtas como '[Intro] F Am F Am'
 REGEX_SECCION = re.compile(
     r'^\s*(?:'
-    r'\[(?:Intro|Verso|Verse|Coro|Chorus|Puente|Bridge|Estribillo|Outro|Final|Solo|Interludio|Pre-Coro|Pre-Chorus|Coda|Intro\s+\d+|Verso\s+\d+|Verse\s+\d+|Coro\s+\d+|Chorus\s+\d+)[^\]]*\]|'
-    r'(?:Intro|Verso|Verse|Coro|Chorus|Puente|Bridge|Estribillo|Outro|Final|Solo|Interludio|Pre-Coro|Pre-Chorus|Coda)\s*:\s*$'
+    r'\[(?:Intro|Verso|Verse|Estrofa|Coro|Chorus|Puente|Bridge|Estribillo|Outro|Final|Solo|Interludio|Pre-Coro|Pre-Chorus|Coda|Intro\s+\d+|Verso\s+\d+|Verse\s+\d+|Estrofa\s+\d+|Coro\s+\d+|Chorus\s+\d+)[^\]]*\]\s*$|'
+    r'(?:Intro|Verso|Verse|Estrofa|Coro|Chorus|Puente|Bridge|Estribillo|Outro|Final|Solo|Interludio|Pre-Coro|Pre-Chorus|Coda)(?:\s+\d+)?\s*:\s*$'
     r')',
+    re.IGNORECASE
+)
+
+# Anotaciones musicales, repeticiones y etiquetas de sección que pueden convivir en una línea de acordes
+REGEX_ANOTACION_O_SECCION = re.compile(
+    r'^(?:'
+    r'x\d+|\(\s*x?\d+\s*x?\s*\)|\d+x|\(\s*\d+x\s*\)|'
+    r'\(?\s*bis\s*\)?|\(?\s*repite\s*\)?|\(?\s*repeticion\s*\)?|'
+    r'\(?\s*fade\s*out\s*\)?|\(?\s*corte\s*\)?|\(?\s*pausa\s*\)?|'
+    r'\[?(?:Intro|Verso|Verse|Estrofa|Coro|Chorus|Puente|Bridge|Estribillo|Outro|Final|Solo|Interludio|Pre-Coro|Pre-Chorus|Coda)(?:\s+\d+)?\]?:?'
+    r')$',
     re.IGNORECASE
 )
 
@@ -490,6 +523,9 @@ def analizar_linea(linea: str) -> LineaMusical:
     Analiza una sola línea de texto y la convierte en una instancia de LineaMusical
     con su clasificación y lista de AcordeTokens identificados.
     """
+    # 0. Sanitizar caracteres invisibles y normalizar espacios tipográficos
+    linea = sanitizar_contenido_musical(linea)
+
     # 1. Línea vacía
     if not linea.strip():
         return LineaMusical(tipo='vacia', texto_original=linea)
@@ -543,28 +579,40 @@ def analizar_linea(linea: str) -> LineaMusical:
     tiene_palabra_larga_no_musical = False
 
     for token_texto, start_col, end_col in tokens_raw:
-        # Si es un separador musical permitido (, | - / x2)
-        if token_texto in SEPARADORES_MUSICALES or re.match(r'^x\d+$', token_texto):
+        # Si es un separador o anotación musical permitido (, | - / x2, (bis), [Intro], etc.)
+        if (token_texto in SEPARADORES_MUSICALES or 
+            re.match(r'^x\d+$', token_texto) or 
+            REGEX_ANOTACION_O_SECCION.match(token_texto)):
             continue
+
+        # Verificar si es un acorde entre paréntesis: ej. (Am), (Fa), (F)
+        tok_a_validar = token_texto
+        c_ini, c_fin = start_col, end_col
+        if token_texto.startswith('(') and token_texto.endswith(')') and len(token_texto) > 2:
+            sub = token_texto[1:-1]
+            if validar_token_acorde(sub):
+                tok_a_validar = sub
+                c_ini = start_col + 1
+                c_fin = end_col - 1
 
         total_sustantivos += 1
 
         # Palabras de más de 8 caracteres difícilmente son acordes si no tienen slash
-        if len(token_texto) > 8 and '/' not in token_texto:
+        if len(tok_a_validar) > 8 and '/' not in tok_a_validar:
             tiene_palabra_larga_no_musical = True
 
-        val = validar_token_acorde(token_texto)
+        val = validar_token_acorde(tok_a_validar)
         if val:
             raiz, acc, mod, bajo = val
             total_acordes_validos += 1
             tokens_musicales.append(AcordeToken(
-                texto_original=token_texto,
+                texto_original=tok_a_validar,
                 nota_raiz=raiz,
                 alteracion=acc,
                 modificador=mod,
                 bajo_slash=bajo,
-                columna_inicio=start_col,
-                columna_fin=end_col,
+                columna_inicio=c_ini,
+                columna_fin=c_fin,
                 es_embebido=False
             ))
 
@@ -605,7 +653,8 @@ def parse_cancion(contenido: str) -> List[LineaMusical]:
     """
     if not contenido:
         return []
-    lineas = contenido.splitlines()
+    contenido_sanitizado = sanitizar_contenido_musical(contenido)
+    lineas = contenido_sanitizado.splitlines()
     return [analizar_linea(l) for l in lineas]
 
 

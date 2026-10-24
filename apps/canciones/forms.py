@@ -42,6 +42,13 @@ class CancionForm(forms.ModelForm):
             return 0
         return val
 
+    def clean_contenido(self):
+        val = self.cleaned_data.get('contenido', '')
+        if val:
+            from apps.canciones.parser import sanitizar_contenido_musical
+            val = sanitizar_contenido_musical(val)
+        return val
+
     class Meta:
         model = Cancion
         fields = [
