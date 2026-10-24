@@ -15,6 +15,7 @@ FOGATA_V1_*
 PILOTO_*
 VALIDACION_*
 *.log
+logs/
 __pycache__/
 *.pyc
 .pytest_cache/

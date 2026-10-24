@@ -48,7 +48,10 @@ db_backups/
 .env
 .env.*
 *.log
+logs/
 scratch/
 tmp/
-
-
+reports/
+.pytest_cache/
+.coverage
+htmlcov/
