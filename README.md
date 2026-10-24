@@ -5,8 +5,8 @@
 
 [![Django](https://img.shields.io/badge/Django-5.2%20LTS-092E20?style=flat-square&logo=django)](https://www.djangoproject.com/)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-154%20passed%20(100%25)-brightgreen?style=flat-square)](#-batería-de-pruebas-y-calidad)
-[![Status](https://img.shields.io/badge/Estado-Fase%208%20Completada%20%7C%20Piloto%20Activo-orange?style=flat-square)](#-hoja-de-ruta-y-evolución-por-fases)
+[![Tests](https://img.shields.io/badge/Tests-209%20passed%20(100%25)-brightgreen?style=flat-square)](#-batería-de-pruebas-y-calidad)
+[![Status](https://img.shields.io/badge/Estado-Fase%2010%20Completada%20%7C%20Producción%20Activa-success?style=flat-square)](#-hoja-de-ruta-y-evolución-por-fases)
 [![Producción](https://img.shields.io/badge/Producción-fogata.humm.cl-success?style=flat-square)](https://fogata.humm.cl)
 
 ---
@@ -47,12 +47,12 @@ El desarrollo de Fogata se rige por cinco principios innegociables:
 
 | Parámetro | Valor Actual |
 | :--- | :--- |
-| **Fase Vigente** | **Fase 8 — Modelo Freemium, Planes y Límites** (Completada y aprobada) |
-| **Próxima Fase** | **Fase 9 — Medios de Pago e Integración Comercial** (Webpay / Pasarelas) |
-| **Suite de Pruebas** | **154 tests automatizados aprobados (100% OK, 0 fallos)** |
+| **Fase Vigente** | **Fase 10 — Limpieza, Administración Segura y Producción Flow** (Completada y aprobada) |
+| **Suite de Pruebas** | **209 tests automatizados aprobados (100% OK, 0 fallos)** |
 | **Entorno de Producción** | Servidor HostGator (`fogata.humm.cl`), Passenger WSGI, HTTPS activo |
+| **Pasarela de Pago** | Flow Producción (`Webpay Plus / Tarjetas de Crédito / Débito`), pagos en CLP |
 | **Base de Datos** | SQLite con configuración atómica y concurrencia protegida (PostgreSQL-ready) |
-| **Usuarios del Piloto** | Cuentas activas catalogadas en modalidad `PILOTO` (Pro sin cobro) |
+| **Usuarios y Planes** | Modalidades `GRATIS` (10 canciones, 1 Fogata), `PRO` comercial y `PILOTO` |
 
 ---
 
@@ -70,7 +70,8 @@ flowchart LR
     F5 --> F6[Fase 6: Multiusuario]
     F6 --> F7[Fase 7: Control Center]
     F7 --> F8[Fase 8: Freemium]
-    F8 -.-> F9[Fase 9: Pasarela de Pago]
+    F8 --> F9[Fase 9: Flow Pagos Producción]
+    F9 --> F10[Fase 10: Limpieza & Robustez]
 ```
 
 ### Detalle de cada fase completada:
@@ -84,7 +85,8 @@ flowchart LR
 * **Fase 6 — Plataforma Multiusuario y Despliegue en Producción:** Autenticación nativa por email normalizado, sistema de invitaciones con consumo atómico para SQLite/Postgres (`Invitacion.consumir_codigo`), aislamiento IDOR absoluto (404 estricto), recuperación de contraseña mediante blind-flow, release gate de 20 controles aprobado y despliegue exitoso en HostGator (`https://fogata.humm.cl`).
 * **Fase 7 — Fogata Control Center y Métricas de Uso:** Módulo administrativo en `apps/gestion`. Telemetría de comportamiento sin cookies invasivas y con estricta anonimización. Auditoría inmutable de acciones administrativas (`AuditoriaAdmin`), ficha 360° de usuarios y visualización de cohortes.
 * **Fase 8 — Modelo Freemium y Límites de Capacidad:** Servicio centralizado de límites `apps/core/planes.py`. Distinción entre planes `GRATIS` (hasta 10 canciones, 1 Fogata activa, 100% de funciones musicales) y `PRO` (ilimitado). Validación server-side en transacciones atómicas, política de downgrade no destructiva, landing interna `/pro/` ($5.990 semestral / $9.990 anual) y embudo de adopción en Control Center.
-* **Fase 9 (Próxima) — Medios de Pago e Integración Comercial:** Integración de checkout formal (Webpay Plus / Mercado Pago / Stripe), procesamiento de webhooks y gestión automatizada del ciclo de vida de suscripciones.
+* **Fase 9 — Medios de Pago e Integración Comercial (Flow Producción):** Integración formal con Flow (`Webpay Plus`, tarjetas de débito/crédito), manejo seguro de webhooks asíncronos con HMAC-SHA256, reconciliación automática programada por cron y activación atómica de vigencias Pro.
+* **Fase 10 — Administración, Limpieza Segura y Robustez Musical:** Herramientas de depuración segura de datos y usuarios de prueba con salvaguardas irreversibles para cuentas reales, sanitización automática de caracteres invisibles Unicode (`\u200b`, `\ufeff`, etc.) y reconocimiento tolerante de acordes en líneas con encabezados mixtos (`[Intro] F Am`) y anotaciones musicales (`(bis)`, `(x2)`).
 
 ---
 
@@ -230,10 +232,18 @@ erDiagram
 ## 🎸 Motor Musical y Experiencia en Vivo
 
 ### 1. Ingestión y Preservación de Acordes (`apps/canciones/parser.py`)
-* Soporta dos formatos estándar:
+* **Formatos Soportados:**
   * **Formato Bracket:** Acordes insertados entre corchetes dentro de la letra (ej: `En el [Sol]muelle de San [Re]Blas`).
-  * **Línea Superior:** Líneas de acordes posicionadas directamente encima de las líneas de texto mediante espacios calculados.
-* El algoritmo separa tokens de acordes reconocidos contra una gramática armónica formal, evitando falsos positivos con palabras del español (`A`, `Y`, `Si`, `Re`).
+  * **Línea Superior:** Líneas de acordes posicionadas directamente encima de las líneas de texto mediante espacios calculados monoespaciados.
+* **Sanitización y Normalización Automática:**
+  * Limpieza transparente de caracteres invisibles de ancho cero (`\u200b`, `\ufeff`, `\u200c`, `\u200d`, etc.) frecuentemente copiados desde páginas web o apps de tablaturas (Cifra Club, Ultimate Guitar, etc.) que rompen el reconocimiento de acordes.
+  * Normalización de espacios no rompibles (`\u00a0`) y tipográficos hacia espacios ASCII estándar, preservando la alineación exacta en fuentes monoespaciadas.
+* **Líneas Mixtas y Anotaciones Musicales:**
+  * Detección robusta de acordes en líneas precedidas por etiquetas de sección (ej: `[Intro] F Am F Am`, `Intro: F Am`, `[Solo] ...`, `[Final] ...`), diferenciando secciones puras de secciones con progresión armónica inmediata.
+  * Tolerancia a anotaciones de repetición y compás (`(bis)`, `(x2)`, `(2x)`, `x2`, `(repite)`, `fade out`) sin penalizar el umbral de reconocimiento de la línea.
+  * Soporte nativo para acordes de paso u opcionales entre paréntesis (ej: `(F)`, `(Am)`, `(Fa)`).
+* **Gramática Armónica Rigurosa:**
+  * El algoritmo separa tokens de acordes reconocidos contra una gramática armónica formal, evitando falsos positivos con palabras comunes del español (`A`, `Y`, `Si`, `Re`).
 
 ### 2. Transposición Armónica Inteligente
 * Algoritmo de cálculo por semitonos en el rango `-6` a `+6`.
@@ -442,7 +452,7 @@ Si se requiere ejecutar un despliegue directo desde la estación de trabajo:
 # Activar entorno virtual
 source .venv/bin/activate
 
-# Ejecutar todas las pruebas unitarias e integración (154 tests)
+# Ejecutar todas las pruebas unitarias e integración (209 tests)
 python manage.py test
 
 # Ejecutar únicamente las pruebas del motor de planes y freemium
@@ -478,6 +488,8 @@ python manage.py collectstatic --noinput
 
 Para profundizar en auditorías técnicas y registros específicos de cada fase, consultar los siguientes documentos disponibles en la raíz del proyecto:
 
+* [INFORME_IMPLEMENTACION_FASE_10_LIMPIEZA.md](file:///Users/rmerinog/PLATAFORMAS/FOGATA/INFORME_IMPLEMENTACION_FASE_10_LIMPIEZA.md): Limpieza y administración segura de usuarios, órdenes sandbox y datos de prueba.
+* [FOGATA_RELEASE_PRODUCCION_FLOW.md](file:///Users/rmerinog/PLATAFORMAS/FOGATA/FOGATA_RELEASE_PRODUCCION_FLOW.md): Informe de activación y Release Gate Flow Producción (12/12 PASS).
 * [DEPLOY_FOGATA_HOSTGATOR.md](file:///Users/rmerinog/PLATAFORMAS/FOGATA/DEPLOY_FOGATA_HOSTGATOR.md): Manual técnico y topología completa del servidor en HostGator.
 * [FOGATA_RELEASE_GATE_MULTIUSUARIO.md](file:///Users/rmerinog/PLATAFORMAS/FOGATA/FOGATA_RELEASE_GATE_MULTIUSUARIO.md): Matriz de 20 controles de seguridad adversarial y pentesting de aislamiento.
 * [INFORME_IMPLEMENTACION_FASE_8.md](file:///Users/rmerinog/PLATAFORMAS/FOGATA/INFORME_IMPLEMENTACION_FASE_8.md): Informe detallado de arquitectura del modelo Freemium y límites de capacidad.
