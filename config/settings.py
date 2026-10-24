@@ -184,7 +184,13 @@ FOGATA_PAYMENTS_ENABLED = os.environ.get('FOGATA_PAYMENTS_ENABLED', 'False').low
 
 # Observabilidad técnica y logging seguro (Incidencia de Producción - Correo)
 log_dir_env = os.environ.get('DJANGO_LOG_DIR')
-LOG_DIR = Path(log_dir_env) if log_dir_env else (BASE_DIR.parent / 'logs' if not DEBUG else BASE_DIR / 'logs')
+if log_dir_env:
+    LOG_DIR = Path(log_dir_env)
+elif not DEBUG and (BASE_DIR.parent / 'logs').is_dir():
+    LOG_DIR = BASE_DIR.parent / 'logs'
+else:
+    LOG_DIR = BASE_DIR / 'logs'
+
 try:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 except Exception:
