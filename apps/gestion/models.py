@@ -27,6 +27,13 @@ class EventoUso(models.Model):
         ('pago_rechazado', 'Notificación de pago rechazado Flow'),
         ('upgrade_pro', 'Primera activación de Fogata Pro'),
         ('renovacion_pro', 'Renovación de vigencia Fogata Pro'),
+        ('acceder_entrenamiento', 'Acceso a Entrena tu oído'),
+        ('iniciar_ejercicio_entrenamiento', 'Inicio de ejercicio de entrenamiento'),
+        ('reproducir_audio_entrenamiento', 'Reproducción de audio en entrenamiento'),
+        ('repetir_audio_entrenamiento', 'Repetición de audio en entrenamiento'),
+        ('revelar_respuesta_entrenamiento', 'Revelación de respuesta en entrenamiento'),
+        ('completar_sesion_entrenamiento', 'Sesión de entrenamiento completada'),
+        ('autoevaluacion_entrenamiento', 'Autoevaluación declarada por el usuario'),
     ]
 
     usuario = models.ForeignKey(

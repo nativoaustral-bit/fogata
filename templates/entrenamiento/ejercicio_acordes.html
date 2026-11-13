@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Encuentra el acorde — Entrena tu oído{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/entrenamiento.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="entrenamiento-wrapper">
+  <!-- Barra de Progreso de la Sesión -->
+  <div class="ejercicio-progreso" id="barra-progreso-sesion">
+    <span class="progreso-indicador" id="texto-progreso">Ejercicio 1 de {{ total_ejercicios }}</span>
+    <div class="progreso-barra-container">
+      <div class="progreso-barra-fill" id="barra-fill" style="width: 20%;"></div>
+    </div>
+    <a href="{% url 'entrenamiento:portada' %}" style="font-size: 0.85rem; color: var(--text-muted); text-decoration: none;">Salir</a>
+  </div>
+
+  <!-- Contenedor del Ejercicio Activo -->
+  <div class="ejercicio-box" id="contenedor-ejercicio">
+    <span class="entrenamiento-badge">Modalidad 2 · Acordes</span>
+    <h1 class="entrenamiento-titulo" style="font-size: 1.6rem; margin-top: 6px;">{{ titulo_modalidad }}</h1>
+    <p class="ejercicio-instruccion">{{ instruccion }}</p>
+
+    <!-- Controles de Audio Previos a Revelar -->
+    <div class="audio-controls-row">
+      <button type="button" class="btn-audio-primary" id="btn-escuchar-acorde">
+        <span>▶ Escuchar acorde</span>
+      </button>
+      <button type="button" class="btn-audio-secondary" id="btn-escuchar-otra-vez" style="display: none;">
+        <span>↻ Escuchar otra vez</span>
+      </button>
+    </div>
+
+    <!-- Botón Revelar -->
+    <div id="bloque-pre-revelar" style="display: none; margin-top: 24px;">
+      <div style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 8px;">
+        ¿Crees que lo encontraste en tu guitarra?
+      </div>
+      <button type="button" class="btn-revelar" id="btn-revelar-acorde">
+        Revelar acorde
+      </button>
+    </div>
+
+    <!-- Sección de Respuesta Revelada -->
+    <div class="respuesta-revelada" id="seccion-revelada" style="display: none;">
+      <div class="respuesta-titulo" id="nombre-acorde-revelado">¡Era La menor!</div>
+      <div class="respuesta-subtitulo" id="codigo-acorde-revelado" style="font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; color: var(--color-flame-light);">Am</div>
+      <p class="respuesta-componentes" id="notas-componentes-acorde">Notas: A – C – E (La – Do – Mi)</p>
+
+      <!-- Diagrama de Posición de Referencia -->
+      <div class="diagramas-flex-container">
+        <div class="diagrama-card">
+          <div id="svg-diagrama-referencia"></div>
+          <span class="diagrama-etiqueta">Posición de referencia</span>
+        </div>
+      </div>
+
+      <div style="margin: 12px 0 20px 0;">
+        <button type="button" class="btn-audio-secondary" id="btn-reproducir-revelado" style="width: 100%; justify-content: center;">
+          <span>▶ Volver a escuchar acorde</span>
+        </button>
+      </div>
+
+      <!-- Sección «También puedes tocarlo aquí» -->
+      <div class="seccion-alternativa" id="bloque-alternativo">
+        <div class="seccion-alternativa-titulo">También puedes tocarlo aquí</div>
+        <p class="seccion-alternativa-desc" id="desc-alternativa">
+          Posición alternativa en el mástil con cejilla.
+        </p>
+        <div class="diagramas-flex-container" style="margin: 10px 0;">
+          <div class="diagrama-card">
+            <div id="svg-diagrama-alternativo"></div>
+            <span class="diagrama-etiqueta">Variante en el mástil</span>
+          </div>
+        </div>
+        <div style="font-size: 0.82rem; color: #777; margin-top: 10px; font-style: italic;">
+          * Distintas posiciones e inversiones tienen sonoridades y matices propios aunque correspondan a la misma armonía.
+        </div>
+      </div>
+
+      <!-- Autoevaluación Voluntaria -->
+      <div class="autoevaluacion-seccion">
+        <div class="autoevaluacion-pregunta">¿Cómo te fue con este acorde?</div>
+        <div class="autoevaluacion-botones">
+          <button type="button" class="btn btn-sm btn-autoeval-encontre" id="btn-eval-encontre">
+            ✓ Lo reconocí
+          </button>
+          <button type="button" class="btn btn-sm btn-autoeval-practicar" id="btn-eval-practicar">
+            Seguir practicando
+          </button>
+        </div>
+      </div>
+
+      <!-- Botón Siguiente Acorde -->
+      <button type="button" class="btn-siguiente-ejercicio" id="btn-siguiente-ejercicio">
+        Siguiente acorde →
+      </button>
+    </div>
+  </div>
+
+  <!-- Pantalla Final de Sesión Completada -->
+  <div class="sesion-final-card" id="pantalla-sesion-final" style="display: none;">
+    <div class="sesion-final-icono">🔥</div>
+    <h2 class="sesion-final-titulo">¡Buen momento de práctica!</h2>
+    <p class="sesion-final-mensaje">
+      Cada vez que escuchas, buscas y vuelves a intentar, le das una nueva oportunidad a tu oído.
+    </p>
+
+    <div class="sesion-final-stats" id="stats-sesion-completada">
+      <div class="sesion-final-stats-num" id="stats-sesion-num">5 acordes completados</div>
+      <div class="sesion-final-stats-desc" id="stats-sesion-desc">Sesión finalizada</div>
+    </div>
+
+    <div class="sesion-final-acciones">
+      <a href="{% url 'entrenamiento:acordes' %}" class="btn btn-primary" style="font-weight: 700;">
+        Seguir entrenando
+      </a>
+      <a href="{% url 'entrenamiento:portada' %}" class="btn btn-secondary">
+        Volver a Entrena tu oído
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/entrenamiento_audio.js' %}"></script>
+<script>
+(function () {
+  'use strict';
+
+  var ejercicios = {{ ejercicios_json|safe }};
+  var sesionId = {{ sesion_id }};
+  var total = ejercicios.length;
+  var indiceActual = 0;
+  var escuchasActual = 0;
+  var respuestaRevelada = false;
+  var aciertosDeclarados = 0;
+
+  var domTextoProgreso = document.getElementById('texto-progreso');
+  var domBarraFill = document.getElementById('barra-fill');
+  var domBtnEscuchar = document.getElementById('btn-escuchar-acorde');
+  var domBtnEscucharOtraVez = document.getElementById('btn-escuchar-otra-vez');
+  var domBloquePreRevelar = document.getElementById('bloque-pre-revelar');
+  var domBtnRevelar = document.getElementById('btn-revelar-acorde');
+  var domSeccionRevelada = document.getElementById('seccion-revelada');
+  var domNombreAcorde = document.getElementById('nombre-acorde-revelado');
+  var domCodigoAcorde = document.getElementById('codigo-acorde-revelado');
+  var domNotasComp = document.getElementById('notas-componentes-acorde');
+  var domSvgRef = document.getElementById('svg-diagrama-referencia');
+  var domSvgAlt = document.getElementById('svg-diagrama-alternativo');
+  var domDescAlt = document.getElementById('desc-alternativa');
+  var domBtnReproducirRevelado = document.getElementById('btn-reproducir-revelado');
+  var domBtnEvalEncontre = document.getElementById('btn-eval-encontre');
+  var domBtnEvalPracticar = document.getElementById('btn-eval-practicar');
+  var domBtnSiguiente = document.getElementById('btn-siguiente-ejercicio');
+  var domContenedorEjercicio = document.getElementById('contenedor-ejercicio');
+  var domPantallaFinal = document.getElementById('pantalla-sesion-final');
+  var domStatsNum = document.getElementById('stats-sesion-num');
+  var domStatsDesc = document.getElementById('stats-sesion-desc');
+
+  function enviarEvento(tipo, datosExtra) {
+    var payload = Object.assign({
+      tipo: tipo,
+      modalidad: 'acordes',
+      sesion_id: sesionId,
+      ejercicio_num: indiceActual + 1
+    }, datosExtra || {});
+
+    fetch("{% url 'entrenamiento:api_evento' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCsrfToken()
+      },
+      body: JSON.stringify(payload)
+    }).catch(function (e) {
+      // Silencioso
+    });
+  }
+
+  function getCsrfToken() {
+    var cookieVal = null;
+    if (document.cookie && document.cookie !== '') {
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.substring(0, 10) === 'csrftoken=') {
+          cookieVal = decodeURIComponent(cookie.substring(10));
+          break;
+        }
+      }
+    }
+    return cookieVal;
+  }
+
+  function cargarEjercicio(idx) {
+    if (idx >= total) {
+      mostrarFinDeSesion();
+      return;
+    }
+
+    indiceActual = idx;
+    escuchasActual = 0;
+    respuestaRevelada = false;
+
+    domTextoProgreso.textContent = 'Ejercicio ' + (idx + 1) + ' de ' + total;
+    domBarraFill.style.width = ((idx + 1) / total * 100) + '%';
+
+    domBloquePreRevelar.style.display = 'none';
+    domSeccionRevelada.style.display = 'none';
+    domBtnEscucharOtraVez.style.display = 'none';
+    domBtnEscuchar.style.display = 'inline-flex';
+    domBtnEvalEncontre.classList.remove('seleccionado');
+    domBtnEvalPracticar.classList.remove('seleccionado');
+
+    if (idx > 0) {
+      domBtnSiguiente.textContent = (idx === total - 1) ? 'Finalizar sesión →' : 'Siguiente acorde →';
+    }
+  }
+
+  function tocarAcordeActual() {
+    var ej = ejercicios[indiceActual];
+    FogataAudio.reproducirAcorde(ej.midi_referencia);
+
+    escuchasActual++;
+    domBtnEscuchar.style.display = 'none';
+    domBtnEscucharOtraVez.style.display = 'inline-flex';
+    domBloquePreRevelar.style.display = 'block';
+
+    enviarEvento('reproducir_audio', {
+      es_repeticion: (escuchasActual > 1)
+    });
+  }
+
+  function revelar() {
+    if (respuestaRevelada) return;
+    respuestaRevelada = true;
+
+    var ej = ejercicios[indiceActual];
+    domNombreAcorde.textContent = '¡Era ' + ej.nombre_latino + '!';
+    domCodigoAcorde.textContent = ej.nombre_americano;
+    domNotasComp.textContent = 'Notas que componen el acorde: ' + ej.notas_componentes;
+
+    domSvgRef.innerHTML = ej.svg_referencia;
+    domSvgAlt.innerHTML = ej.svg_alternativa;
+    domDescAlt.textContent = ej.descripcion_alternativa;
+
+    domBloquePreRevelar.style.display = 'none';
+    domSeccionRevelada.style.display = 'block';
+
+    enviarEvento('revelar_respuesta');
+
+    domSeccionRevelada.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function mostrarFinDeSesion() {
+    FogataAudio.detener();
+    domContenedorEjercicio.style.display = 'none';
+    document.getElementById('barra-progreso-sesion').style.display = 'none';
+    domPantallaFinal.style.display = 'block';
+
+    domStatsNum.textContent = total + ' acordes completados';
+    if (aciertosDeclarados > 0) {
+      domStatsDesc.textContent = aciertosDeclarados + ' reconocidos según tu propia percepción auditiva.';
+    } else {
+      domStatsDesc.textContent = 'Cada sesión afina la relación entre tu oído y el mástil.';
+    }
+
+    enviarEvento('completar_sesion', {
+      total_ejercicios: total,
+      aciertos_declarados: aciertosDeclarados
+    });
+  }
+
+  domBtnEscuchar.addEventListener('click', tocarAcordeActual);
+  domBtnEscucharOtraVez.addEventListener('click', tocarAcordeActual);
+  domBtnReproducirRevelado.addEventListener('click', tocarAcordeActual);
+  domBtnRevelar.addEventListener('click', revelar);
+
+  domBtnEvalEncontre.addEventListener('click', function () {
+    domBtnEvalEncontre.classList.add('seleccionado');
+    domBtnEvalPracticar.classList.remove('seleccionado');
+    aciertosDeclarados++;
+    enviarEvento('autoevaluacion', { resultado: 'encontre' });
+  });
+
+  domBtnEvalPracticar.addEventListener('click', function () {
+    domBtnEvalPracticar.classList.add('seleccionado');
+    domBtnEvalEncontre.classList.remove('seleccionado');
+    enviarEvento('autoevaluacion', { resultado: 'practicar' });
+  });
+
+  domBtnSiguiente.addEventListener('click', function () {
+    cargarEjercicio(indiceActual + 1);
+  });
+
+  cargarEjercicio(0);
+})();
+</script>
+{% endblock %}
+

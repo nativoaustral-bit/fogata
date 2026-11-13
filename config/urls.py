@@ -23,6 +23,7 @@ urlpatterns = [
     path('recuperar-password/enviado/', core_views.FogataPasswordResetDoneView.as_view(), name='password_reset_done'),
     path('canciones/', include('apps.canciones.urls')),
     path('fogatas/', include('apps.fogatas.urls')),
+    path('entrenamiento/', include('apps.entrenamiento.urls')),
     path('pro/', core_views.pro_view, name='pro'),
     path('pagos/', include('apps.pagos.urls')),
     path('cuenta/', pagos_views.mi_cuenta_view, name='mi_cuenta'),

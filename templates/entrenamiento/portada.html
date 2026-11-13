@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Entrena tu oído — Fogata{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/entrenamiento.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="entrenamiento-wrapper">
+  <div class="entrenamiento-header">
+    <span class="entrenamiento-badge">Nuevo módulo</span>
+    <h1 class="entrenamiento-titulo">Entrena tu oído</h1>
+    <div class="entrenamiento-lema">Escucha. Encuentra. Toca.</div>
+    <p class="entrenamiento-descripcion">
+      Entrena tu oído con tu guitarra. Escucha una nota, un acorde o una progresión.
+      Intenta encontrarla y descubre la respuesta cuando estés listo.
+    </p>
+  </div>
+
+  <div class="modalidades-grid">
+    <!-- Opción 1: Notas -->
+    <a href="{% url 'entrenamiento:notas' %}" class="modalidad-card" id="btn-modalidad-notas">
+      <div class="modalidad-card-header">
+        <span class="modalidad-card-num">OPCIÓN 1</span>
+        <span class="modalidad-card-flecha">→</span>
+      </div>
+      <h2 class="modalidad-card-titulo">Notas</h2>
+      <p class="modalidad-card-desc">Comienza por reconocer sonidos individuales.</p>
+    </a>
+
+    <!-- Opción 2: Acordes -->
+    <a href="{% url 'entrenamiento:acordes' %}" class="modalidad-card" id="btn-modalidad-acordes">
+      <div class="modalidad-card-header">
+        <span class="modalidad-card-num">OPCIÓN 2 · CENTRAL</span>
+        <span class="modalidad-card-flecha">→</span>
+      </div>
+      <h2 class="modalidad-card-titulo">Acordes</h2>
+      <p class="modalidad-card-desc">Aprende a reconocer cómo suenan los acordes.</p>
+    </a>
+
+    <!-- Opción 3: Progresiones -->
+    <a href="{% url 'entrenamiento:progresiones' %}" class="modalidad-card" id="btn-modalidad-progresiones">
+      <div class="modalidad-card-header">
+        <span class="modalidad-card-num">OPCIÓN 3</span>
+        <span class="modalidad-card-flecha">→</span>
+      </div>
+      <h2 class="modalidad-card-titulo">Progresiones</h2>
+      <p class="modalidad-card-desc">Descubre cómo se relacionan los acordes.</p>
+    </a>
+  </div>
+
+  <div style="margin-top: 36px; padding: 16px 20px; background: rgba(255,255,255,0.02); border-radius: 8px; border-left: 3px solid var(--color-flame); text-align: left;">
+    <div style="font-size: 0.85rem; color: var(--color-flame); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+      Principio Fogata
+    </div>
+    <p style="font-size: 0.92rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+      No memorices solamente dónde van tus dedos. Aprende a recordar cómo suena.
+      Fogata te ayuda a necesitar cada vez menos Fogata mientras tocas.
+    </p>
+  </div>
+</div>
+{% endblock %}
+

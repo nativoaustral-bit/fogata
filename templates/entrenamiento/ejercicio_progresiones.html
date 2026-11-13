@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sigue la progresión — Entrena tu oído{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/entrenamiento.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="entrenamiento-wrapper">
+  <!-- Barra de Progreso de la Sesión -->
+  <div class="ejercicio-progreso" id="barra-progreso-sesion">
+    <span class="progreso-indicador" id="texto-progreso">Ejercicio 1 de {{ total_ejercicios }}</span>
+    <div class="progreso-barra-container">
+      <div class="progreso-barra-fill" id="barra-fill" style="width: 20%;"></div>
+    </div>
+    <a href="{% url 'entrenamiento:portada' %}" style="font-size: 0.85rem; color: var(--text-muted); text-decoration: none;">Salir</a>
+  </div>
+
+  <!-- Contenedor del Ejercicio Activo -->
+  <div class="ejercicio-box" id="contenedor-ejercicio">
+    <span class="entrenamiento-badge">Modalidad 3 · Progresiones</span>
+    <h1 class="entrenamiento-titulo" style="font-size: 1.6rem; margin-top: 6px;">{{ titulo_modalidad }}</h1>
+    <p class="ejercicio-instruccion">{{ instruccion }}</p>
+
+    <!-- Controles de Audio Previos a Revelar -->
+    <div class="audio-controls-row">
+      <button type="button" class="btn-audio-primary" id="btn-escuchar-progresion">
+        <span>▶ Escuchar progresión</span>
+      </button>
+      <button type="button" class="btn-audio-secondary" id="btn-escuchar-otra-vez" style="display: none;">
+        <span>↻ Volver a escuchar</span>
+      </button>
+    </div>
+
+    <div id="indicador-reproduccion" style="display: none; font-size: 0.9rem; color: var(--color-flame); margin: 8px 0;">
+      🎶 Reproduciendo secuencia...
+    </div>
+
+    <!-- Botón Revelar -->
+    <div id="bloque-pre-revelar" style="display: none; margin-top: 24px;">
+      <div style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 8px;">
+        ¿Lograste seguir la secuencia con tu guitarra?
+      </div>
+      <button type="button" class="btn-revelar" id="btn-revelar-progresion">
+        Revelar progresión
+      </button>
+    </div>
+
+    <!-- Sección de Respuesta Revelada -->
+    <div class="respuesta-revelada" id="seccion-revelada" style="display: none;">
+      <div class="respuesta-titulo" id="titulo-progresion">Secuencia revelada</div>
+      
+      <!-- Secuencia de Acordes en Píldoras -->
+      <div class="secuencia-visual" id="contenedor-secuencia-pildoras"></div>
+
+      <!-- Diagramas de Acordes en Orden -->
+      <div class="diagramas-flex-container" id="contenedor-diagramas-progresion"></div>
+
+      <div style="margin: 16px 0;">
+        <button type="button" class="btn-audio-secondary" id="btn-reproducir-revelada" style="width: 100%; justify-content: center;">
+          <span>▶ Volver a escuchar la progresión</span>
+        </button>
+      </div>
+
+      <!-- Explicación breve: ¿Por qué suenan bien juntos? -->
+      <div class="explicacion-musical-box">
+        <div class="explicacion-musical-titulo">¿Por qué suenan bien juntos?</div>
+        <p class="explicacion-musical-texto" id="texto-explicacion-musical"></p>
+      </div>
+
+      <!-- Autoevaluación Voluntaria -->
+      <div class="autoevaluacion-seccion">
+        <div class="autoevaluacion-pregunta">¿Cómo te fue siguiendo esta secuencia?</div>
+        <div class="autoevaluacion-botones">
+          <button type="button" class="btn btn-sm btn-autoeval-encontre" id="btn-eval-encontre">
+            ✓ Logré seguirla
+          </button>
+          <button type="button" class="btn btn-sm btn-autoeval-practicar" id="btn-eval-practicar">
+            Seguir practicando
+          </button>
+        </div>
+      </div>
+
+      <!-- Botón Siguiente Ejercicio -->
+      <button type="button" class="btn-siguiente-ejercicio" id="btn-siguiente-ejercicio">
+        Siguiente progresión →
+      </button>
+    </div>
+  </div>
+
+  <!-- Pantalla Final de Sesión Completada -->
+  <div class="sesion-final-card" id="pantalla-sesion-final" style="display: none;">
+    <div class="sesion-final-icono">✨</div>
+    <h2 class="sesion-final-titulo">¡Buen momento de práctica!</h2>
+    <p class="sesion-final-mensaje">
+      Cada vez que escuchas, buscas y vuelves a intentar, le das una nueva oportunidad a tu oído.
+    </p>
+
+    <div class="sesion-final-stats" id="stats-sesion-completada">
+      <div class="sesion-final-stats-num" id="stats-sesion-num">5 progresiones completadas</div>
+      <div class="sesion-final-stats-desc" id="stats-sesion-desc">Sesión finalizada</div>
+    </div>
+
+    <div class="sesion-final-acciones">
+      <a href="{% url 'entrenamiento:progresiones' %}" class="btn btn-primary" style="font-weight: 700;">
+        Seguir entrenando
+      </a>
+      <a href="{% url 'entrenamiento:portada' %}" class="btn btn-secondary">
+        Volver a Entrena tu oído
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/entrenamiento_audio.js' %}"></script>
+<script>
+(function () {
+  'use strict';
+
+  var ejercicios = {{ ejercicios_json|safe }};
+  var sesionId = {{ sesion_id }};
+  var total = ejercicios.length;
+  var indiceActual = 0;
+  var escuchasActual = 0;
+  var respuestaRevelada = false;
+  var aciertosDeclarados = 0;
+
+  var domTextoProgreso = document.getElementById('texto-progreso');
+  var domBarraFill = document.getElementById('barra-fill');
+  var domBtnEscuchar = document.getElementById('btn-escuchar-progresion');
+  var domBtnEscucharOtraVez = document.getElementById('btn-escuchar-otra-vez');
+  var domIndicadorReproduccion = document.getElementById('indicador-reproduccion');
+  var domBloquePreRevelar = document.getElementById('bloque-pre-revelar');
+  var domBtnRevelar = document.getElementById('btn-revelar-progresion');
+  var domSeccionRevelada = document.getElementById('seccion-revelada');
+  var domTituloProgresion = document.getElementById('titulo-progresion');
+  var domContenedorPildoras = document.getElementById('contenedor-secuencia-pildoras');
+  var domContenedorDiagramas = document.getElementById('contenedor-diagramas-progresion');
+  var domTextoExplicacion = document.getElementById('texto-explicacion-musical');
+  var domBtnReproducirRevelada = document.getElementById('btn-reproducir-revelada');
+  var domBtnEvalEncontre = document.getElementById('btn-eval-encontre');
+  var domBtnEvalPracticar = document.getElementById('btn-eval-practicar');
+  var domBtnSiguiente = document.getElementById('btn-siguiente-ejercicio');
+  var domContenedorEjercicio = document.getElementById('contenedor-ejercicio');
+  var domPantallaFinal = document.getElementById('pantalla-sesion-final');
+  var domStatsNum = document.getElementById('stats-sesion-num');
+  var domStatsDesc = document.getElementById('stats-sesion-desc');
+
+  function enviarEvento(tipo, datosExtra) {
+    var payload = Object.assign({
+      tipo: tipo,
+      modalidad: 'progresiones',
+      sesion_id: sesionId,
+      ejercicio_num: indiceActual + 1
+    }, datosExtra || {});
+
+    fetch("{% url 'entrenamiento:api_evento' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCsrfToken()
+      },
+      body: JSON.stringify(payload)
+    }).catch(function (e) {
+      // Silencioso
+    });
+  }
+
+  function getCsrfToken() {
+    var cookieVal = null;
+    if (document.cookie && document.cookie !== '') {
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.substring(0, 10) === 'csrftoken=') {
+          cookieVal = decodeURIComponent(cookie.substring(10));
+          break;
+        }
+      }
+    }
+    return cookieVal;
+  }
+
+  function cargarEjercicio(idx) {
+    if (idx >= total) {
+      mostrarFinDeSesion();
+      return;
+    }
+
+    FogataAudio.detener();
+    indiceActual = idx;
+    escuchasActual = 0;
+    respuestaRevelada = false;
+
+    domTextoProgreso.textContent = 'Ejercicio ' + (idx + 1) + ' de ' + total;
+    domBarraFill.style.width = ((idx + 1) / total * 100) + '%';
+
+    domBloquePreRevelar.style.display = 'none';
+    domSeccionRevelada.style.display = 'none';
+    domIndicadorReproduccion.style.display = 'none';
+    domBtnEscucharOtraVez.style.display = 'none';
+    domBtnEscuchar.style.display = 'inline-flex';
+    domBtnEvalEncontre.classList.remove('seleccionado');
+    domBtnEvalPracticar.classList.remove('seleccionado');
+
+    if (idx > 0) {
+      domBtnSiguiente.textContent = (idx === total - 1) ? 'Finalizar sesión →' : 'Siguiente progresión →';
+    }
+  }
+
+  function tocarProgresionActual() {
+    var ej = ejercicios[indiceActual];
+    domIndicadorReproduccion.style.display = 'block';
+
+    FogataAudio.reproducirProgresion(
+      ej.audio_chords,
+      1700,
+      function (pasoIdx) {
+        // Resaltar píldora si la respuesta ya está visible
+        var pildoras = domContenedorPildoras.querySelectorAll('.secuencia-acorde-pildora');
+        for (var p = 0; p < pildoras.length; p++) {
+          pildoras[p].style.borderColor = (p === pasoIdx) ? '#ffffff' : 'var(--color-flame)';
+          pildoras[p].style.background = (p === pasoIdx) ? 'var(--color-flame-dark)' : '#242424';
+        }
+      },
+      function () {
+        domIndicadorReproduccion.style.display = 'none';
+        var pildoras = domContenedorPildoras.querySelectorAll('.secuencia-acorde-pildora');
+        for (var p = 0; p < pildoras.length; p++) {
+          pildoras[p].style.borderColor = 'var(--color-flame)';
+          pildoras[p].style.background = '#242424';
+        }
+      }
+    );
+
+    escuchasActual++;
+    domBtnEscuchar.style.display = 'none';
+    domBtnEscucharOtraVez.style.display = 'inline-flex';
+    domBloquePreRevelar.style.display = 'block';
+
+    enviarEvento('reproducir_audio', {
+      es_repeticion: (escuchasActual > 1)
+    });
+  }
+
+  function revelar() {
+    if (respuestaRevelada) return;
+    respuestaRevelada = true;
+
+    var ej = ejercicios[indiceActual];
+    domTituloProgresion.textContent = ej.titulo;
+    domTextoExplicacion.textContent = ej.explicacion;
+
+    // Renderizar píldoras con flechas
+    domContenedorPildoras.innerHTML = '';
+    for (var i = 0; i < ej.acordes.length; i++) {
+      if (i > 0) {
+        var flecha = document.createElement('span');
+        flecha.className = 'secuencia-flecha';
+        flecha.textContent = '→';
+        domContenedorPildoras.appendChild(flecha);
+      }
+      var pildora = document.createElement('span');
+      pildora.className = 'secuencia-acorde-pildora';
+      pildora.textContent = ej.acordes[i];
+      domContenedorPildoras.appendChild(pildora);
+    }
+
+    // Renderizar diagramas en orden
+    domContenedorDiagramas.innerHTML = '';
+    for (var j = 0; j < ej.diagramas_svg.length; j++) {
+      var card = document.createElement('div');
+      card.className = 'diagrama-card';
+      card.innerHTML = ej.diagramas_svg[j];
+      var etq = document.createElement('span');
+      etq.className = 'diagrama-etiqueta';
+      etq.textContent = 'Paso ' + (j + 1) + ': ' + ej.acordes[j];
+      card.appendChild(etq);
+      domContenedorDiagramas.appendChild(card);
+    }
+
+    domBloquePreRevelar.style.display = 'none';
+    domSeccionRevelada.style.display = 'block';
+
+    enviarEvento('revelar_respuesta');
+
+    domSeccionRevelada.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function mostrarFinDeSesion() {
+    FogataAudio.detener();
+    domContenedorEjercicio.style.display = 'none';
+    document.getElementById('barra-progreso-sesion').style.display = 'none';
+    domPantallaFinal.style.display = 'block';
+
+    domStatsNum.textContent = total + ' secuencias completadas';
+    if (aciertosDeclarados > 0) {
+      domStatsDesc.textContent = aciertosDeclarados + ' progresiones reconocidas según tu percepción.';
+    } else {
+      domStatsDesc.textContent = 'Aprender a escuchar las relaciones entre acordes toma tiempo y práctica.';
+    }
+
+    enviarEvento('completar_sesion', {
+      total_ejercicios: total,
+      aciertos_declarados: aciertosDeclarados
+    });
+  }
+
+  domBtnEscuchar.addEventListener('click', tocarProgresionActual);
+  domBtnEscucharOtraVez.addEventListener('click', tocarProgresionActual);
+  domBtnReproducirRevelada.addEventListener('click', tocarProgresionActual);
+  domBtnRevelar.addEventListener('click', revelar);
+
+  domBtnEvalEncontre.addEventListener('click', function () {
+    domBtnEvalEncontre.classList.add('seleccionado');
+    domBtnEvalPracticar.classList.remove('seleccionado');
+    aciertosDeclarados++;
+    enviarEvento('autoevaluacion', { resultado: 'encontre' });
+  });
+
+  domBtnEvalPracticar.addEventListener('click', function () {
+    domBtnEvalPracticar.classList.add('seleccionado');
+    domBtnEvalEncontre.classList.remove('seleccionado');
+    enviarEvento('autoevaluacion', { resultado: 'practicar' });
+  });
+
+  domBtnSiguiente.addEventListener('click', function () {
+    cargarEjercicio(indiceActual + 1);
+  });
+
+  cargarEjercicio(0);
+})();
+</script>
+{% endblock %}
+

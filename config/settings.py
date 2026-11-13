@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'apps.fogatas.apps.FogatasConfig',
     'apps.gestion.apps.GestionConfig',
     'apps.pagos.apps.PagosConfig',
+    'apps.entrenamiento.apps.EntrenamientoConfig',
 ]
 
 MIDDLEWARE = [
@@ -181,6 +182,9 @@ FLOW_PAYMENT_TIMEOUT = int(os.environ.get('FLOW_PAYMENT_TIMEOUT', 3600))
 FLOW_HTTP_TIMEOUT = int(os.environ.get('FLOW_HTTP_TIMEOUT', 15))
 FLOW_CONFIRMATION_TIMEOUT = int(os.environ.get('FLOW_CONFIRMATION_TIMEOUT', 7))
 FOGATA_PAYMENTS_ENABLED = os.environ.get('FOGATA_PAYMENTS_ENABLED', 'False').lower() in ('true', '1')
+
+# Módulo Entrena tu oído (Activación controlada - Criterio 13)
+FOGATA_EAR_TRAINING_ENABLED = os.environ.get('FOGATA_EAR_TRAINING_ENABLED', 'True').lower() in ('true', '1')
 
 # Observabilidad técnica y logging seguro (Incidencia de Producción - Correo)
 log_dir_env = os.environ.get('DJANGO_LOG_DIR')

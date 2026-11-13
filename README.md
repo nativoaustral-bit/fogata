@@ -8,7 +8,7 @@ Fogata es una plataforma web y atril digital interactivo diseñado para músicos
 
 [![Django](https://img.shields.io/badge/Django-5.2%20LTS-092E20?style=flat-square&logo=django)](https://www.djangoproject.com/)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-209%20passed%20(100%25)-brightgreen?style=flat-square)](#-validación-rápida)
+[![Tests](https://img.shields.io/badge/Tests-227%20passed%20(100%25)-brightgreen?style=flat-square)](#-validación-rápida)
 [![Producción](https://img.shields.io/badge/Producción-fogata.humm.cl-success?style=flat-square)](https://fogata.humm.cl)
 
 ---
@@ -58,6 +58,15 @@ Funcionalidades operativas y verificadas en la suite de pruebas y en producción
 * **Diagramas de Acordes SVG:**
   * Generador procedural nativo en Python de diagramas vectoriales SVG para guitarra en afinación estándar EADGBE (cero librerías pesadas o CDNs).
   * Panel interactivo para inspeccionar la digitación de cualquier acorde pulsándolo en el atril.
+* **Entrena tu oído (Entrenamiento Auditivo para Guitarra):**
+  * Módulo dedicado para guitarristas basado en el principio: *«El objetivo de Fogata es ayudarte a necesitar cada vez menos Fogata mientras tocas»*.
+  * Secuencia de aprendizaje: **Escuchar → Buscar en la guitarra → Reconocer → Revelar → Comprender → Recordar**.
+  * **Modalidad 1 (Notas):** Reconocimiento de alturas individuales en registro cómodo de guitarra con cálculo exacto de posiciones en el mástil (afinación estándar EADGBE), diapasón horizontal interactivo SVG y nota de referencia opcional para oído relativo.
+  * **Modalidad 2 (Acordes - Central):** Reconocimiento auditivo de los 8 acordes estándar (C, G, D, A, E, Am, Em, Dm), descomposición armónica de notas componentes, diagrama SVG de referencia y posición alternativa en el mástil con cejilla (CAGED).
+  * **Modalidad 3 (Progresiones):** Reconocimiento de secuencias de 2, 3 y 4 acordes con cadencia musical rítmica, revelación secuencial de diagramas y breve explicación conceptual («¿Por qué suenan bien juntos?»).
+  * **Motor de Audio Web Audio API:** Síntesis nativa de cuerda pulsada mediante modelado físico Karplus-Strong, libre de servicios externos, con control de parada inmediata y soporte mobile-first.
+  * **Sesiones Cortas:** Bloques de 5 ejercicios con autoevaluación voluntaria (sin penalizaciones, sin calificaciones automáticas ni temporizadores).
+  * **Disponibilidad y Control:** Habilitado para planes Gratis y Pro; interruptor controlable vía `FOGATA_EAR_TRAINING_ENABLED`.
 * **Sesiones Compartidas y Modo Invitado:**
   * Enlaces temporales únicos (`/s/<token>/`) con códigos QR para compartir el setlist con otros músicos en tiempo real sin requerir registro.
 * **Modelo Freemium (Gratis y Pro):**
@@ -109,6 +118,13 @@ FOGATA/
 │   │   ├── planes.py          # Única fuente de verdad de límites y capacidad
 │   │   ├── test_planes.py     # Suite de pruebas de límites y concurrencia
 │   │   └── views.py           # Registro, login, recuperación de clave, landing /pro/ y PWA
+│   │
+│   ├── entrenamiento/         # Módulo «Entrena tu oído» (Notas, Acordes y Progresiones)
+│   │   ├── models.py          # Modelo SesionEntrenamiento con autoevaluación voluntaria
+│   │   ├── musical.py         # Mapeo físico EADGBE, afinación temperada y generador SVG de diapasón
+│   │   ├── tests.py           # Suite exhaustiva de pruebas unitarias y musicales (18 tests)
+│   │   ├── urls.py            # Rutas de portada, modalidades y endpoint seguro de telemetría
+│   │   └── views.py           # Controladores de sesiones cortas, serialización y registro de eventos
 │   │
 │   ├── fogatas/               # Setlists, ordenamiento y sesiones compartidas con QR
 │   │   ├── models.py          # Modelos Fogata, FogataCancion y SesionCompartida
@@ -222,6 +238,7 @@ Fogata utiliza variables de entorno para desacoplar credenciales y configuracion
 | | `FOGATA_PRO_SEMESTRAL_PRICE_CLP` | Precio en CLP del plan Pro Semestral (default: `5990`). |
 | | `FOGATA_PRO_ANUAL_PRICE_CLP` | Precio en CLP del plan Pro Anual (default: `9990`). |
 | | `FOGATA_ANALYTICS_START_DATE` | Fecha base de cálculo para métricas del Control Center (`YYYY-MM-DD`). |
+| **Entrena tu oído** | `FOGATA_EAR_TRAINING_ENABLED` | Interruptor general para habilitar el módulo de entrenamiento auditivo (`True` o `False`). |
 | **Correo (SMTP)** | `DJANGO_EMAIL_BACKEND` | Backend de correo Django (`smtp` en producción, `console` en pruebas). |
 | | `EMAIL_HOST` | Servidor SMTP saliente (ej: `mail.humm.cl`). |
 | | `EMAIL_PORT` | Puerto SMTP seguro (ej: `465` para SSL nativo en HostGator). |

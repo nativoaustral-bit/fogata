@@ -50,6 +50,11 @@
             <a href="{% url 'fogatas:lista' %}" class="{% if request.resolver_match.app_name == 'fogatas' %}active{% endif %}">
               Fogatas
             </a>
+            {% if modulo_entrenamiento_activo %}
+            <a href="{% url 'entrenamiento:portada' %}" class="{% if request.resolver_match.app_name == 'entrenamiento' %}active{% endif %}">
+              Entrena tu oído
+            </a>
+            {% endif %}
             <a href="{% url 'pro' %}" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; text-decoration: none; color: {% if es_plan_pro %}#ff9800{% else %}var(--text-muted){% endif %}; background: rgba(255,255,255,0.04); border: 1px solid {% if es_plan_pro %}rgba(255,152,0,0.3){% else %}var(--border-color){% endif %};" title="Plan comercial activo — Ver Fogata Pro">
               <span>Plan: {{ nombre_plan_usuario }}</span>
               {% if not es_plan_pro %}<span style="color: var(--color-flame);">🔥</span>{% endif %}

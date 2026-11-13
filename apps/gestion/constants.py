@@ -27,6 +27,10 @@ ACCIONES_USO_REAL = {
     'editar_fogata',
     'tocar_fogata',
     'crear_sesion_compartida',
+    'acceder_entrenamiento',
+    'iniciar_ejercicio_entrenamiento',
+    'revelar_respuesta_entrenamiento',
+    'completar_sesion_entrenamiento',
 }
 
 # Whitelist estricta de metadatos permitidos por tipo de evento
@@ -49,6 +53,13 @@ METADATA_WHITELIST = {
     'pago_rechazado': {'plan'},
     'upgrade_pro': {'plan', 'meses'},
     'renovacion_pro': {'plan', 'meses'},
+    'acceder_entrenamiento': set(),
+    'iniciar_ejercicio_entrenamiento': {'modalidad', 'ejercicio_num'},
+    'reproducir_audio_entrenamiento': {'modalidad', 'es_repeticion'},
+    'repetir_audio_entrenamiento': {'modalidad'},
+    'revelar_respuesta_entrenamiento': {'modalidad', 'ejercicio_num'},
+    'completar_sesion_entrenamiento': {'modalidad', 'total_ejercicios', 'aciertos_declarados'},
+    'autoevaluacion_entrenamiento': {'modalidad', 'resultado_declarado'},
 }
 
 # Palabras prohibidas que jamás deben ingresar a metadata
