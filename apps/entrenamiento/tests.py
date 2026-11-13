@@ -219,6 +219,10 @@ class EntrenamientoViewsTests(TestCase):
         self.client.force_login(self.user)
         resp = self.client.get(reverse('canciones:lista'))
         self.assertContains(resp, 'Entrena tu oído')
+        # Verificar elementos fijos móviles y botón sandwich
+        self.assertContains(resp, 'id="btn-menu-sandwich"')
+        self.assertContains(resp, 'class="nav-direct-mobile"')
+        self.assertContains(resp, 'id="menu-desplegable-sandwich"')
 
     def test_api_eventos_telemetria_y_autoevaluacion(self):
         """Prueba del ciclo de vida de eventos vía API JSON."""

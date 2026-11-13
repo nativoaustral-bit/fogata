@@ -31,13 +31,28 @@
   <div class="app-wrapper">
     {% if not modo_musico %}
     <header class="site-header">
-      <div class="container">
+      <div class="container site-header-container">
         <a href="{% url 'core:home' %}" class="site-brand">
           <img src="{% static 'img/icono.svg' %}" alt="Fogata" class="brand-logo">
           <span>Fogata</span>
         </a>
 
-        <nav class="site-nav" aria-label="Navegación principal">
+        <!-- Accesos directos fijos en cabecera móvil -->
+        {% if request.user.is_authenticated %}
+        <div class="nav-direct-mobile" aria-label="Accesos rápidos">
+          <a href="{% url 'fogatas:lista' %}" class="nav-direct-link {% if request.resolver_match.app_name == 'fogatas' %}active{% endif %}">
+            Fogatas
+          </a>
+          {% if modulo_entrenamiento_activo %}
+          <a href="{% url 'entrenamiento:portada' %}" class="nav-direct-link {% if request.resolver_match.app_name == 'entrenamiento' %}active{% endif %}">
+            Entrena tu oído
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Navegación completa en desktop -->
+        <nav class="site-nav site-nav-desktop" aria-label="Navegación principal">
           {% if request.user.is_authenticated %}
             {% if request.user.is_staff %}
               <a href="{% url 'gestion:dashboard' %}" style="color: var(--color-flame); font-weight: 600;" title="Fogata Control Center">
@@ -83,7 +98,87 @@
             📲 Instalar
           </button>
         </nav>
+
+        <!-- Botón de sandwich para móvil -->
+        <button type="button" id="btn-menu-sandwich" class="btn-sandwich" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu-desplegable-sandwich">
+          <span class="sandwich-line"></span>
+          <span class="sandwich-line"></span>
+          <span class="sandwich-line"></span>
+        </button>
       </div>
+
+      <!-- Menú desplegable completo móvil -->
+      <nav id="menu-desplegable-sandwich" class="menu-desplegable-sandwich" aria-label="Menú desplegable de opciones" style="display: none;">
+        <div class="container menu-desplegable-content">
+          {% if request.user.is_authenticated %}
+            <div class="menu-drawer-section">
+              <a href="{% url 'canciones:lista' %}" class="menu-drawer-item {% if request.resolver_match.app_name == 'canciones' %}active{% endif %}">
+                <span class="menu-drawer-icon">🎵</span>
+                <span>Canciones</span>
+              </a>
+              <a href="{% url 'fogatas:lista' %}" class="menu-drawer-item {% if request.resolver_match.app_name == 'fogatas' %}active{% endif %}">
+                <span class="menu-drawer-icon">🔥</span>
+                <span>Fogatas</span>
+              </a>
+              {% if modulo_entrenamiento_activo %}
+              <a href="{% url 'entrenamiento:portada' %}" class="menu-drawer-item {% if request.resolver_match.app_name == 'entrenamiento' %}active{% endif %}">
+                <span class="menu-drawer-icon">👂</span>
+                <span>Entrena tu oído</span>
+              </a>
+              {% endif %}
+              {% if request.user.is_staff %}
+              <a href="{% url 'gestion:dashboard' %}" class="menu-drawer-item" style="color: var(--color-flame); font-weight: 600;">
+                <span class="menu-drawer-icon">⚙️</span>
+                <span>Control Center</span>
+              </a>
+              {% endif %}
+            </div>
+
+            <div class="menu-drawer-divider"></div>
+
+            <div class="menu-drawer-section">
+              <a href="{% url 'pro' %}" class="menu-drawer-item">
+                <span class="menu-drawer-icon">⭐</span>
+                <span>Plan: <strong>{{ nombre_plan_usuario }}</strong> {% if not es_plan_pro %}<span style="color: var(--color-flame);">🔥</span>{% endif %}</span>
+              </a>
+              <a href="{% url 'mi_cuenta' %}" class="menu-drawer-item {% if request.resolver_match.url_name == 'mi_cuenta' %}active{% endif %}">
+                <span class="menu-drawer-icon">👤</span>
+                <span>Mi cuenta</span>
+              </a>
+              <button type="button" id="btn-instalar-pwa-mobile" class="menu-drawer-item" style="display: none; background: none; border: none; text-align: left; width: 100%; cursor: pointer;">
+                <span class="menu-drawer-icon">📲</span>
+                <span>Instalar aplicación</span>
+              </button>
+            </div>
+
+            <div class="menu-drawer-divider"></div>
+
+            <div class="menu-drawer-section" style="padding-top: 6px;">
+              <form method="post" action="{% url 'core:logout' %}" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary btn-block" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
+                  <span>🚪</span> Cerrar sesión
+                </button>
+              </form>
+            </div>
+          {% else %}
+            <div class="menu-drawer-section">
+              <a href="{% url 'pro' %}" class="menu-drawer-item">
+                <span class="menu-drawer-icon">🔥</span>
+                <span>Fogata Pro</span>
+              </a>
+              <a href="{% url 'core:login' %}" class="menu-drawer-item">
+                <span class="menu-drawer-icon">🔑</span>
+                <span>Iniciar sesión</span>
+              </a>
+              <a href="{% url 'core:registro' %}" class="menu-drawer-item" style="color: var(--color-flame); font-weight: 700;">
+                <span class="menu-drawer-icon">✨</span>
+                <span>Crear cuenta</span>
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </nav>
     </header>
     {% endif %}
 

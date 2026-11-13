@@ -1325,6 +1325,7 @@
 
     // Instalación PWA (beforeinstallprompt)
     var btnInstalar = document.getElementById('btn-instalar-pwa');
+    var btnInstalarMobile = document.getElementById('btn-instalar-pwa-mobile');
     var deferredPrompt = null;
 
     window.addEventListener('beforeinstallprompt', function (e) {
@@ -1333,21 +1334,31 @@
       if (btnInstalar) {
         btnInstalar.style.display = 'inline-flex';
       }
+      if (btnInstalarMobile) {
+        btnInstalarMobile.style.display = 'flex';
+      }
     });
 
-    if (btnInstalar) {
-      btnInstalar.addEventListener('click', function () {
-        if (!deferredPrompt) {
-          return;
-        }
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(function () {
-          deferredPrompt = null;
-          btnInstalar.style.display = 'none';
-        }).catch(function () {
-          btnInstalar.style.display = 'none';
-        });
+    function manejarInstalacion() {
+      if (!deferredPrompt) {
+        return;
+      }
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function () {
+        deferredPrompt = null;
+        if (btnInstalar) btnInstalar.style.display = 'none';
+        if (btnInstalarMobile) btnInstalarMobile.style.display = 'none';
+      }).catch(function () {
+        if (btnInstalar) btnInstalar.style.display = 'none';
+        if (btnInstalarMobile) btnInstalarMobile.style.display = 'none';
       });
+    }
+
+    if (btnInstalar) {
+      btnInstalar.addEventListener('click', manejarInstalacion);
+    }
+    if (btnInstalarMobile) {
+      btnInstalarMobile.addEventListener('click', manejarInstalacion);
     }
   }
 
@@ -1658,6 +1669,68 @@
     initRestriccionMutacionesOffline();
     initGestionFogatasOffline();
     initLogoutCleanup();
+    initMenuSandwich();
+  }
+
+  function initMenuSandwich() {
+    var btnSandwich = document.getElementById('btn-menu-sandwich');
+    var menuPanel = document.getElementById('menu-desplegable-sandwich');
+
+    if (!btnSandwich || !menuPanel) {
+      return;
+    }
+
+    function toggleMenu(abrir) {
+      var estaAbierto = btnSandwich.classList.contains('abierto');
+      var nuevoEstado = (abrir !== undefined) ? abrir : !estaAbierto;
+
+      if (nuevoEstado) {
+        btnSandwich.classList.add('abierto');
+        btnSandwich.setAttribute('aria-expanded', 'true');
+        btnSandwich.setAttribute('aria-label', 'Cerrar menú');
+        menuPanel.classList.add('abierto');
+        menuPanel.style.display = 'block';
+      } else {
+        btnSandwich.classList.remove('abierto');
+        btnSandwich.setAttribute('aria-expanded', 'false');
+        btnSandwich.setAttribute('aria-label', 'Abrir menú');
+        menuPanel.classList.remove('abierto');
+        menuPanel.style.display = 'none';
+      }
+    }
+
+    btnSandwich.addEventListener('click', function (e) {
+      e.stopPropagation();
+      toggleMenu();
+    });
+
+    // Cerrar al hacer clic fuera de la cabecera
+    document.addEventListener('click', function (e) {
+      if (btnSandwich.classList.contains('abierto')) {
+        var header = document.querySelector('.site-header');
+        if (header && !header.contains(e.target)) {
+          toggleMenu(false);
+        }
+      }
+    });
+
+    // Cerrar con tecla Escape
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        if (btnSandwich.classList.contains('abierto')) {
+          toggleMenu(false);
+          btnSandwich.focus();
+        }
+      }
+    });
+
+    // Cerrar al hacer clic en un enlace del menú
+    var links = menuPanel.querySelectorAll('a, button[type="submit"]');
+    for (var i = 0; i < links.length; i++) {
+      links[i].addEventListener('click', function () {
+        toggleMenu(false);
+      });
+    }
   }
 
   function initLogoutCleanup() {
