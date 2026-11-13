@@ -5,66 +5,312 @@
 {% load static %}
 
 {% block content %}
-<div class="container" style="max-width: 440px; margin: 36px auto;">
-  <div style="text-align: center; margin-bottom: 24px;">
-    <div style="margin-bottom: 12px;">
-      <img src="{% static 'img/fogata_logo_full.svg' %}" alt="Fogata" style="width: 150px; height: auto; display: inline-block;">
+<div class="login-page-wrapper">
+  <!-- Bloque Principal de Acceso (Primera pantalla para usuarios recurrentes) -->
+  <div class="container" style="max-width: 440px; margin: 32px auto 40px auto;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="margin-bottom: 14px;">
+        <img src="{% static 'img/fogata_logo_full.svg' %}" alt="Fogata" style="width: 150px; height: auto; display: inline-block;">
+      </div>
+      <h1 style="font-size: 1.25rem; font-weight: 700; color: var(--color-flame); margin: 0 0 6px 0;">
+        Tus canciones. Tus acordes. Tu sesión.
+      </h1>
+      <p style="font-size: 0.95rem; color: var(--text-muted); margin: 0 0 16px 0;">
+        Organiza tu repertorio, disfruta tocando y entrena tu oído.
+      </p>
+      <div style="display: inline-block; padding: 4px 14px; background: rgba(255, 152, 0, 0.08); border: 1px solid rgba(255, 152, 0, 0.25); border-radius: 20px; font-size: 0.88rem; color: var(--color-flame); font-weight: 600;">
+        Iniciar sesión
+      </div>
     </div>
-    <p style="font-size: 1.1rem; color: var(--color-flame); font-weight: 600; margin: 0;">
-      Iniciar sesión
-    </p>
+
+    <div class="card" style="padding: 28px; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px;">
+      <form method="post" action="{% url 'core:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger" style="margin-bottom: 18px; padding: 10px 14px; background-color: #3e1212; border: 1px solid #c62828; color: #ffcdd2; border-radius: 6px; font-size: 0.9rem;">
+          {% for error in form.non_field_errors %}
+            <p style="margin: 0;">{{ error }}</p>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label for="id_email" style="display: block; font-size: 0.9rem; font-weight: 600; color: #f5f5f5; margin-bottom: 6px;">
+            Correo electrónico
+          </label>
+          {{ form.email }}
+          {% if form.email.errors %}
+            <p style="color: #ff5252; font-size: 0.82rem; margin-top: 4px;">{{ form.email.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div class="form-group" style="margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label for="id_password" style="font-size: 0.9rem; font-weight: 600; color: #f5f5f5; margin: 0;">
+              Contraseña
+            </label>
+            <a href="{% url 'core:password_reset' %}" style="font-size: 0.82rem; color: var(--color-flame); text-decoration: underline;">
+              Olvidé mi contraseña
+            </a>
+          </div>
+          {{ form.password }}
+          {% if form.password.errors %}
+            <p style="color: #ff5252; font-size: 0.82rem; margin-top: 4px;">{{ form.password.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem; font-weight: 700;">
+          Entrar
+        </button>
+      </form>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px;">
+      <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0;">
+        ¿No tienes cuenta?
+        <a href="{% url 'core:registro' %}" style="color: var(--color-flame); font-weight: 600; text-decoration: underline;">
+          Crear cuenta
+        </a>
+      </p>
+    </div>
+
+    <!-- Enlace discreto de navegación interna -->
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="#conoce-fogata" style="color: var(--text-muted); font-size: 0.84rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
+        <span>Conoce Fogata y Entrena tu oído</span>
+        <span>↓</span>
+      </a>
+    </div>
   </div>
 
-  <div class="card" style="padding: 28px; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px;">
-    <form method="post" action="{% url 'core:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}" novalidate>
-      {% csrf_token %}
+  <!-- SECCIÓN COMERCIAL PÚBLICA DEBAJO DEL FORMULARIO DE ACCESO -->
+  <div id="conoce-fogata" class="container" style="max-width: 860px; margin: 16px auto 72px auto; padding: 0 16px;">
+    
+    <div style="height: 1px; background: var(--border-color); margin-bottom: 48px;"></div>
 
-      {% if form.non_field_errors %}
-      <div class="alert alert-danger" style="margin-bottom: 18px; padding: 10px 14px; background-color: #3e1212; border: 1px solid #c62828; color: #ffcdd2; border-radius: 6px; font-size: 0.9rem;">
-        {% for error in form.non_field_errors %}
-          <p style="margin: 0;">{{ error }}</p>
-        {% endfor %}
-      </div>
-      {% endif %}
-
-      <div class="form-group" style="margin-bottom: 16px;">
-        <label for="id_email" style="display: block; font-size: 0.9rem; font-weight: 600; color: #f5f5f5; margin-bottom: 6px;">
-          Correo electrónico
-        </label>
-        {{ form.email }}
-        {% if form.email.errors %}
-          <p style="color: #ff5252; font-size: 0.82rem; margin-top: 4px;">{{ form.email.errors.0 }}</p>
-        {% endif %}
+    <!-- SECCIÓN A — ¿Qué es Fogata? -->
+    <section style="margin-bottom: 56px;">
+      <div style="text-align: center; max-width: 680px; margin: 0 auto 32px auto;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-flame); text-transform: uppercase; letter-spacing: 1px;">
+          Atril digital para guitarristas
+        </span>
+        <h2 style="font-size: 1.7rem; font-weight: 800; color: #ffffff; margin: 8px 0 12px 0;">
+          Más guitarra. Menos distracciones.
+        </h2>
+        <p style="font-size: 1.02rem; color: var(--text-muted); line-height: 1.6; margin: 0;">
+          Fogata es tu espacio para guardar tus canciones, organizar repertorios y tocar desde tu celular, tablet o computador. Simple, sin complicaciones y a tu ritmo.
+        </p>
       </div>
 
-      <div class="form-group" style="margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <label for="id_password" style="font-size: 0.9rem; font-weight: 600; color: #f5f5f5; margin: 0;">
-            Contraseña
-          </label>
-          <a href="{% url 'core:password_reset' %}" style="font-size: 0.82rem; color: var(--color-flame); text-decoration: underline;">
-            Olvidé mi contraseña
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px;">
+        <div style="padding: 22px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px;">
+          <div style="font-size: 1.8rem; margin-bottom: 10px;">🎵</div>
+          <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin: 0 0 8px 0;">
+            Tus canciones, ordenadas
+          </h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+            Guarda tus letras y acordes y organiza las canciones que quieres tocar.
+          </p>
+        </div>
+
+        <div style="padding: 22px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px;">
+          <div style="font-size: 1.8rem; margin-bottom: 10px;">⚡</div>
+          <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin: 0 0 8px 0;">
+            Listo cuando quieras tocar
+          </h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+            Abre tu Fogata, utiliza el Modo Tocar y disfruta de tu sesión sin distracciones.
+          </p>
+        </div>
+
+        <div style="padding: 22px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px;">
+          <div style="font-size: 1.8rem; margin-bottom: 10px;">👥</div>
+          <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin: 0 0 8px 0;">
+            Comparte el momento
+          </h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+            Comparte temporalmente tu sesión con amigos para que puedan seguir tus letras y acordes desde sus dispositivos.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN B — Entrena tu oído (Destacada) -->
+    <section style="margin-bottom: 56px; padding: 32px 24px; background: linear-gradient(180deg, rgba(255, 152, 0, 0.08) 0%, rgba(24, 24, 24, 0.8) 100%); border: 1px solid rgba(255, 152, 0, 0.3); border-radius: 12px; text-align: center;">
+      <span style="display: inline-block; padding: 3px 10px; background: var(--color-flame); color: #0d0d0d; border-radius: 4px; font-size: 0.76rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+        Entrenamiento auditivo
+      </span>
+      <h2 style="font-size: 1.65rem; font-weight: 800; color: #ffffff; margin: 0 0 12px 0;">
+        ¿Y si cada vez necesitaras mirar menos la pantalla?
+      </h2>
+      <p style="font-size: 1.02rem; color: var(--text-muted); max-width: 660px; margin: 0 auto 24px auto; line-height: 1.6;">
+        Entrena tu oído de una manera entretenida. Escucha una nota, un acorde o una progresión. Intenta encontrarla en tu guitarra y revela la respuesta cuando estés listo.
+      </p>
+
+      <!-- Secuencia visual sencilla -->
+      <div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 24px;">
+        <div style="padding: 10px 16px; background: #1c1c1c; border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; color: #ffffff; font-size: 0.92rem;">
+          👂 Escucha
+        </div>
+        <span style="color: var(--color-flame); font-weight: 800;">→</span>
+        <div style="padding: 10px 16px; background: #1c1c1c; border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; color: #ffffff; font-size: 0.92rem;">
+          🎸 Encuentra
+        </div>
+        <span style="color: var(--color-flame); font-weight: 800;">→</span>
+        <div style="padding: 10px 16px; background: #1c1c1c; border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; color: #ffffff; font-size: 0.92rem;">
+          👁️ Revela
+        </div>
+        <span style="color: var(--color-flame); font-weight: 800;">→</span>
+        <div style="padding: 10px 16px; background: #1c1c1c; border: 1px solid var(--color-flame); border-radius: 8px; font-weight: 700; color: var(--color-flame); font-size: 0.92rem;">
+          🎶 Sigue tocando
+        </div>
+      </div>
+
+      <p style="font-size: 0.92rem; color: var(--text-muted); margin: 0;">
+        Empieza gratis con ejercicios básicos y amplía tus posibilidades con Fogata Pro.
+      </p>
+    </section>
+
+    <!-- SECCIÓN C — ¿Para quién es Fogata? -->
+    <section style="margin-bottom: 56px;">
+      <div style="text-align: center; margin-bottom: 28px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-flame); text-transform: uppercase; letter-spacing: 1px;">
+          Hecho para tu ritmo
+        </span>
+        <h2 style="font-size: 1.55rem; font-weight: 800; color: #ffffff; margin: 8px 0 0 0;">
+          ¿Para quién es Fogata?
+        </h2>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+        <div style="padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px;">
+          <div style="font-size: 1.5rem; margin-bottom: 8px;">🛋️</div>
+          <h3 style="font-size: 1rem; font-weight: 700; color: #ffffff; margin: 0 0 6px 0;">
+            Para desconectarte
+          </h3>
+          <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+            Cuando quieres sentarte un rato, tomar tu guitarra y disfrutar tus canciones.
+          </p>
+        </div>
+
+        <div style="padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px;">
+          <div style="font-size: 1.5rem; margin-bottom: 8px;">🔥</div>
+          <h3 style="font-size: 1rem; font-weight: 700; color: #ffffff; margin: 0 0 6px 0;">
+            Para compartir
+          </h3>
+          <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+            Cuando te reúnes con amigos y quieres llevar tu repertorio preparado.
+          </p>
+        </div>
+
+        <div style="padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px;">
+          <div style="font-size: 1.5rem; margin-bottom: 8px;">🎯</div>
+          <h3 style="font-size: 1rem; font-weight: 700; color: #ffffff; margin: 0 0 6px 0;">
+            Para practicar y ensayar
+          </h3>
+          <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+            Cuando necesitas organizar tus sesiones y desarrollar tu oído musical.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN D — Planes -->
+    <section style="margin-bottom: 56px;">
+      <div style="text-align: center; margin-bottom: 28px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-flame); text-transform: uppercase; letter-spacing: 1px;">
+          Planes claros y transparentes
+        </span>
+        <h2 style="font-size: 1.55rem; font-weight: 800; color: #ffffff; margin: 8px 0 0 0;">
+          Empieza gratis. Avanza cuando quieras.
+        </h2>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; align-items: stretch;">
+        <!-- Tarjeta Gratis -->
+        <div style="padding: 28px 24px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+              Plan de inicio
+            </div>
+            <h3 style="font-size: 1.4rem; font-weight: 800; color: #ffffff; margin: 0 0 8px 0;">
+              FOGATA GRATIS
+            </h3>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff; margin-bottom: 18px;">
+              $0 <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">para siempre</span>
+            </div>
+
+            <ul style="list-style: none; padding: 0; margin: 0 0 24px 0; display: flex; flex-direction: column; gap: 10px; font-size: 0.92rem; color: #e0e0e0;">
+              <li style="display: flex; gap: 8px;">✓ <span>Hasta 10 canciones</span></li>
+              <li style="display: flex; gap: 8px;">✓ <span>1 Fogata</span></li>
+              <li style="display: flex; gap: 8px;">✓ <span>Modo Tocar</span></li>
+              <li style="display: flex; gap: 8px;">✓ <span>Entrenamiento auditivo básico</span></li>
+              <li style="display: flex; gap: 8px;">✓ <span>Reproducciones y repeticiones ilimitadas en los ejercicios disponibles</span></li>
+            </ul>
+          </div>
+
+          <a href="{% url 'core:registro' %}" class="btn btn-secondary" style="width: 100%; text-align: center; padding: 12px; font-weight: 700;">
+            Crear cuenta gratis
           </a>
         </div>
-        {{ form.password }}
-        {% if form.password.errors %}
-          <p style="color: #ff5252; font-size: 0.82rem; margin-top: 4px;">{{ form.password.errors.0 }}</p>
-        {% endif %}
+
+        <!-- Tarjeta Pro -->
+        <div style="padding: 28px 24px; background: #1c1813; border: 2px solid var(--color-flame); border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+          <div style="position: absolute; top: -12px; right: 20px; background: var(--color-flame); color: #0d0d0d; font-size: 0.75rem; font-weight: 800; padding: 2px 10px; border-radius: 12px; text-transform: uppercase;">
+            Recomendado
+          </div>
+
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-flame); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+              Experiencia total
+            </div>
+            <h3 style="font-size: 1.4rem; font-weight: 800; color: #ffffff; margin: 0 0 8px 0;">
+              FOGATA PRO
+            </h3>
+            <div style="margin-bottom: 18px;">
+              <div style="font-size: 1.8rem; font-weight: 800; color: var(--color-flame);">
+                $5.990 <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">/ 6 meses</span>
+              </div>
+              <div style="font-size: 0.92rem; color: var(--text-muted); margin-top: 4px;">
+                o <strong>$9.990</strong> / 12 meses
+              </div>
+            </div>
+
+            <ul style="list-style: none; padding: 0; margin: 0 0 24px 0; display: flex; flex-direction: column; gap: 10px; font-size: 0.92rem; color: #ffffff;">
+              <li style="display: flex; gap: 8px;">🔥 <span>Canciones ilimitadas</span></li>
+              <li style="display: flex; gap: 8px;">🔥 <span>Fogatas ilimitadas</span></li>
+              <li style="display: flex; gap: 8px;">🔥 <span>Todas las funciones actuales de Pro</span></li>
+              <li style="display: flex; gap: 8px;">🔥 <span>Entrenamiento auditivo avanzado</span></li>
+              <li style="display: flex; gap: 8px;">🔥 <span>Más notas, acordes y progresiones</span></li>
+            </ul>
+          </div>
+
+          <a href="{% url 'pro' %}" class="btn btn-primary" style="width: 100%; text-align: center; padding: 12px; font-weight: 700;">
+            Conocer Fogata Pro
+          </a>
+        </div>
       </div>
+    </section>
 
-      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem; font-weight: 700;">
-        Entrar
-      </button>
-    </form>
-  </div>
+    <!-- SECCIÓN E — Cierre -->
+    <section style="text-align: center; padding: 32px 20px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; color: #ffffff; margin: 0 0 8px 0;">
+        Toca. Practica. Disfruta.
+      </h2>
+      <p style="font-size: 1rem; color: var(--text-muted); max-width: 540px; margin: 0 auto 20px auto; line-height: 1.55;">
+        Fogata está para acompañarte mientras desarrollas tu propia manera de tocar.
+      </p>
+      <div style="margin-bottom: 18px;">
+        <a href="{% url 'core:registro' %}" class="btn btn-primary" style="font-size: 1.05rem; padding: 12px 28px; font-weight: 700;">
+          Empieza gratis
+        </a>
+      </div>
+      <div style="font-size: 0.88rem; color: var(--color-flame); font-weight: 600; font-family: monospace, monospace;">
+        fogata.humm.cl
+      </div>
+    </section>
 
-  <div style="text-align: center; margin-top: 20px;">
-    <p style="color: var(--text-muted); font-size: 0.9rem;">
-      ¿No tienes cuenta?
-      <a href="{% url 'core:registro' %}" style="color: var(--color-flame); font-weight: 600; text-decoration: underline;">
-        Crear cuenta
-      </a>
-    </p>
   </div>
 </div>
 {% endblock %}

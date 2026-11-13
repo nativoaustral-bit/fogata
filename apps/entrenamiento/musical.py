@@ -207,22 +207,37 @@ class EjercicioNota:
     octava: int
     posiciones: List[PosicionMastil]
     fretboard_svg: str
+    es_pro: bool = False
 
 
-# Banco de notas seleccionadas en un registro cómodo para guitarra
-# (evita graves extremos y sobreagudos difíciles de discernir en altavoces de celular).
-# Rango: D3 (146.83 Hz) hasta G4 (392.00 Hz)
+# Banco de notas para entrenamiento en guitarra.
+# Gratis: Las 7 notas naturales (C, D, E, F, G, A, B) en registros básicos.
+# Pro: Notas naturales y cromáticas (sostenidos/bemoles) y registros adicionales.
 NOTAS_ENTRENAMIENTO = [
-    ('D3', 50, 'Re (D3)', 'D3', 3),
-    ('E3', 52, 'Mi (E3)', 'E3', 3),
-    ('G3', 55, 'Sol (G3)', 'G3', 3),
-    ('A3', 57, 'La (A3)', 'A3', 3),
-    ('B3', 59, 'Si (B3)', 'B3', 3),
-    ('C4', 60, 'Do (C4)', 'C4', 4),
-    ('D4', 62, 'Re (D4)', 'D4', 4),
-    ('E4', 64, 'Mi (E4)', 'E4', 4),
-    ('F4', 65, 'Fa (F4)', 'F4', 4),
-    ('G4', 67, 'Sol (G4)', 'G4', 4),
+    # --- Notas Naturales Básicas (Gratis y Pro) ---
+    ('D3', 50, 'Re (D3)', 'D3', 3, False),
+    ('E3', 52, 'Mi (E3)', 'E3', 3, False),
+    ('G3', 55, 'Sol (G3)', 'G3', 3, False),
+    ('A3', 57, 'La (A3)', 'A3', 3, False),
+    ('B3', 59, 'Si (B3)', 'B3', 3, False),
+    ('C4', 60, 'Do (C4)', 'C4', 4, False),
+    ('D4', 62, 'Re (D4)', 'D4', 4, False),
+    ('E4', 64, 'Mi (E4)', 'E4', 4, False),
+    ('F4', 65, 'Fa (F4)', 'F4', 4, False),
+    ('G4', 67, 'Sol (G4)', 'G4', 4, False),
+
+    # --- Notas Cromáticas y Registros Adicionales (Pro) ---
+    ('F#3', 54, 'Fa# (F#3 / Gb3)', 'F#3 / Gb3', 3, True),
+    ('G#3', 56, 'Sol# (G#3 / Ab3)', 'G#3 / Ab3', 3, True),
+    ('A#3', 58, 'La# (A#3 / Bb3)', 'A#3 / Bb3', 3, True),
+    ('C#4', 61, 'Do# (C#4 / Db4)', 'C#4 / Db4', 4, True),
+    ('D#4', 63, 'Re# (D#4 / Eb4)', 'D#4 / Eb4', 4, True),
+    ('F#4', 66, 'Fa# (F#4 / Gb4)', 'F#4 / Gb4', 4, True),
+    ('G#4', 68, 'Sol# (G#4 / Ab4)', 'G#4 / Ab4', 4, True),
+    ('A4', 69, 'La agudo (A4 — 440 Hz)', 'A4', 4, True),
+    ('B4', 71, 'Si agudo (B4)', 'B4', 4, True),
+    ('A2', 45, 'La grave (A2 — 110 Hz)', 'A2', 2, True),
+    ('C3', 48, 'Do grave (C3)', 'C3', 3, True),
 ]
 
 # Nota de referencia para orientación auditiva relativa
@@ -234,10 +249,12 @@ NOTA_REFERENCIA_DEFAULT = {
 }
 
 
-def obtener_catalogo_notas() -> List[EjercicioNota]:
+def obtener_catalogo_notas(solo_gratis: bool = False) -> List[EjercicioNota]:
     """Genera el catálogo de ejercicios de notas con sus posiciones y SVGs."""
     catalogo: List[EjercicioNota] = []
-    for cod, midi, nom_lat, nom_am, octava in NOTAS_ENTRENAMIENTO:
+    for cod, midi, nom_lat, nom_am, octava, es_pro in NOTAS_ENTRENAMIENTO:
+        if solo_gratis and es_pro:
+            continue
         posiciones = calcular_posiciones_exactas(midi)
         svg = generar_svg_mastil_posiciones(posiciones, nom_lat)
         catalogo.append(EjercicioNota(
@@ -249,6 +266,7 @@ def obtener_catalogo_notas() -> List[EjercicioNota]:
             octava=octava,
             posiciones=posiciones,
             fretboard_svg=svg,
+            es_pro=es_pro,
         ))
     return catalogo
 
@@ -270,6 +288,7 @@ class EjercicioAcorde:
     midi_alternativa: List[int]
     svg_alternativa: str
     descripcion_alternativa: str
+    es_pro: bool = False
 
 
 def calcular_midi_cuerdas(trastes: List[int]) -> List[int]:
@@ -287,8 +306,11 @@ def calcular_midi_cuerdas(trastes: List[int]) -> List[int]:
     return res
 
 
-# Las 8 digitaciones esenciales y sus variantes validadas
+# Banco de acordes para entrenamiento en guitarra.
+# Gratis: Los 8 acordes estándar en primera posición con variantes CAGED.
+# Pro: Catálogo completo ampliado con cejillas (F, B, Bm, F#m) y séptimas dominantes (C7, D7, G7, A7, E7, B7).
 ACORDES_DATA = [
+    # --- 8 Acordes Básicos (Gratis y Pro) ---
     {
         'codigo': 'C',
         'nombre_latino': 'Do mayor',
@@ -297,6 +319,7 @@ ACORDES_DATA = [
         'ref': DigitacionAcorde(trastes=[-1, 3, 2, 0, 1, 0], dedos=[0, 3, 2, 0, 1, 0]),
         'alt': DigitacionAcorde(trastes=[-1, 3, 5, 5, 5, 3], base_fret=3, cejilla=(3, 5, 1)),
         'alt_desc': 'Forma de La (A) con cejilla en el traste 3. Al tocarse en un registro medio, ofrece un sonido más compacto y definido.',
+        'es_pro': False,
     },
     {
         'codigo': 'G',
@@ -306,6 +329,7 @@ ACORDES_DATA = [
         'ref': DigitacionAcorde(trastes=[3, 2, 0, 0, 0, 3], dedos=[2, 1, 0, 0, 0, 3]),
         'alt': DigitacionAcorde(trastes=[3, 5, 5, 4, 3, 3], base_fret=3, cejilla=(3, 6, 1)),
         'alt_desc': 'Forma de Mi (E) con cejilla en el traste 3. Muy utilizada para acompañamiento rítmico cerrado y cortes secos.',
+        'es_pro': False,
     },
     {
         'codigo': 'D',
@@ -315,6 +339,7 @@ ACORDES_DATA = [
         'ref': DigitacionAcorde(trastes=[-1, -1, 0, 2, 3, 2], dedos=[0, 0, 0, 1, 3, 2]),
         'alt': DigitacionAcorde(trastes=[-1, 5, 7, 7, 7, 5], base_fret=5, cejilla=(5, 5, 1)),
         'alt_desc': 'Forma de La (A) con cejilla en el traste 5. Concentra el sonido en las cuerdas agudas con el bajo en la 5ª cuerda.',
+        'es_pro': False,
     },
     {
         'codigo': 'A',
@@ -324,6 +349,7 @@ ACORDES_DATA = [
         'ref': DigitacionAcorde(trastes=[-1, 0, 2, 2, 2, 0], dedos=[0, 0, 1, 2, 3, 0]),
         'alt': DigitacionAcorde(trastes=[5, 7, 7, 6, 5, 5], base_fret=5, cejilla=(5, 6, 1)),
         'alt_desc': 'Forma de Mi (E) con cejilla en el traste 5. Brinda un ataque contundente y pleno en frecuencias graves.',
+        'es_pro': False,
     },
     {
         'codigo': 'E',
@@ -333,6 +359,7 @@ ACORDES_DATA = [
         'ref': DigitacionAcorde(trastes=[0, 2, 2, 1, 0, 0], dedos=[0, 2, 3, 1, 0, 0]),
         'alt': DigitacionAcorde(trastes=[-1, 7, 9, 9, 9, 7], base_fret=7, cejilla=(7, 5, 1)),
         'alt_desc': 'Forma de La (A) con cejilla en el traste 7. Ideal para complementar arreglos donde otra guitarra ya toca en primera posición.',
+        'es_pro': False,
     },
     {
         'codigo': 'Am',
@@ -342,6 +369,7 @@ ACORDES_DATA = [
         'ref': DigitacionAcorde(trastes=[-1, 0, 2, 2, 1, 0], dedos=[0, 0, 2, 3, 1, 0]),
         'alt': DigitacionAcorde(trastes=[5, 7, 7, 5, 5, 5], base_fret=5, cejilla=(5, 6, 1)),
         'alt_desc': 'Forma de Mi menor (Em) con cejilla en el traste 5. Sonoridad oscura, pareja y muy expresiva en acordes rasgueados.',
+        'es_pro': False,
     },
     {
         'codigo': 'Em',
@@ -351,6 +379,7 @@ ACORDES_DATA = [
         'ref': DigitacionAcorde(trastes=[0, 2, 2, 0, 0, 0], dedos=[0, 2, 3, 0, 0, 0]),
         'alt': DigitacionAcorde(trastes=[-1, 7, 9, 9, 8, 7], base_fret=7, cejilla=(7, 5, 1)),
         'alt_desc': 'Forma de La menor (Am) con cejilla en el traste 7. Registro medio-agudo con gran calidez armónica.',
+        'es_pro': False,
     },
     {
         'codigo': 'Dm',
@@ -360,14 +389,120 @@ ACORDES_DATA = [
         'ref': DigitacionAcorde(trastes=[-1, -1, 0, 2, 3, 1], dedos=[0, 0, 0, 2, 3, 1]),
         'alt': DigitacionAcorde(trastes=[-1, 5, 7, 7, 6, 5], base_fret=5, cejilla=(5, 5, 1)),
         'alt_desc': 'Forma de La menor (Am) con cejilla en el traste 5. Ampliamente utilizada en baladas, boleros y música acústica.',
+        'es_pro': False,
+    },
+
+    # --- Acordes Adicionales con Cejillas y Séptimas Dominantes (Pro) ---
+    {
+        'codigo': 'F',
+        'nombre_latino': 'Fa mayor',
+        'nombre_americano': 'F',
+        'notas_componentes': 'F – A – C (Fa – La – Do)',
+        'ref': DigitacionAcorde(trastes=[1, 3, 3, 2, 1, 1], base_fret=1, cejilla=(1, 6, 1)),
+        'alt': DigitacionAcorde(trastes=[-1, -1, 3, 2, 1, 1], base_fret=1, cejilla=(1, 2, 1)),
+        'alt_desc': 'Forma reducida de cuatro cuerdas (D, G, B, E) con mini-cejilla en traste 1. Excelente para transiciones rápidas y menor fatiga en la mano izquierda.',
+        'es_pro': True,
+    },
+    {
+        'codigo': 'B',
+        'nombre_latino': 'Si mayor',
+        'nombre_americano': 'B',
+        'notas_componentes': 'B – D# – F# (Si – Re# – Fa#)',
+        'ref': DigitacionAcorde(trastes=[-1, 2, 4, 4, 4, 2], base_fret=2, cejilla=(2, 5, 1)),
+        'alt': DigitacionAcorde(trastes=[7, 9, 9, 8, 7, 7], base_fret=7, cejilla=(7, 6, 1)),
+        'alt_desc': 'Forma de Mi (E) con cejilla en el traste 7. Brinda una respuesta potente con bajo en la 6ª cuerda.',
+        'es_pro': True,
+    },
+    {
+        'codigo': 'Bm',
+        'nombre_latino': 'Si menor',
+        'nombre_americano': 'Bm',
+        'notas_componentes': 'B – D – F# (Si – Re – Fa#)',
+        'ref': DigitacionAcorde(trastes=[-1, 2, 4, 4, 3, 2], base_fret=2, cejilla=(2, 5, 1)),
+        'alt': DigitacionAcorde(trastes=[7, 9, 9, 7, 7, 7], base_fret=7, cejilla=(7, 6, 1)),
+        'alt_desc': 'Forma de Mi menor (Em) con cejilla en el traste 7. Registro medio-agudo con gran definición.',
+        'es_pro': True,
+    },
+    {
+        'codigo': 'F#m',
+        'nombre_latino': 'Fa sostenido menor',
+        'nombre_americano': 'F#m',
+        'notas_componentes': 'F# – A – C# (Fa# – La – Do#)',
+        'ref': DigitacionAcorde(trastes=[2, 4, 4, 2, 2, 2], base_fret=2, cejilla=(2, 6, 1)),
+        'alt': DigitacionAcorde(trastes=[-1, 9, 11, 11, 10, 9], base_fret=9, cejilla=(9, 5, 1)),
+        'alt_desc': 'Forma de La menor (Am) con cejilla en el traste 9. Aporta un color brillante y melódico.',
+        'es_pro': True,
+    },
+    {
+        'codigo': 'C7',
+        'nombre_latino': 'Do séptima',
+        'nombre_americano': 'C7',
+        'notas_componentes': 'C – E – G – Bb (Do – Mi – Sol – Sib)',
+        'ref': DigitacionAcorde(trastes=[-1, 3, 2, 3, 1, 0], dedos=[0, 3, 2, 4, 1, 0]),
+        'alt': DigitacionAcorde(trastes=[-1, 3, 5, 3, 5, 3], base_fret=3, cejilla=(3, 5, 1)),
+        'alt_desc': 'Forma de La séptima (A7) con cejilla en el traste 3. Sonido compacto ideal para acompañamiento rítmico.',
+        'es_pro': True,
+    },
+    {
+        'codigo': 'D7',
+        'nombre_latino': 'Re séptima',
+        'nombre_americano': 'D7',
+        'notas_componentes': 'D – F# – A – C (Re – Fa# – La – Do)',
+        'ref': DigitacionAcorde(trastes=[-1, -1, 0, 2, 1, 2], dedos=[0, 0, 0, 2, 1, 3]),
+        'alt': DigitacionAcorde(trastes=[-1, 5, 7, 5, 7, 5], base_fret=5, cejilla=(5, 5, 1)),
+        'alt_desc': 'Forma de La séptima (A7) con cejilla en el traste 5. Registro medio con bajo en la 5ª cuerda.',
+        'es_pro': True,
+    },
+    {
+        'codigo': 'G7',
+        'nombre_latino': 'Sol séptima',
+        'nombre_americano': 'G7',
+        'notas_componentes': 'G – B – D – F (Sol – Si – Re – Fa)',
+        'ref': DigitacionAcorde(trastes=[3, 2, 0, 0, 0, 1], dedos=[3, 2, 0, 0, 0, 1]),
+        'alt': DigitacionAcorde(trastes=[3, 5, 3, 4, 3, 3], base_fret=3, cejilla=(3, 6, 1)),
+        'alt_desc': 'Forma de Mi séptima (E7) con cejilla en el traste 3. Muy utilizada para funk, blues y cortes rítmicos.',
+        'es_pro': True,
+    },
+    {
+        'codigo': 'A7',
+        'nombre_latino': 'La séptima',
+        'nombre_americano': 'A7',
+        'notas_componentes': 'A – C# – E – G (La – Do# – Mi – Sol)',
+        'ref': DigitacionAcorde(trastes=[-1, 0, 2, 0, 2, 0], dedos=[0, 0, 2, 0, 3, 0]),
+        'alt': DigitacionAcorde(trastes=[5, 7, 5, 6, 5, 5], base_fret=5, cejilla=(5, 6, 1)),
+        'alt_desc': 'Forma de Mi séptima (E7) con cejilla en el traste 5. Sonido pleno con bajo en la 6ª cuerda.',
+        'es_pro': True,
+    },
+    {
+        'codigo': 'E7',
+        'nombre_latino': 'Mi séptima',
+        'nombre_americano': 'E7',
+        'notas_componentes': 'E – G# – B – D (Mi – Sol# – Si – Re)',
+        'ref': DigitacionAcorde(trastes=[0, 2, 0, 1, 0, 0], dedos=[0, 2, 0, 1, 0, 0]),
+        'alt': DigitacionAcorde(trastes=[-1, 7, 9, 7, 9, 7], base_fret=7, cejilla=(7, 5, 1)),
+        'alt_desc': 'Forma de La séptima (A7) con cejilla en el traste 7. Concentra la tensión armónica en registro agudo.',
+        'es_pro': True,
+    },
+    {
+        'codigo': 'B7',
+        'nombre_latino': 'Si séptima',
+        'nombre_americano': 'B7',
+        'notas_componentes': 'B – D# – F# – A (Si – Re# – Fa# – La)',
+        'ref': DigitacionAcorde(trastes=[-1, 2, 1, 2, 0, 2], dedos=[0, 2, 1, 3, 0, 4]),
+        'alt': DigitacionAcorde(trastes=[7, 9, 7, 8, 7, 7], base_fret=7, cejilla=(7, 6, 1)),
+        'alt_desc': 'Forma de Mi séptima (E7) con cejilla en el traste 7. Sonoridad brillante y completa.',
+        'es_pro': True,
     },
 ]
 
 
-def obtener_catalogo_acordes() -> List[EjercicioAcorde]:
+def obtener_catalogo_acordes(solo_gratis: bool = False) -> List[EjercicioAcorde]:
     """Genera el catálogo de acordes con sus diagramas SVG y notas calculadas."""
     catalogo: List[EjercicioAcorde] = []
     for item in ACORDES_DATA:
+        es_pro = item.get('es_pro', False)
+        if solo_gratis and es_pro:
+            continue
         ref_dig = item['ref']
         alt_dig = item['alt']
         svg_ref = generar_svg_acorde(ref_dig, nombre_mostrar=item['codigo'], ancho=170, alto=210)
@@ -385,6 +520,7 @@ def obtener_catalogo_acordes() -> List[EjercicioAcorde]:
             midi_alternativa=calcular_midi_cuerdas(alt_dig.trastes),
             svg_alternativa=svg_alt,
             descripcion_alternativa=item['alt_desc'],
+            es_pro=es_pro,
         ))
     return catalogo
 
@@ -402,95 +538,204 @@ class EjercicioProgresion:
     explicacion: str
     diagramas_svg: List[str]
     audio_chords: List[List[int]]
+    es_pro: bool = False
 
 
 PROGRESIONES_DATA = [
-    # --- 2 Acordes ---
+    # --- 2 Acordes Básicos (Gratis y Pro) ---
     {
         'id': 'prog-g-d',
         'titulo': 'Cadencia elemental (Sol mayor)',
         'acordes': ['G', 'D'],
         'explicacion': 'Cadencia auténtica básica (I – V). La brillantez y tensión de Re mayor conduce naturalmente a descansar en Sol mayor.',
+        'es_pro': False,
     },
     {
         'id': 'prog-am-em',
         'titulo': 'Relación modal menor (La menor)',
         'acordes': ['Am', 'Em'],
         'explicacion': 'Movimiento menor (i – v). Al compartir la nota Mi entre ambos acordes, el cambio se percibe continuo, introspectivo y suave.',
+        'es_pro': False,
     },
     {
         'id': 'prog-c-g',
         'titulo': 'Movimiento fundamental (Do mayor)',
         'acordes': ['C', 'G'],
         'explicacion': 'Relación de quinta (I – V). Es una de las relaciones armónicas más naturales del oído humano y base del acompañamiento popular.',
+        'es_pro': False,
     },
     {
         'id': 'prog-d-a',
         'titulo': 'Impulso brillante (Re mayor)',
         'acordes': ['D', 'A'],
         'explicacion': 'Cadencia en Re mayor (I – V). El acorde de La aporta la energía tonal necesaria para resolver de vuelta al reposo de Re.',
+        'es_pro': False,
+    },
+    {
+        'id': 'prog-c-am',
+        'titulo': 'Alternancia mayor-relativo menor (Do mayor)',
+        'acordes': ['C', 'Am'],
+        'explicacion': 'Relación de tónica y relativo menor (I – vi). Al compartir las notas Do y Mi, crea una transición nostálgica y equilibrada.',
+        'es_pro': False,
+    },
+    {
+        'id': 'prog-e-a',
+        'titulo': 'Resolución dominante a tónica (La mayor)',
+        'acordes': ['E', 'A'],
+        'explicacion': 'Fuerza tonal (V – I). El acorde de Mi mayor concentra la tensión brillante que resuelve con certeza en La mayor.',
+        'es_pro': False,
+    },
+    {
+        'id': 'prog-dm-am',
+        'titulo': 'Cadencia menor suave (La menor)',
+        'acordes': ['Dm', 'Am'],
+        'explicacion': 'Movimiento subdominante a tónica menor (iv – i). Sonido cálido y melancólico, típico de baladas y folclore.',
+        'es_pro': False,
+    },
+    {
+        'id': 'prog-em-c',
+        'titulo': 'Conexión emotiva menor a mayor',
+        'acordes': ['Em', 'C'],
+        'explicacion': 'Paso de relativo menor a mayor (iii – I en Sol mayor). Abre el panorama auditivo transmitiendo sensación de alivio y luminosidad.',
+        'es_pro': False,
     },
 
-    # --- 3 Acordes ---
+    # --- 2 Acordes con Variedad Tonal y Cejillas (Pro) ---
+    {
+        'id': 'prog-c-f',
+        'titulo': 'Apertura subdominante (Do mayor)',
+        'acordes': ['C', 'F'],
+        'explicacion': 'Relación I – IV en Do mayor. La llegada de Fa mayor amplía el espacio melódico antes de resolver.',
+        'es_pro': True,
+    },
+    {
+        'id': 'prog-d-g7',
+        'titulo': 'Tensión dominante y apertura (Sol mayor)',
+        'acordes': ['D', 'G7'],
+        'explicacion': 'Intercambio armónico con séptima dominante. Introduce un color blues y rítmico con la presencia de la séptima menor.',
+        'es_pro': True,
+    },
+    {
+        'id': 'prog-a-e7',
+        'titulo': 'Cadencia dominante clásica (La mayor)',
+        'acordes': ['A', 'E7'],
+        'explicacion': 'Relación I – V7 en La mayor. El tritono en Mi séptima empuja con decisión de regreso a La mayor.',
+        'es_pro': True,
+    },
+    {
+        'id': 'prog-em-b7',
+        'titulo': 'Cadencia menor armónica (Mi menor)',
+        'acordes': ['Em', 'B7'],
+        'explicacion': 'Relación i – V7 en Mi menor. La nota sensible Re# en Si séptima conduce con fuerza dramática hacia el reposo de Mi menor.',
+        'es_pro': True,
+    },
+    {
+        'id': 'prog-g-bm',
+        'titulo': 'Transición mediante (Sol mayor)',
+        'acordes': ['G', 'Bm'],
+        'explicacion': 'Relación I – iii en Sol mayor. Un movimiento suave que matiza el brillo del acorde mayor con una profundidad reflexiva.',
+        'es_pro': True,
+    },
+
+    # --- 3 Acordes (Pro) ---
     {
         'id': 'prog-a-d-e',
         'titulo': 'Fórmula clásica de tres acordes (La mayor)',
         'acordes': ['A', 'D', 'E'],
         'explicacion': 'Progresión I – IV – V en La mayor. Re genera apertura melódica y Mi concentra la tensión que resuelve con fuerza en La.',
+        'es_pro': True,
     },
     {
         'id': 'prog-g-c-d',
         'titulo': 'Cadencia completa en Sol mayor',
         'acordes': ['G', 'C', 'D'],
         'explicacion': 'Estructura I – IV – V en Sol mayor. Do amplía el espacio sonoro y Re prepara el retorno al tono principal.',
+        'es_pro': True,
     },
     {
         'id': 'prog-d-g-a',
         'titulo': 'Tríada tonal en Re mayor',
         'acordes': ['D', 'G', 'A'],
         'explicacion': 'La relación armónica pilar (I – IV – V) en Re mayor. Tres acordes mayores que delimitan con absoluta claridad la tonalidad.',
+        'es_pro': True,
     },
     {
         'id': 'prog-am-dm-em',
         'titulo': 'Secuencia menor natural (La menor)',
         'acordes': ['Am', 'Dm', 'Em'],
         'explicacion': 'Secuencia i – iv – v en La menor. Al encadenar tres acordes menores, genera una atmósfera uniforme, cálida y reflexiva.',
+        'es_pro': True,
+    },
+    {
+        'id': 'prog-c-f-g',
+        'titulo': 'Estructura fundamental en Do mayor',
+        'acordes': ['C', 'F', 'G'],
+        'explicacion': 'La emblemática progresión I – IV – V en Do mayor. Tónica, subdominante y dominante en su máxima pureza acústica.',
+        'es_pro': True,
+    },
+    {
+        'id': 'prog-em-am-b7',
+        'titulo': 'Cadencia menor armónica completa (Mi menor)',
+        'acordes': ['Em', 'Am', 'B7'],
+        'explicacion': 'Secuencia i – iv – V7 en Mi menor. El paso por La menor profundiza la textura antes de la resolución clásica de Si séptima.',
+        'es_pro': True,
     },
 
-    # --- 4 Acordes ---
+    # --- 4 Acordes (Pro) ---
     {
         'id': 'prog-g-em-c-d',
         'titulo': 'Círculo armónico en Sol mayor',
         'acordes': ['G', 'Em', 'C', 'D'],
         'explicacion': 'Círculo clásico I – vi – IV – V. El paso por Mi menor agrega un matiz emotivo antes de avanzar por el impulso de Do y Re.',
+        'es_pro': True,
     },
     {
         'id': 'prog-em-c-g-d',
         'titulo': 'Progresión menor moderna',
         'acordes': ['Em', 'C', 'G', 'D'],
         'explicacion': 'Secuencia vi – IV – I – V en Sol / Mi menor. Su dinamismo crea una rueda sonora que fluye de manera natural sin sentirse estancada.',
+        'es_pro': True,
     },
     {
         'id': 'prog-c-am-dm-g',
         'titulo': 'Círculo armónico en Do mayor',
         'acordes': ['C', 'Am', 'Dm', 'G'],
         'explicacion': 'Secuencia I – vi – ii – V. Una de las progresiones más equilibradas y elegantes, muy utilizada en la balada y la música popular.',
+        'es_pro': True,
     },
     {
         'id': 'prog-c-g-am-em',
         'titulo': 'Descenso armónico (Do mayor)',
         'acordes': ['C', 'G', 'Am', 'Em'],
         'explicacion': 'Secuencia I – V – vi – iii. Los acordes se encadenan con suavidad gracias a las notas comunes que comparten en cada transición.',
+        'es_pro': True,
+    },
+    {
+        'id': 'prog-am-f-c-g',
+        'titulo': 'Secuencia pop menor en La menor',
+        'acordes': ['Am', 'F', 'C', 'G'],
+        'explicacion': 'Secuencia i – VI – III – VII en La menor. Ampliamente utilizada en la música acústica contemporánea por su potencia melódica.',
+        'es_pro': True,
+    },
+    {
+        'id': 'prog-d-a-bm-g',
+        'titulo': 'Progresión en Re mayor con relativo menor',
+        'acordes': ['D', 'A', 'Bm', 'G'],
+        'explicacion': 'Secuencia I – V – vi – IV en Re mayor. Combina la fuerza del bajo en Si menor con la calidez abierta de Sol mayor.',
+        'es_pro': True,
     },
 ]
 
 
-def obtener_catalogo_progresiones() -> List[EjercicioProgresion]:
+def obtener_catalogo_progresiones(solo_gratis: bool = False) -> List[EjercicioProgresion]:
     """Genera el catálogo de progresiones con diagramas SVG y secuencias de audio."""
-    catalogo_acordes_dict = {a.codigo: a for a in obtener_catalogo_acordes()}
+    catalogo_acordes_dict = {a.codigo: a for a in obtener_catalogo_acordes(solo_gratis=False)}
     catalogo: List[EjercicioProgresion] = []
 
     for item in PROGRESIONES_DATA:
+        es_pro = item.get('es_pro', False)
+        if solo_gratis and es_pro:
+            continue
         acordes_codigos = item['acordes']
         diagramas: List[str] = []
         audio_chords: List[List[int]] = []
@@ -509,6 +754,7 @@ def obtener_catalogo_progresiones() -> List[EjercicioProgresion]:
             explicacion=item['explicacion'],
             diagramas_svg=diagramas,
             audio_chords=audio_chords,
+            es_pro=es_pro,
         ))
 
     return catalogo

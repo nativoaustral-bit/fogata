@@ -8,7 +8,7 @@ Fogata es una plataforma web y atril digital interactivo diseñado para músicos
 
 [![Django](https://img.shields.io/badge/Django-5.2%20LTS-092E20?style=flat-square&logo=django)](https://www.djangoproject.com/)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-227%20passed%20(100%25)-brightgreen?style=flat-square)](#-validación-rápida)
+[![Tests](https://img.shields.io/badge/Tests-230%20passed%20(100%25)-brightgreen?style=flat-square)](#-validación-rápida)
 [![Producción](https://img.shields.io/badge/Producción-fogata.humm.cl-success?style=flat-square)](https://fogata.humm.cl)
 
 ---
@@ -62,11 +62,20 @@ Funcionalidades operativas y verificadas en la suite de pruebas y en producción
   * Módulo dedicado para guitarristas basado en el principio: *«El objetivo de Fogata es ayudarte a necesitar cada vez menos Fogata mientras tocas»*.
   * Secuencia de aprendizaje: **Escuchar → Buscar en la guitarra → Reconocer → Revelar → Comprender → Recordar**.
   * **Modalidad 1 (Notas):** Reconocimiento de alturas individuales en registro cómodo de guitarra con cálculo exacto de posiciones en el mástil (afinación estándar EADGBE), diapasón horizontal interactivo SVG y nota de referencia opcional para oído relativo.
-  * **Modalidad 2 (Acordes - Central):** Reconocimiento auditivo de los 8 acordes estándar (C, G, D, A, E, Am, Em, Dm), descomposición armónica de notas componentes, diagrama SVG de referencia y posición alternativa en el mástil con cejilla (CAGED).
-  * **Modalidad 3 (Progresiones):** Reconocimiento de secuencias de 2, 3 y 4 acordes con cadencia musical rítmica, revelación secuencial de diagramas y breve explicación conceptual («¿Por qué suenan bien juntos?»).
+    * *Plan Gratis:* 7 notas naturales (C, D, E, F, G, A, B) en registros básicos.
+    * *Plan Pro:* Catálogo cromático extendido (sostenidos y bemoles), registros agudos/graves adicionales y mayor variedad.
+  * **Modalidad 2 (Acordes - Central):** Reconocimiento auditivo de acordes, descomposición armónica de notas componentes, diagrama SVG de referencia y posición alternativa en el mástil con cejilla (CAGED).
+    * *Plan Gratis:* 8 acordes esenciales del guitarrista (C, G, D, A, E, Am, Em, Dm).
+    * *Plan Pro:* Catálogo completo de 18 acordes validados (mayores, menores, séptimas, cejillas F, B, Bm, F#m y séptimas dominantes C7, D7, G7, A7, E7, B7).
+  * **Modalidad 3 (Progresiones):** Reconocimiento de secuencias de acordes con cadencia rítmica, revelación secuencial de diagramas y explicación armónica («¿Por qué suenan bien juntos?»).
+    * *Plan Gratis:* Progresiones fundamentales de 2 acordes básicos (I-V, I-IV, i-VII, etc.).
+    * *Plan Pro:* Catálogo ampliado de progresiones de 2, 3 y 4 acordes (incluyendo secuencias pop/rock y progresiones con cejillas y séptimas).
   * **Motor de Audio Web Audio API:** Síntesis nativa de cuerda pulsada mediante modelado físico Karplus-Strong, libre de servicios externos, con control de parada inmediata y soporte mobile-first.
-  * **Sesiones Cortas:** Bloques de 5 ejercicios con autoevaluación voluntaria (sin penalizaciones, sin calificaciones automáticas ni temporizadores).
-  * **Disponibilidad y Control:** Habilitado para planes Gratis y Pro; interruptor controlable vía `FOGATA_EAR_TRAINING_ENABLED`.
+  * **Sesiones Cortas y Freemium Real:** Bloques de 5 ejercicios con autoevaluación voluntaria (sin penalizaciones, sin calificaciones automáticas ni temporizadores). En ambos planes: repeticiones ilimitadas de audio, revelación gratuita de respuestas y diagramas SVG.
+  * **Disponibilidad y Control:** Habilitado para planes Gratis y Pro con control de acceso server-side estricto; interruptor global vía `FOGATA_EAR_TRAINING_ENABLED`.
+* **Página de Acceso Unificada (Login y Entrada Comercial):**
+  * Acceso directo para usuarios recurrentes en la parte superior de `/login/` y ruta pública `/` (correo, contraseña, recordar clave, crear cuenta) sin necesidad de scroll.
+  * Exposición comercial explicativa bajo el formulario: propuesta de valor («Más guitarra. Menos distracciones»), secuencia de entrenamiento auditivo, público objetivo, tabla de planes con precios reales ($0 / $5.990 / $9.990 CLP) y enlaces directos a registro. Cero landings aisladas duplicadas.
 * **Sesiones Compartidas y Modo Invitado:**
   * Enlaces temporales únicos (`/s/<token>/`) con códigos QR para compartir el setlist con otros músicos en tiempo real sin requerir registro.
 * **Modelo Freemium (Gratis y Pro):**
@@ -276,16 +285,17 @@ Fogata cuenta con integración nativa con la pasarela oficial **Flow** (Chile) p
 
 La lógica de capacidad comercial está centralizada en `apps/core/planes.py`:
 
-| Plan | Canciones Almacenadas | Fogatas Activas | Precio CLP | Experiencia Musical |
-| :--- | :---: | :---: | :---: | :---: |
-| **Fogata Gratis** | Hasta 10 canciones | 1 Fogata activa | **$0** (Para siempre) | **100% Completa** (Atril, transposición, diagramas, QR) |
-| **Fogata Pro Semestral** | **Ilimitadas (∞)** | **Ilimitadas (∞)** | **$5.990** / 6 meses | **100% Completa** |
-| **Fogata Pro Anual** | **Ilimitadas (∞)** | **Ilimitadas (∞)** | **$9.990** / año | **100% Completa** |
+| Plan | Canciones Almacenadas | Fogatas Activas | Entrena tu oído | Precio CLP | Experiencia Musical |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Fogata Gratis** | Hasta 10 canciones | 1 Fogata activa | 7 notas naturales, 8 acordes básicos y progresiones de 2 acordes | **$0** (Para siempre) | **100% Completa** (Atril, transposición, diagramas, QR) |
+| **Fogata Pro Semestral** | **Ilimitadas (∞)** | **Ilimitadas (∞)** | **Catálogo completo** (notas cromáticas, 18 acordes con cejillas/séptimas y progresiones de 2, 3 y 4 acordes) | **$5.990** / 6 meses | **100% Completa** |
+| **Fogata Pro Anual** | **Ilimitadas (∞)** | **Ilimitadas (∞)** | **Catálogo completo** (notas cromáticas, 18 acordes con cejillas/séptimas y progresiones de 2, 3 y 4 acordes) | **$9.990** / año | **100% Completa** |
 
 ### Reglas Comerciales de la Plataforma
-* **Capacidad, no funcionalidad:** Los usuarios del plan Gratis tienen acceso idéntico al Modo Tocar, auto-scroll, transposición, diagramas SVG y sesiones compartidas.
-* **Validación Atómica Server-Side:** La creación de canciones y fogatas valida los límites dentro de transacciones de base de datos (`with transaction.atomic():`), impidiendo evasiones por concurrencia.
-* **Política de Downgrade No Destructiva:** Si una suscripción Pro vence, **ningún dato se borra ni se bloquea**. El usuario conserva todas sus canciones y setlists existentes; únicamente no podrá crear ítems nuevos hasta renovar o situarse bajo el cupo gratuito.
+* **Capacidad y Variedad, no Restricción Artificial:** Los usuarios del plan Gratis tienen acceso idéntico al Modo Tocar, auto-scroll, transposición, diagramas SVG y sesiones compartidas. En «Entrena tu oído», disfrutan de repeticiones de audio ilimitadas, revelación sin costo y autoevaluación voluntaria en su repertorio de estudio.
+* **Integración Transparente con Suscripciones Existentes:** La verificación Pro en «Entrena tu oído» reutiliza la función `obtener_tipo_cuenta(user)` en `apps/core/planes.py`. Los usuarios con Pro activo, cuentas piloto o administradores acceden automáticamente a todo el catálogo Pro sin pagos adicionales ni configuraciones separadas.
+* **Validación Atómica Server-Side:** La creación de canciones y fogatas valida los límites dentro de transacciones de base de datos (`with transaction.atomic():`), y los controladores de entrenamiento filtran el catálogo en el backend según el plan del usuario, impidiendo accesos no autorizados mediante alteración de parámetros en la URL.
+* **Política de Downgrade No Destructiva:** Si una suscripción Pro vence, **ningún dato se borra ni se bloquea**. El usuario conserva todas sus canciones y setlists existentes; en «Entrena tu oído» vuelve automáticamente al catálogo gratuito sin perder su historial de sesiones de práctica.
 
 ---
 
@@ -387,14 +397,15 @@ source .venv/bin/activate
 # 1. Comprobación de configuración Django
 python manage.py check
 
-# 2. Ejecutar la suite completa de pruebas unitarias e integración (209 tests)
+# 2. Ejecutar la suite completa de pruebas unitarias e integración (230 tests)
 python manage.py test
 
 # 3. Ejecutar pruebas de módulos específicos
 python manage.py test apps.canciones      # Motor musical, parser, diagramas (76 tests)
+python manage.py test apps.entrenamiento  # Entrena tu oído, notas, acordes, Pro (21 tests)
 python manage.py test apps.pagos          # Pasarela Flow, webhooks, reconciliación (30 tests)
-python manage.py test apps.core           # Autenticación, planes, límites (39 tests)
-python manage.py test apps.gestion        # Control Center, analítica, limpieza (43 tests)
+python manage.py test apps.core           # Autenticación, planes, límites, login (37 tests)
+python manage.py test apps.gestion        # Control Center, analítica, limpieza (45 tests)
 python manage.py test apps.fogatas        # Setlists, sesiones compartidas (21 tests)
 
 # 4. Chequeo sintáctico de JavaScript cliente

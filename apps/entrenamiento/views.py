@@ -8,6 +8,7 @@ from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from apps.core.planes import obtener_tipo_cuenta
 from apps.gestion.services import registrar_evento
 from .models import SesionEntrenamiento
 from .musical import (
@@ -16,6 +17,12 @@ from .musical import (
     obtener_catalogo_progresiones,
     NOTA_REFERENCIA_DEFAULT,
 )
+
+
+def es_usuario_pro(user) -> bool:
+    """Verifica si el usuario cuenta con suscripción o acceso Pro activo."""
+    tipo = obtener_tipo_cuenta(user)
+    return tipo in ('PRO', 'ADMIN', 'PILOTO')
 
 
 def _verificar_modulo_activo():
@@ -51,9 +58,12 @@ def portada_entrenamiento(request: HttpRequest) -> HttpResponse:
         completada=True
     ).order_by('-finalizada_el').first()
 
+    es_pro = es_usuario_pro(request.user)
+
     context = {
         'sesiones_completadas': sesiones_completadas,
         'ultima_sesion': ultima_sesion,
+        'es_pro': es_pro,
     }
     return render(request, 'entrenamiento/portada.html', context)
 
@@ -64,6 +74,8 @@ def entrenar_notas_view(request: HttpRequest) -> HttpResponse:
     Modalidad 1 — Entrena notas.
     Prepara una sesión de 5 ejercicios con notas en un registro cómodo de guitarra,
     con posiciones exactas en el diapasón y nota de referencia opcional.
+    Usuarios Gratis: Las 7 notas naturales (C, D, E, F, G, A, B).
+    Usuarios Pro: Notas naturales y cromáticas con registros extendidos.
     """
     _verificar_modulo_activo()
 
@@ -82,7 +94,8 @@ def entrenar_notas_view(request: HttpRequest) -> HttpResponse:
         metadata={'modalidad': 'notas', 'ejercicio_num': 1}
     )
 
-    catalogo = obtener_catalogo_notas()
+    es_pro = es_usuario_pro(request.user)
+    catalogo = obtener_catalogo_notas(solo_gratis=(not es_pro))
     # Tomar 5 notas aleatorias sin repetir en la misma sesión
     seleccion = random.sample(catalogo, k=min(5, len(catalogo)))
 
@@ -97,6 +110,7 @@ def entrenar_notas_view(request: HttpRequest) -> HttpResponse:
             'octava': ej.octava,
             'posiciones': [asdict(p) for p in ej.posiciones],
             'fretboard_svg': ej.fretboard_svg,
+            'es_pro': ej.es_pro,
         })
 
     context = {
@@ -107,6 +121,7 @@ def entrenar_notas_view(request: HttpRequest) -> HttpResponse:
         'ejercicios_json': json.dumps(ejercicios_data),
         'referencia_json': json.dumps(NOTA_REFERENCIA_DEFAULT),
         'total_ejercicios': 5,
+        'es_pro': es_pro,
     }
     return render(request, 'entrenamiento/ejercicio_notas.html', context)
 
@@ -115,8 +130,9 @@ def entrenar_notas_view(request: HttpRequest) -> HttpResponse:
 def entrenar_acordes_view(request: HttpRequest) -> HttpResponse:
     """
     Modalidad 2 — Entrena acordes (Experiencia central).
-    Prepara una sesión de 5 ejercicios basados en los 8 acordes estándar (C, G, D, A, E, Am, Em, Dm),
-    con diagramas de referencia y posiciones alternativas CAGED.
+    Prepara una sesión de 5 ejercicios basados en el catálogo musical de Fogata:
+    Usuarios Gratis: 8 acordes estándar (C, G, D, A, E, Am, Em, Dm).
+    Usuarios Pro: Catálogo completo ampliado con cejillas (F, B, Bm, F#m) y séptimas (C7, D7, G7, A7, E7, B7).
     """
     _verificar_modulo_activo()
 
@@ -134,7 +150,8 @@ def entrenar_acordes_view(request: HttpRequest) -> HttpResponse:
         metadata={'modalidad': 'acordes', 'ejercicio_num': 1}
     )
 
-    catalogo = obtener_catalogo_acordes()
+    es_pro = es_usuario_pro(request.user)
+    catalogo = obtener_catalogo_acordes(solo_gratis=(not es_pro))
     seleccion = random.sample(catalogo, k=min(5, len(catalogo)))
 
     ejercicios_data = []
@@ -151,6 +168,7 @@ def entrenar_acordes_view(request: HttpRequest) -> HttpResponse:
             'midi_alternativa': ej.midi_alternativa,
             'svg_alternativa': ej.svg_alternativa,
             'descripcion_alternativa': ej.descripcion_alternativa,
+            'es_pro': ej.es_pro,
         })
 
     context = {
@@ -160,6 +178,7 @@ def entrenar_acordes_view(request: HttpRequest) -> HttpResponse:
         'sesion_id': sesion.pk,
         'ejercicios_json': json.dumps(ejercicios_data),
         'total_ejercicios': 5,
+        'es_pro': es_pro,
     }
     return render(request, 'entrenamiento/ejercicio_acordes.html', context)
 
@@ -168,8 +187,9 @@ def entrenar_acordes_view(request: HttpRequest) -> HttpResponse:
 def entrenar_progresiones_view(request: HttpRequest) -> HttpResponse:
     """
     Modalidad 3 — Entrena progresiones.
-    Prepara una sesión de 5 secuencias de acordes ordenadas progresivamente
-    (2, 3 y 4 acordes), con reproducción secuencial y explicación breve.
+    Prepara una sesión de 5 secuencias de acordes ordenadas progresivamente:
+    Usuarios Gratis: Progresiones de 2 acordes básicos (G-D, Am-Em, C-G, D-A, C-Am, E-A, Dm-Am, Em-C).
+    Usuarios Pro: Progresiones variadas de 2, 3 y 4 acordes (I-IV-V, i-iv-v, círculos armónicos).
     """
     _verificar_modulo_activo()
 
@@ -187,7 +207,8 @@ def entrenar_progresiones_view(request: HttpRequest) -> HttpResponse:
         metadata={'modalidad': 'progresiones', 'ejercicio_num': 1}
     )
 
-    catalogo = obtener_catalogo_progresiones()
+    es_pro = es_usuario_pro(request.user)
+    catalogo = obtener_catalogo_progresiones(solo_gratis=(not es_pro))
     # Tomar 5 progresiones asegurando variedad
     seleccion = random.sample(catalogo, k=min(5, len(catalogo)))
 
@@ -201,6 +222,7 @@ def entrenar_progresiones_view(request: HttpRequest) -> HttpResponse:
             'explicacion': ej.explicacion,
             'diagramas_svg': ej.diagramas_svg,
             'audio_chords': ej.audio_chords,
+            'es_pro': ej.es_pro,
         })
 
     context = {
@@ -210,6 +232,7 @@ def entrenar_progresiones_view(request: HttpRequest) -> HttpResponse:
         'sesion_id': sesion.pk,
         'ejercicios_json': json.dumps(ejercicios_data),
         'total_ejercicios': 5,
+        'es_pro': es_pro,
     }
     return render(request, 'entrenamiento/ejercicio_progresiones.html', context)
 

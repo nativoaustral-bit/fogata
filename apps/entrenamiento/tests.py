@@ -66,30 +66,38 @@ class MusicalEngineTests(TestCase):
         self.assertIn('</svg>', svg)
 
     def test_catalogo_notas_completo(self):
-        """El catálogo de notas debe proveer las notas configuradas con sus posiciones."""
-        catalogo = obtener_catalogo_notas()
-        self.assertEqual(len(catalogo), 10)
-        codigos = {n.id for n in catalogo}
-        self.assertIn('G3', codigos)
-        self.assertIn('A3', codigos)
-        self.assertIn('E4', codigos)
-
-        for n in catalogo:
+        """El catálogo de notas debe proveer notas naturales para Gratis y catálogo completo para Pro."""
+        catalogo_gratis = obtener_catalogo_notas(solo_gratis=True)
+        self.assertEqual(len(catalogo_gratis), 10)
+        # Las 7 notas naturales deben estar presentes en el catálogo gratuito
+        nombres_raiz = set(n.nombre_latino.split()[0] for n in catalogo_gratis)
+        self.assertEqual(nombres_raiz, {'Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si'})
+        for n in catalogo_gratis:
+            self.assertFalse(n.es_pro)
             self.assertTrue(len(n.posiciones) >= 2)
             self.assertTrue(n.frecuencia > 100)
             self.assertIn('<svg', n.fretboard_svg)
 
+        catalogo_pro = obtener_catalogo_notas(solo_gratis=False)
+        self.assertEqual(len(catalogo_pro), 21)
+        codigos_pro = {n.id for n in catalogo_pro}
+        self.assertIn('F#3', codigos_pro)
+        self.assertIn('C#4', codigos_pro)
+        self.assertIn('A4', codigos_pro)
+        self.assertIn('A2', codigos_pro)
+
     def test_catalogo_acordes_8_esenciales(self):
         """
-        Verifica los 8 acordes estándar (C, G, D, A, E, Am, Em, Dm)
-        con sus digitaciones abiertas de referencia y alternativas validadas.
+        Verifica los 8 acordes estándar (C, G, D, A, E, Am, Em, Dm) para Gratis
+        y el catálogo completo de 18 acordes (con cejillas y séptimas) para Pro.
         """
-        catalogo = obtener_catalogo_acordes()
-        self.assertEqual(len(catalogo), 8)
-        codigos = [a.codigo for a in catalogo]
+        catalogo_gratis = obtener_catalogo_acordes(solo_gratis=True)
+        self.assertEqual(len(catalogo_gratis), 8)
+        codigos = [a.codigo for a in catalogo_gratis]
         self.assertEqual(codigos, ['C', 'G', 'D', 'A', 'E', 'Am', 'Em', 'Dm'])
 
-        for ac in catalogo:
+        for ac in catalogo_gratis:
+            self.assertFalse(ac.es_pro)
             self.assertEqual(len(ac.trastes_referencia), 6)
             self.assertEqual(len(ac.trastes_alternativa), 6)
             self.assertIn('<svg', ac.svg_referencia)
@@ -97,17 +105,28 @@ class MusicalEngineTests(TestCase):
             self.assertTrue(len(ac.notas_componentes) > 0)
             self.assertTrue(len(ac.descripcion_alternativa) > 0)
 
-    def test_catalogo_progresiones_armonicas(self):
-        """Verifica las 12 progresiones musicales (2, 3 y 4 acordes)."""
-        catalogo = obtener_catalogo_progresiones()
-        self.assertEqual(len(catalogo), 12)
+        catalogo_pro = obtener_catalogo_acordes(solo_gratis=False)
+        self.assertEqual(len(catalogo_pro), 18)
+        codigos_pro = [a.codigo for a in catalogo_pro]
+        for c_esperado in ['F', 'B', 'Bm', 'F#m', 'C7', 'D7', 'G7', 'A7', 'E7', 'B7']:
+            self.assertIn(c_esperado, codigos_pro)
 
-        for prog in catalogo:
-            self.assertTrue(len(prog.acordes) in (2, 3, 4))
-            self.assertEqual(len(prog.diagramas_svg), len(prog.acordes))
-            self.assertEqual(len(prog.audio_chords), len(prog.acordes))
+    def test_catalogo_progresiones_armonicas(self):
+        """Verifica las progresiones de 2 acordes para Gratis y el catálogo completo (2, 3 y 4) para Pro."""
+        catalogo_gratis = obtener_catalogo_progresiones(solo_gratis=True)
+        self.assertEqual(len(catalogo_gratis), 8)
+        for prog in catalogo_gratis:
+            self.assertFalse(prog.es_pro)
+            self.assertEqual(len(prog.acordes), 2)
+            self.assertEqual(len(prog.diagramas_svg), 2)
+            self.assertEqual(len(prog.audio_chords), 2)
             self.assertIn('→', prog.acordes_str)
             self.assertTrue(len(prog.explicacion) > 10)
+
+        catalogo_pro = obtener_catalogo_progresiones(solo_gratis=False)
+        self.assertEqual(len(catalogo_pro), 25)
+        longitudes = set(len(p.acordes) for p in catalogo_pro)
+        self.assertEqual(longitudes, {2, 3, 4})
 
 
 class EntrenamientoViewsTests(TestCase):
@@ -354,4 +373,125 @@ class EntrenamientoViewsTests(TestCase):
         sesion.refresh_from_db()
         self.assertEqual(sesion.ejercicios_completados, 1)
         self.assertEqual(sesion.aciertos_declarados, 0)
+
+    def test_diferenciacion_gratis_y_pro_en_vistas(self):
+        """
+        Verifica que:
+        - Usuario Gratis solo recibe ejercicios con es_pro=False (notas naturales, 8 acordes, 2 acordes progresiones).
+        - Usuario Pro activo recibe ejercicios del catálogo completo.
+        - Usuario Pro vencido regresa automáticamente a las restricciones de Gratis.
+        """
+        from apps.core.models import PerfilPiloto
+        from datetime import timedelta
+        from django.utils import timezone
+
+        # 1. Usuario Gratis
+        user_gratis = User.objects.create_user(
+            username='gratis_musico@test.com',
+            email='gratis_musico@test.com',
+            password='Password123!'
+        )
+        PerfilPiloto.objects.create(user=user_gratis, tipo_cuenta='GRATIS')
+
+        self.client.force_login(user_gratis)
+
+        resp_notas = self.client.get(self.url_notas)
+        ejercicios_notas = json.loads(resp_notas.context['ejercicios_json'])
+        for ej in ejercicios_notas:
+            self.assertFalse(ej['es_pro'])
+
+        resp_acordes = self.client.get(self.url_acordes)
+        ejercicios_acordes = json.loads(resp_acordes.context['ejercicios_json'])
+        for ej in ejercicios_acordes:
+            self.assertFalse(ej['es_pro'])
+            self.assertIn(ej['codigo'], ['C', 'G', 'D', 'A', 'E', 'Am', 'Em', 'Dm'])
+
+        resp_progs = self.client.get(self.url_progresiones)
+        ejercicios_progs = json.loads(resp_progs.context['ejercicios_json'])
+        for ej in ejercicios_progs:
+            self.assertFalse(ej['es_pro'])
+            self.assertEqual(len(ej['acordes']), 2)
+
+        # 2. Usuario Pro Activo
+        user_pro = User.objects.create_user(
+            username='pro_activo@test.com',
+            email='pro_activo@test.com',
+            password='Password123!'
+        )
+        PerfilPiloto.objects.create(
+            user=user_pro,
+            tipo_cuenta='PRO',
+            fecha_fin_plan=timezone.now() + timedelta(days=30)
+        )
+        self.client.force_login(user_pro)
+        resp_pro_notas = self.client.get(self.url_notas)
+        self.assertTrue(resp_pro_notas.context['es_pro'])
+
+        # 3. Usuario Pro Vencido (degradado a Gratis en tiempo real)
+        user_vencido = User.objects.create_user(
+            username='pro_vencido@test.com',
+            email='pro_vencido@test.com',
+            password='Password123!'
+        )
+        PerfilPiloto.objects.create(
+            user=user_vencido,
+            tipo_cuenta='PRO',
+            fecha_fin_plan=timezone.now() - timedelta(days=1)
+        )
+        self.client.force_login(user_vencido)
+        resp_vencido_notas = self.client.get(self.url_notas)
+        self.assertFalse(resp_vencido_notas.context['es_pro'])
+        ejercicios_vencido = json.loads(resp_vencido_notas.context['ejercicios_json'])
+        for ej in ejercicios_vencido:
+            self.assertFalse(ej['es_pro'])
+
+    def test_seguridad_servidor_evita_bypasses_a_pro(self):
+        """Un usuario Gratis no puede obtener contenido Pro manipulando query parameters."""
+        from apps.core.models import PerfilPiloto
+        user_gratis = User.objects.create_user(
+            username='hacker_gratis@test.com',
+            email='hacker_gratis@test.com',
+            password='Password123!'
+        )
+        PerfilPiloto.objects.create(user=user_gratis, tipo_cuenta='GRATIS')
+        self.client.force_login(user_gratis)
+
+        resp = self.client.get(self.url_acordes + '?nivel=pro&modo=avanzado')
+        self.assertFalse(resp.context['es_pro'])
+        ejercicios = json.loads(resp.context['ejercicios_json'])
+        for ej in ejercicios:
+            self.assertFalse(ej['es_pro'])
+            self.assertIn(ej['codigo'], ['C', 'G', 'D', 'A', 'E', 'Am', 'Em', 'Dm'])
+
+    def test_pagina_login_como_entrada_comercial_publica(self):
+        """La página de login muestra el formulario arriba y la presentación comercial abajo."""
+        # 1. Acceso a /login/
+        resp = self.client.get(reverse('core:login'))
+        self.assertEqual(resp.status_code, 200)
+        # Formulario arriba
+        self.assertContains(resp, 'name="email"')
+        self.assertContains(resp, 'name="password"')
+        self.assertContains(resp, 'Olvidé mi contraseña')
+        self.assertContains(resp, 'Tus canciones. Tus acordes. Tu sesión.')
+        # Secciones comerciales abajo
+        self.assertContains(resp, 'Más guitarra. Menos distracciones.')
+        self.assertContains(resp, '¿Y si cada vez necesitaras mirar menos la pantalla?')
+        self.assertContains(resp, 'Escucha')
+        self.assertContains(resp, 'Encuentra')
+        self.assertContains(resp, 'Revela')
+        self.assertContains(resp, 'Sigue tocando')
+        self.assertContains(resp, '¿Para quién es Fogata?')
+        self.assertContains(resp, 'Empieza gratis. Avanza cuando quieras.')
+        self.assertContains(resp, 'FOGATA GRATIS')
+        self.assertContains(resp, 'FOGATA PRO')
+        self.assertContains(resp, '5.990')
+        self.assertContains(resp, '9.990')
+        self.assertContains(resp, 'Toca. Practica. Disfruta.')
+        self.assertContains(resp, 'fogata.humm.cl')
+
+        # 2. Acceso anónimo a / (home) muestra la entrada unificada
+        resp_home = self.client.get(reverse('core:home'))
+        self.assertEqual(resp_home.status_code, 200)
+        self.assertContains(resp_home, 'name="email"')
+        self.assertContains(resp_home, 'Tus canciones. Tus acordes. Tu sesión.')
 

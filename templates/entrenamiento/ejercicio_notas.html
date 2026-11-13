@@ -20,7 +20,10 @@
 
   <!-- Contenedor del Ejercicio Activo -->
   <div class="ejercicio-box" id="contenedor-ejercicio">
-    <span class="entrenamiento-badge">Modalidad 1 · Notas</span>
+    <span class="entrenamiento-badge">
+      Modalidad 1 · Notas
+      <span id="badge-pro-indicador" style="display: none; background: #ff9800; color: #0d0d0d; font-weight: 800; padding: 1px 6px; border-radius: 3px; font-size: 0.72rem; margin-left: 6px;">PRO</span>
+    </span>
     <h1 class="entrenamiento-titulo" style="font-size: 1.6rem; margin-top: 6px;">{{ titulo_modalidad }}</h1>
     <p class="ejercicio-instruccion">{{ instruccion }}</p>
 
@@ -100,6 +103,25 @@
       <div class="sesion-final-stats-num" id="stats-sesion-num">5 ejercicios</div>
       <div class="sesion-final-stats-desc" id="stats-sesion-desc">Sesión de notas finalizada</div>
     </div>
+
+    {% if not es_pro %}
+    <div style="margin: 20px 0; padding: 18px; background: rgba(255, 152, 0, 0.05); border: 1px solid rgba(255, 152, 0, 0.25); border-radius: 8px; text-align: left;">
+      <div style="font-size: 1rem; font-weight: 700; color: #f5f5f5; margin-bottom: 4px;">
+        Lleva tu oído más lejos.
+      </div>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.45;">
+        Amplía tu entrenamiento con más notas, acordes y progresiones. Todo incluido en Fogata Pro.
+      </p>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="{% url 'pro' %}?origen=entrenamiento_notas" class="btn btn-sm btn-primary" style="font-weight: 700;">
+          Conocer Fogata Pro
+        </a>
+        <a href="{% url 'entrenamiento:notas' %}" class="btn btn-sm btn-secondary">
+          Seguir practicando gratis
+        </a>
+      </div>
+    </div>
+    {% endif %}
 
     <div class="sesion-final-acciones">
       <a href="{% url 'entrenamiento:notas' %}" class="btn btn-primary" style="font-weight: 700;">
@@ -192,6 +214,12 @@
     indiceActual = idx;
     escuchasActual = 0;
     respuestaRevelada = false;
+
+    var ej = ejercicios[idx];
+    var domBadgePro = document.getElementById('badge-pro-indicador');
+    if (domBadgePro) {
+      domBadgePro.style.display = ej.es_pro ? 'inline-block' : 'none';
+    }
 
     // Actualizar barra de progreso
     domTextoProgreso.textContent = 'Ejercicio ' + (idx + 1) + ' de ' + total;

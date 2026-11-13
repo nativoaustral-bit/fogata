@@ -22,12 +22,13 @@ from apps.gestion.services import registrar_evento
 def home(request):
     """
     Pantalla principal de Fogata:
-    - Si el usuario es anónimo: Muestra la Landing pública sobria.
+    - Si el usuario es anónimo: Muestra la página de acceso y presentación comercial unificada (Fase 11).
     - Si el usuario está autenticado: Muestra su repertorio privado (canciones y Fogatas propias)
       o el estado de bienvenida si su repertorio está vacío.
     """
     if not request.user.is_authenticated:
-        return render(request, 'core/landing.html')
+        form = LoginForm()
+        return render(request, 'core/login.html', {'form': form, 'next': ''})
 
     # Filtrar estrictamente por propietario (Criterio 11)
     canciones_usuario = Cancion.objects.filter(propietario=request.user)
