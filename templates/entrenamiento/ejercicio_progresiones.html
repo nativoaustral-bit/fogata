@@ -219,7 +219,8 @@
     FogataAudio.reproducirProgresion(
       ej.audio_chords,
       1700,
-      function (pasoIdx) {
+      function (pasoIdx, totalPasos) {
+        domIndicadorReproduccion.textContent = '🎶 Reproduciendo acorde ' + (pasoIdx + 1) + ' de ' + totalPasos + '...';
         // Resaltar píldora si la respuesta ya está visible
         var pildoras = domContenedorPildoras.querySelectorAll('.secuencia-acorde-pildora');
         for (var p = 0; p < pildoras.length; p++) {
@@ -229,6 +230,7 @@
       },
       function () {
         domIndicadorReproduccion.style.display = 'none';
+        domIndicadorReproduccion.textContent = '🎶 Reproduciendo secuencia...';
         var pildoras = domContenedorPildoras.querySelectorAll('.secuencia-acorde-pildora');
         for (var p = 0; p < pildoras.length; p++) {
           pildoras[p].style.borderColor = 'var(--color-flame)';

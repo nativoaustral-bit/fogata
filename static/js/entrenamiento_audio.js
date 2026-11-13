@@ -12,7 +12,7 @@
   var masterGain = null;
   var limiter = null;
   var bodyBus = null;
-  var activeSources = [];
+  var activeVoices = [];
   var scheduledTimeouts = [];
   var bufferCache = {};
 
@@ -159,25 +159,48 @@
   }
 
   /**
-   * Detiene de inmediato cualquier sonido activo o secuencia en progreso sin chasquidos.
+   * Cancela cualquier temporizador pendiente de secuencias de acordes.
    */
-  function detenerTodo() {
+  function limpiarTimeouts() {
     for (var i = 0; i < scheduledTimeouts.length; i++) {
       clearTimeout(scheduledTimeouts[i]);
     }
     scheduledTimeouts = [];
+  }
 
-    if (activeSources.length > 0 && audioCtx) {
-      for (var s = 0; s < activeSources.length; s++) {
+  /**
+   * Amortigua con un micro-fade out cualquier cuerda activa para evitar
+   * acumulación o chasquidos de DC al cambiar de nota/acorde.
+   */
+  function amortiguarVoces(fadeMs) {
+    if (activeVoices.length > 0 && audioCtx) {
+      var fadeSec = (fadeMs || 35) / 1000.0;
+      var tNow = audioCtx.currentTime;
+      for (var s = 0; s < activeVoices.length; s++) {
+        var v = activeVoices[s];
         try {
-          activeSources[s].stop();
-          activeSources[s].disconnect();
+          if (v.gain && v.gain.gain) {
+            v.gain.gain.cancelScheduledValues(tNow);
+            v.gain.gain.setValueAtTime(v.gain.gain.value, tNow);
+            v.gain.gain.linearRampToValueAtTime(0.0001, tNow + fadeSec);
+          }
+          if (v.src) {
+            v.src.stop(tNow + fadeSec + 0.005);
+          }
         } catch (e) {
-          // Ignorar si ya terminó
+          // Ya terminado o desconectado
         }
       }
-      activeSources = [];
+      activeVoices = [];
     }
+  }
+
+  /**
+   * Detiene de inmediato cualquier sonido activo o secuencia en progreso sin chasquidos.
+   */
+  function detenerTodo() {
+    limpiarTimeouts();
+    amortiguarVoces(20);
   }
 
   /**
@@ -202,11 +225,13 @@
 
     var tInicio = ctx.currentTime + (inicioDelay || 0);
     src.start(tInicio);
-    activeSources.push(src);
+
+    var voiceItem = { src: src, gain: gain };
+    activeVoices.push(voiceItem);
 
     src.onended = function () {
-      var idx = activeSources.indexOf(src);
-      if (idx !== -1) activeSources.splice(idx, 1);
+      var idx = activeVoices.indexOf(voiceItem);
+      if (idx !== -1) activeVoices.splice(idx, 1);
     };
   }
 
@@ -223,11 +248,21 @@
    * Reproduce un acorde en rasgueo descendente natural de guitarra acústica.
    * Aplica escalado de ganancia proporcional al número de cuerdas (anti-saturación)
    * y micro-retardo humano entre cuerdas (curva de rasgueo real).
+   *
+   * @param {Array<number>} notasMidi - Arreglo con notas MIDI de las cuerdas.
+   * @param {boolean} [limpiarSecuencia=true] - Si es false, no cancela los timeouts de una progresión en curso.
    */
-  function reproducirAcorde(notasMidi) {
-    detenerTodo();
+  function reproducirAcorde(notasMidi, limpiarSecuencia) {
+    if (limpiarSecuencia !== false) {
+      limpiarTimeouts();
+    }
+    amortiguarVoces(40);
+
     var ctx = obtenerAudioContext();
     if (!ctx) return;
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
 
     var notasValidas = [];
     for (var i = 0; i < notasMidi.length; i++) {
@@ -262,16 +297,23 @@
    */
   function reproducirProgresion(secuenciaAcordes, intervaloEntreAcordes, callbackPaso, callbackFin) {
     detenerTodo();
-    var intervalo = intervaloEntreAcordes || 1700; // 1.7 segundos por acorde
+    var ctx = obtenerAudioContext();
+    if (!ctx || !secuenciaAcordes || !secuenciaAcordes.length) return;
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
 
-    for (var i = 0; i < secuenciaAcordes.length; i++) {
+    var intervalo = intervaloEntreAcordes || 1700; // 1.7 segundos por acorde
+    var totalAcordes = secuenciaAcordes.length;
+
+    for (var i = 0; i < totalAcordes; i++) {
       (function (indice) {
         var tid = setTimeout(function () {
-          if (callbackPaso) callbackPaso(indice);
+          if (callbackPaso) callbackPaso(indice, totalAcordes);
           var acorde = secuenciaAcordes[indice];
-          reproducirAcorde(acorde);
+          reproducirAcorde(acorde, false); // Importante: false preserva los timeouts de la progresión
 
-          if (indice === secuenciaAcordes.length - 1 && callbackFin) {
+          if (indice === totalAcordes - 1 && callbackFin) {
             var finTid = setTimeout(function () {
               callbackFin();
             }, intervalo);
