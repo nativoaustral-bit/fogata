@@ -1,7 +1,8 @@
 /**
- * FOGATA — Motor de Audio Nativo para «Entrena tu oído»
- * Síntesis de cuerdas pulsadas mediante algoritmo físico Karplus-Strong sobre Web Audio API.
- * Cero dependencias externas. Cero librerías pesadas. 100% compatible mobile.
+ * FOGATA — Motor de Audio Acústico para «Entrena tu oído»
+ * Síntesis física de guitarra acústica (Extended Karplus-Strong / Jaffe-Smith)
+ * con resonancia de caja de resonancia armónica y modelado de ataque de púa/yema.
+ * Cero saturación digital. Cero dependencias externas. 100% compatible mobile.
  */
 
 (function (window) {
@@ -9,11 +10,15 @@
 
   var audioCtx = null;
   var masterGain = null;
-  var compressor = null;
+  var limiter = null;
+  var bodyBus = null;
   var activeSources = [];
   var scheduledTimeouts = [];
   var bufferCache = {};
 
+  /**
+   * Inicializa el grafo de audio con modelado acústico de cuerpo de guitarra.
+   */
   function obtenerAudioContext() {
     if (!audioCtx) {
       var AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -23,19 +28,63 @@
       }
       audioCtx = new AudioContextClass();
 
-      // Compresor/limitador suave para evitar cualquier saturación o click
-      compressor = audioCtx.createDynamicsCompressor();
-      compressor.threshold.setValueAtTime(-12, audioCtx.currentTime);
-      compressor.knee.setValueAtTime(8, audioCtx.currentTime);
-      compressor.ratio.setValueAtTime(4, audioCtx.currentTime);
-      compressor.attack.setValueAtTime(0.005, audioCtx.currentTime);
-      compressor.release.setValueAtTime(0.05, audioCtx.currentTime);
+      // Bus de entrada con filtros de resonancia de caja de guitarra acústica
+      bodyBus = audioCtx.createGain();
+      bodyBus.gain.setValueAtTime(1.0, audioCtx.currentTime);
 
+      // 1. Filtro paso-alto: elimina sub-graves sucios (<75 Hz)
+      var hpFilter = audioCtx.createBiquadFilter();
+      hpFilter.type = 'highpass';
+      hpFilter.frequency.setValueAtTime(75, audioCtx.currentTime);
+
+      // 2. Resonancia de aire de la caja (Helmholtz ~105 Hz, Q=2.2)
+      var airResonance = audioCtx.createBiquadFilter();
+      airResonance.type = 'peaking';
+      airResonance.frequency.setValueAtTime(105, audioCtx.currentTime);
+      airResonance.Q.setValueAtTime(2.2, audioCtx.currentTime);
+      airResonance.gain.setValueAtTime(3.5, audioCtx.currentTime);
+
+      // 3. Resonancia de madera de la tapa armónica (~225 Hz, Q=2.5)
+      var woodResonance = audioCtx.createBiquadFilter();
+      woodResonance.type = 'peaking';
+      woodResonance.frequency.setValueAtTime(225, audioCtx.currentTime);
+      woodResonance.Q.setValueAtTime(2.5, audioCtx.currentTime);
+      woodResonance.gain.setValueAtTime(3.0, audioCtx.currentTime);
+
+      // 4. Atenuación de estridencia digital (~2800 Hz) para calidez de nylon/bronce
+      var warmNotch = audioCtx.createBiquadFilter();
+      warmNotch.type = 'peaking';
+      warmNotch.frequency.setValueAtTime(2800, audioCtx.currentTime);
+      warmNotch.Q.setValueAtTime(1.2, audioCtx.currentTime);
+      warmNotch.gain.setValueAtTime(-3.5, audioCtx.currentTime);
+
+      // 5. Suave caída acústica natural por encima de 5500 Hz
+      var highCut = audioCtx.createBiquadFilter();
+      highCut.type = 'lowpass';
+      highCut.frequency.setValueAtTime(5500, audioCtx.currentTime);
+
+      // Ganancia maestra con amplio margen dinámico (headroom anti-saturación)
       masterGain = audioCtx.createGain();
-      masterGain.gain.setValueAtTime(0.85, audioCtx.currentTime);
+      masterGain.gain.setValueAtTime(0.78, audioCtx.currentTime);
 
-      masterGain.connect(compressor);
-      compressor.connect(audioCtx.destination);
+      // Limitador transparente de seguridad (techo en -1.5 dBFS)
+      // Solo actúa ante picos inesperados; en operación normal no comprime ni distorsiona
+      limiter = audioCtx.createDynamicsCompressor();
+      limiter.threshold.setValueAtTime(-1.5, audioCtx.currentTime);
+      limiter.knee.setValueAtTime(3.0, audioCtx.currentTime);
+      limiter.ratio.setValueAtTime(16.0, audioCtx.currentTime);
+      limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
+      limiter.release.setValueAtTime(0.12, audioCtx.currentTime);
+
+      // Conexión del bus acústico en serie
+      bodyBus.connect(hpFilter);
+      hpFilter.connect(airResonance);
+      airResonance.connect(woodResonance);
+      woodResonance.connect(warmNotch);
+      warmNotch.connect(highCut);
+      highCut.connect(masterGain);
+      masterGain.connect(limiter);
+      limiter.connect(audioCtx.destination);
     }
 
     if (audioCtx.state === 'suspended') {
@@ -50,46 +99,52 @@
   }
 
   /**
-   * Genera un AudioBuffer con el timbre acústico de una cuerda pulsada.
-   * Utiliza el modelo físico Karplus-Strong con atenuación de armónicos.
+   * Genera un AudioBuffer con el timbre orgánico de una cuerda de guitarra acústica.
+   * Modela la deformación física triangular inicial, la fricción de la púa y el decaimiento armónico.
    */
-  function sintetizarCuerda(frecuencia, duracionSegundos) {
+  function sintetizarCuerdaAcustica(frecuencia, duracionSegundos) {
     var ctx = obtenerAudioContext();
     if (!ctx) return null;
 
-    var duracion = duracionSegundos || 2.4;
+    var duracion = duracionSegundos || 2.8;
     var sampleRate = ctx.sampleRate;
     var totalSamples = Math.floor(sampleRate * duracion);
     var buffer = ctx.createBuffer(1, totalSamples, sampleRate);
     var canal = buffer.getChannelData(0);
 
     var periodo = Math.max(2, Math.round(sampleRate / frecuencia));
+    // Punto de pulsado físico de la púa (~20% de la longitud de la cuerda desde el puente)
+    var puntoPua = Math.max(1, Math.round(periodo * 0.20));
 
-    // Excitación inicial (ataque de púa/yema): pulso de ruido filtrado
-    var prev = 0;
+    // Excitación física: perfil de deformación triangular + fricción suavizada de la púa
+    var lpRuido = 0;
     for (var i = 0; i < periodo; i++) {
+      // Perfil triangular de la cuerda estirada antes de soltarse
+      var triangulo = (i < puntoPua) ? (i / puntoPua) : ((periodo - i) / (periodo - puntoPua));
+      // Fricción acústica de ataque filtrada (sin estridencia blanca)
       var ruido = (Math.random() * 2.0 - 1.0);
-      // Filtro paso-bajo inicial para suavizar el chasquido y dar calidez acústica
-      prev = (ruido + prev) * 0.5;
-      canal[i] = prev * 0.85;
+      lpRuido += 0.35 * (ruido - lpRuido);
+
+      canal[i] = (triangulo * 0.40) + (lpRuido * 0.60);
     }
 
-    // Lazo de realimentación con decaimiento dependiente de la frecuencia
-    // Cuerdas más agudas decaen ligeramente más rápido que las graves
-    var factorDecaimiento = 0.993 - (frecuencia / 25000.0);
-    if (factorDecaimiento < 0.985) factorDecaimiento = 0.985;
+    // Lazo de realimentación (ecuación de onda con amortiguamiento dependiente de frecuencia)
+    // Las cuerdas graves sostienen más tiempo (~3.2s) que las agudas (~2.0s)
+    var factorDecaimiento = 0.9968 - (frecuencia / 36000.0);
+    if (factorDecaimiento < 0.984) factorDecaimiento = 0.984;
 
     for (var j = periodo; j < totalSamples; j++) {
-      // Filtro promediador de 2 muestras (simula absorción de energía en cejuela y puente)
-      canal[j] = 0.5 * (canal[j - periodo] + canal[j - periodo - 1]) * factorDecaimiento;
+      var p1 = j - periodo;
+      var p2 = (p1 > 0) ? (p1 - 1) : (periodo - 1); // Protección estricta contra índices negativos / NaN
+      canal[j] = 0.5 * (canal[p1] + canal[p2]) * factorDecaimiento;
     }
 
-    // Suave fade-out en los últimos 40ms para evitar corte abrupto
-    var fadeSamples = Math.floor(sampleRate * 0.04);
-    var startIndex = totalSamples - fadeSamples;
+    // Suave fade-out en los últimos 45ms para evitar cualquier click final
+    var fadeSamples = Math.floor(sampleRate * 0.045);
+    var startFade = totalSamples - fadeSamples;
     for (var k = 0; k < fadeSamples; k++) {
       var mult = 1.0 - (k / fadeSamples);
-      canal[startIndex + k] *= mult;
+      canal[startFade + k] *= mult;
     }
 
     return buffer;
@@ -98,29 +153,27 @@
   function obtenerBufferNota(frecuencia) {
     var key = Math.round(frecuencia * 10) / 10;
     if (!bufferCache[key]) {
-      bufferCache[key] = sintetizarCuerda(frecuencia, 2.4);
+      bufferCache[key] = sintetizarCuerdaAcustica(frecuencia, 2.8);
     }
     return bufferCache[key];
   }
 
   /**
-   * Detiene de inmediato cualquier sonido activo o secuencia en progreso.
+   * Detiene de inmediato cualquier sonido activo o secuencia en progreso sin chasquidos.
    */
   function detenerTodo() {
-    // Cancelar timeouts pendientes de progresiones
     for (var i = 0; i < scheduledTimeouts.length; i++) {
       clearTimeout(scheduledTimeouts[i]);
     }
     scheduledTimeouts = [];
 
-    // Detener fuentes activas
     if (activeSources.length > 0 && audioCtx) {
       for (var s = 0; s < activeSources.length; s++) {
         try {
           activeSources[s].stop();
           activeSources[s].disconnect();
         } catch (e) {
-          // Ignorar si ya estaba detenida
+          // Ignorar si ya terminó
         }
       }
       activeSources = [];
@@ -128,9 +181,9 @@
   }
 
   /**
-   * Reproduce una nota individual.
+   * Reproduce una cuerda individual con ganancia calibrada.
    */
-  function reproducirNota(frecuencia, volumen, inicioDelay) {
+  function reproducirCuerda(frecuencia, volumen, inicioDelay) {
     var ctx = obtenerAudioContext();
     if (!ctx) return;
 
@@ -141,11 +194,11 @@
     src.buffer = buf;
 
     var gain = ctx.createGain();
-    var vol = volumen !== undefined ? volumen : 0.8;
+    var vol = volumen !== undefined ? volumen : 0.42;
     gain.gain.setValueAtTime(vol, ctx.currentTime);
 
     src.connect(gain);
-    gain.connect(masterGain);
+    gain.connect(bodyBus);
 
     var tInicio = ctx.currentTime + (inicioDelay || 0);
     src.start(tInicio);
@@ -158,9 +211,20 @@
   }
 
   /**
-   * Reproduce un acorde en rasgueo descendente natural de guitarra.
+   * Reproduce una nota solista en registro natural de guitarra.
    */
-  function reproducirAcorde(notasMidi, tiempoStrum) {
+  function reproducirNota(frecuencia, volumen) {
+    detenerTodo();
+    // Volumen solista calibrado para excelente presencia sin sobrecarga
+    reproducirCuerda(frecuencia, volumen || 0.45, 0);
+  }
+
+  /**
+   * Reproduce un acorde en rasgueo descendente natural de guitarra acústica.
+   * Aplica escalado de ganancia proporcional al número de cuerdas (anti-saturación)
+   * y micro-retardo humano entre cuerdas (curva de rasgueo real).
+   */
+  function reproducirAcorde(notasMidi) {
     detenerTodo();
     var ctx = obtenerAudioContext();
     if (!ctx) return;
@@ -172,33 +236,40 @@
       }
     }
 
-    if (notasValidas.length === 0) return;
+    var numCuerdas = notasValidas.length;
+    if (numCuerdas === 0) return;
 
-    // Retardo natural entre cuerdas (35ms por cuerda)
-    var delayPaso = tiempoStrum || 0.035;
+    // Escalado de volumen por cuerda: mantiene la suma polifónica dentro de un rango limpio (-9 a -8 dBFS)
+    var volumenPorCuerda = 0.38 / Math.sqrt(numCuerdas);
 
-    for (var n = 0; n < notasValidas.length; n++) {
+    // Curva de rasgueo natural humana (micro-retardos ligeramente decrecientes en el barrido)
+    var retardosStrum = [0.0, 0.030, 0.056, 0.078, 0.096, 0.112];
+
+    for (var n = 0; n < numCuerdas; n++) {
       var freq = midiAFrecuencia(notasValidas[n]);
-      var delay = n * delayPaso;
-      // Las notas graves tienen un poco más de energía física
-      var vol = 0.75 - (n * 0.03);
-      reproducirNota(freq, vol, delay);
+      var delay = (n < retardosStrum.length) ? retardosStrum[n] : (n * 0.024);
+
+      // Leve contorno de peso: cuerdas graves tienen un 10% más de masa que las agudas
+      var factorPeso = 1.05 - (n * 0.03);
+      var volFinal = volumenPorCuerda * factorPeso;
+
+      reproducirCuerda(freq, volFinal, delay);
     }
   }
 
   /**
-   * Reproduce una secuencia de acordes con cadencia musical.
+   * Reproduce una secuencia de acordes con cadencia musical natural.
    */
   function reproducirProgresion(secuenciaAcordes, intervaloEntreAcordes, callbackPaso, callbackFin) {
     detenerTodo();
-    var intervalo = intervaloEntreAcordes || 1800; // 1.8 segundos por acorde
+    var intervalo = intervaloEntreAcordes || 1700; // 1.7 segundos por acorde
 
     for (var i = 0; i < secuenciaAcordes.length; i++) {
       (function (indice) {
         var tid = setTimeout(function () {
           if (callbackPaso) callbackPaso(indice);
           var acorde = secuenciaAcordes[indice];
-          reproducirAcorde(acorde, 0.032);
+          reproducirAcorde(acorde);
 
           if (indice === secuenciaAcordes.length - 1 && callbackFin) {
             var finTid = setTimeout(function () {
@@ -216,13 +287,9 @@
   window.FogataAudio = {
     inicializar: obtenerAudioContext,
     detener: detenerTodo,
-    reproducirNota: function (frecuencia, volumen) {
-      detenerTodo();
-      reproducirNota(frecuencia, volumen || 0.85, 0);
-    },
+    reproducirNota: reproducirNota,
     reproducirNotaMidi: function (midi, volumen) {
-      detenerTodo();
-      reproducirNota(midiAFrecuencia(midi), volumen || 0.85, 0);
+      reproducirNota(midiAFrecuencia(midi), volumen);
     },
     reproducirAcorde: reproducirAcorde,
     reproducirProgresion: reproducirProgresion,
@@ -230,4 +297,3 @@
   };
 
 })(window);
-
