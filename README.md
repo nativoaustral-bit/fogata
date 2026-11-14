@@ -45,6 +45,10 @@ Funcionalidades operativas y verificadas en la suite de pruebas y en producción
 * **Fogatas (Setlists en Vivo):**
   * Agrupación ordenada de canciones para presentaciones, ensayos o fogatas.
   * Reordenamiento secuencial de temas y notas específicas por sesión.
+* **Navegación Móvil Optimizada:**
+  * Barra superior responsive adaptada a dispositivos móviles sin desplazamiento horizontal lateral.
+  * Accesos directos prioritarios fijos (**Fogatas** y **Entrena tu oído**) visibles permanentemente en la cabecera móvil para usuarios autenticados.
+  * Menú sándwich desplegable (`btn-sandwich`) para navegación completa hacia Canciones, Mi Cuenta, Control Center y cierre de sesión sin sobrecargar la pantalla.
 * **Modo Tocar (Atril Digital):**
   * Vista inmersiva en pantalla completa optimizada para lectura en dispositivos móviles y tablets.
   * Auto-scroll continuo con velocidad regulable al vuelo y cálculo por duración estimada.
@@ -70,7 +74,8 @@ Funcionalidades operativas y verificadas en la suite de pruebas y en producción
   * **Modalidad 3 (Progresiones):** Reconocimiento de secuencias de acordes con cadencia rítmica, revelación secuencial de diagramas y explicación armónica («¿Por qué suenan bien juntos?»).
     * *Plan Gratis:* Progresiones fundamentales de 2 acordes básicos (I-V, I-IV, i-VII, etc.).
     * *Plan Pro:* Catálogo ampliado de progresiones de 2, 3 y 4 acordes (incluyendo secuencias pop/rock y progresiones con cejillas y séptimas).
-  * **Motor de Audio Web Audio API:** Síntesis nativa de cuerda pulsada mediante modelado físico Karplus-Strong, libre de servicios externos, con control de parada inmediata y soporte mobile-first.
+  * **Motor de Audio Web Audio API (Guitarra Acústica):** Síntesis nativa de cuerda pulsada mediante modelado físico Karplus-Strong con emulación de resonancia de caja armónica acústica, filtrado paso-bajo dinámico y rasgueo natural (*strumming*), calibrado para máxima fidelidad y cero saturación en altavoces de dispositivos móviles.
+  * **Reproducción Secuencial en Progresiones:** Reproducción rítmica encadenada y fluida de progresiones completas (2, 3 y 4 acordes) con parada instantánea al cambiar de vista, libre de librerías externas o archivos de audio pesados.
   * **Sesiones Cortas y Freemium Real:** Bloques de 5 ejercicios con autoevaluación voluntaria (sin penalizaciones, sin calificaciones automáticas ni temporizadores). En ambos planes: repeticiones ilimitadas de audio, revelación gratuita de respuestas y diagramas SVG.
   * **Disponibilidad y Control:** Habilitado para planes Gratis y Pro con control de acceso server-side estricto; interruptor global vía `FOGATA_EAR_TRAINING_ENABLED`.
 * **Página de Acceso Unificada (Login y Entrada Comercial):**
@@ -131,7 +136,7 @@ FOGATA/
 │   ├── entrenamiento/         # Módulo «Entrena tu oído» (Notas, Acordes y Progresiones)
 │   │   ├── models.py          # Modelo SesionEntrenamiento con autoevaluación voluntaria
 │   │   ├── musical.py         # Mapeo físico EADGBE, afinación temperada y generador SVG de diapasón
-│   │   ├── tests.py           # Suite exhaustiva de pruebas unitarias y musicales (18 tests)
+│   │   ├── tests.py           # Suite exhaustiva de pruebas unitarias y musicales (21 tests)
 │   │   ├── urls.py            # Rutas de portada, modalidades y endpoint seguro de telemetría
 │   │   └── views.py           # Controladores de sesiones cortas, serialización y registro de eventos
 │   │
