@@ -65,13 +65,21 @@ PATRON_MODIFICADOR = (
     r'(?:'
     r'maj7|maj9|maj11|maj13|maj|'
     r'min7|min9|min|'
-    r'm7b5|m7|m9|m11|m13|m6|m\(maj7\)|m/maj7|m|'
+    r'm7b5|m7-5|m7#5|m7\+5|m7b9|m7/9|m7\(9\)|m7/11|m7\(11\)|'
+    r'm7\+|m7M|m\(maj7\)|m/maj7|'
+    r'm7|m9|m11|m13|m6|'
+    r'madd9|msus4|msus2|msus|m4|m5|m2|m|'
     r'M7|M9|M11|M13|M|'
-    r'dim7|dim|aug|\+|°|ø|'
-    r'sus2|sus4|7sus4|7sus2|sus|'
+    r'dim7|dim|aug|\+|°7|°|ø7|ø|o7|'
+    r'7sus4|7sus2|7sus|9sus4|9sus|sus4|sus2|sus|'
     r'add9|add2|add4|add11|add|'
+    r'\(add9\)|\(add2\)|\(add4\)|\(sus4\)|\(sus2\)|\(maj7\)|\(7\)|'
     r'6/9|69|6|'
-    r'7#5|7b5|7#9|7b9|7\+5|7-5|'
+    r'7/9b|7/b9|7b9|7/9#|7/#9|7#9|7/9\+|7/9-|7-9|'
+    r'7/5b|7/b5|7/5#|7/#5|7#5|7b5|7\+5|7-5|'
+    r'7/9|7/11|7/13|9/7|9/11|'
+    r'7\(b9\)|7\(9b\)|7\(#9\)|7\(9#\)|7\(b5\)|7\(#5\)|7\(9\)|7\(11\)|7\(13\)|'
+    r'7\+|7M|7-|9\+|9M|9b|9#|b9|#9|'
     r'2|4|5|7|9|11|13|'
     r'Δ7|Δ'
     r')'
@@ -160,7 +168,13 @@ def validar_token_acorde(token_str: str) -> Optional[Tuple[str, str, str, str]]:
     if not token_limpio:
         return None
 
-    match = REGEX_ACORDE_COMPLETO.match(token_limpio)
+    # Manejar abreviatura común en cancioneros hispanos: 'Lm' como 'Lam' (La menor)
+    token_a_evaluar = token_limpio
+    if token_limpio.startswith(('Lm', 'lm', 'LM')) and not token_limpio.startswith(('Lam', 'lam', 'LAM', 'LaM')):
+        # Ej: Lm -> Lam, Lm5 -> Lam5, Lm4 -> Lam4, Lm7 -> Lam7, Lm/Sol -> Lam/Sol
+        token_a_evaluar = 'La' + token_limpio[1:]
+
+    match = REGEX_ACORDE_COMPLETO.match(token_a_evaluar)
     if not match:
         return None
 
@@ -619,8 +633,8 @@ def analizar_linea(linea: str) -> LineaMusical:
     # Criterio independiente de idioma para determinar si la línea es de acordes:
     # 1. No debe tener palabras largas que correspondan a prosa.
     # 2. Debe tener al menos 1 acorde válido.
-    # 3. La proporción de tokens válidos respecto a tokens sustantivos debe ser >= 70%
-    #    (o 100% si hay solo 1 o 2 tokens sustantivos).
+    # 3. La proporción de tokens válidos respecto a tokens sustantivos debe ser >= 65%
+    #    (admite líneas de 3 posiciones donde 2 son acordes claros, 66.7%).
     if total_sustantivos > 0 and not tiene_palabra_larga_no_musical:
         ratio = total_acordes_validos / total_sustantivos
         es_linea_acordes = False
@@ -632,7 +646,7 @@ def analizar_linea(linea: str) -> LineaMusical:
             unico = tokens_musicales[0]
             if len(unico.texto_original) > 1 or unico.nota_raiz.isupper() or unico.alteracion or unico.modificador:
                 es_linea_acordes = True
-        elif total_sustantivos > 1 and ratio >= 0.70:
+        elif total_sustantivos > 1 and ratio >= 0.65:
             es_linea_acordes = True
 
         if es_linea_acordes:

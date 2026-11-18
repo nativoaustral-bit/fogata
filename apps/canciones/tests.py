@@ -1293,11 +1293,12 @@ class DiagramasBatchTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('application/json', response['Content-Type'])
 
+        from apps.canciones.diagramas import BIBLIOTECA_ACORDES
         data = json.loads(response.content.decode('utf-8'))
         self.assertTrue(data.get('ok'))
-        self.assertEqual(data.get('total'), 64)
+        self.assertEqual(data.get('total'), len(BIBLIOTECA_ACORDES))
         diagramas = data.get('diagramas', {})
-        self.assertEqual(len(diagramas), 64)
+        self.assertEqual(len(diagramas), len(BIBLIOTECA_ACORDES))
 
         # Probar acorde C (0, '', None)
         c_item = diagramas.get('0||')
@@ -1421,6 +1422,95 @@ class SanitizacionYCasosEspecialesAcordesTest(TestCase):
         )
         self.assertNotIn('\u200b', cancion.contenido)
         self.assertEqual(cancion.contenido, "F    Am\nState of love")
+
+    def test_acordes_complejos_trova_y_jazz(self):
+        """
+        Verifica reconocimiento de acordes con alteraciones avanzadas, séptimas mayores
+        en notación latina (Fa7+), novenas (C7/9, E7/9b), disminuidos (Bdim7) y extensiones menores (Lam4, Lam5, Lm5).
+        """
+        acordes = [
+            ('Bdim7', ('B', '', 'dim7', '')),
+            ('E7/9b', ('E', '', '7/9b', '')),
+            ('E7/b9', ('E', '', '7/b9', '')),
+            ('E7b9', ('E', '', '7b9', '')),
+            ('A7', ('A', '', '7', '')),
+            ('Fa7+', ('Fa', '', '7+', '')),
+            ('F7+', ('F', '', '7+', '')),
+            ('C7+', ('C', '', '7+', '')),
+            ('Do7+', ('Do', '', '7+', '')),
+            ('Fa7M', ('Fa', '', '7M', '')),
+            ('C7/9', ('C', '', '7/9', '')),
+            ('Lam5', ('La', '', 'm5', '')),
+            ('Lam4', ('La', '', 'm4', '')),
+            ('Lm5', ('La', '', 'm5', '')),
+            ('Lm4', ('La', '', 'm4', '')),
+            ('Lm', ('La', '', 'm', '')),
+        ]
+        for texto, esperado in acordes:
+            res = validar_token_acorde(texto)
+            self.assertIsNotNone(res, f"El acorde '{texto}' debería ser reconocido como válido.")
+            self.assertEqual(res, esperado, f"El acorde '{texto}' no coincide con la tupla esperada.")
+
+    def test_clasificacion_lineas_paloma_mia(self):
+        """
+        Verifica que todas las líneas armónicas de 'Paloma Mía' de Silvio Rodríguez
+        sean clasificadas como 'acordes' y ningún acorde quede atrapado como texto plano.
+        """
+        lineas_acordes = [
+            ("Bdim7        E7/9b        A7", ['Bdim7', 'E7/9b', 'A7']),
+            ("Dm           Am - Lam5 - Lam4 - Lam", ['Dm', 'Am', 'Lam5', 'Lam4', 'Lam']),
+            ("Bdim7        E7/9b        Am", ['Bdim7', 'E7/9b', 'Am']),
+            ("G            C7/9         Fa7+", ['G', 'C7/9', 'Fa7+']),
+            ("G            Fa           E", ['G', 'Fa', 'E']),
+            ("C            Sim7", ['C', 'Sim7']),
+        ]
+        for linea_texto, tokens_esperados in lineas_acordes:
+            lineas = parse_cancion(linea_texto)
+            self.assertEqual(len(lineas), 1)
+            lm = lineas[0]
+            self.assertEqual(
+                lm.tipo, 'acordes',
+                f"La línea '{linea_texto}' debería ser clasificada como 'acordes', pero fue '{lm.tipo}'."
+            )
+            tokens_obtenidos = [t.texto_original for t in lm.tokens_acorde]
+            self.assertEqual(
+                tokens_obtenidos, tokens_esperados,
+                f"Los tokens de '{linea_texto}' no coinciden."
+            )
+
+    def test_diagramas_acordes_complejos_disponibilidad(self):
+        """
+        Verifica que Bdim7, E7/9b, Fa7+ y C7/9 resuelvan diagramas SVG físicos,
+        y que Lam4/Lam5 devuelvan mensaje seguro sin error.
+        """
+        from apps.canciones.diagramas import obtener_info_diagrama
+
+        # Bdim7 (raiz 11, mod 'dim7')
+        info_bdim = obtener_info_diagrama(11, 'dim7')
+        self.assertTrue(info_bdim['disponible'])
+        self.assertIn('<svg', info_bdim['svg'])
+        self.assertEqual(info_bdim['nombre'], 'Bdim7')
+
+        # E7/9b (raiz 4, mod '7/9b' -> normaliza a '7b9')
+        info_e7b9 = obtener_info_diagrama(4, '7/9b')
+        self.assertTrue(info_e7b9['disponible'])
+        self.assertIn('<svg', info_e7b9['svg'])
+
+        # Fa7+ (raiz 5, mod '7+' -> normaliza a 'maj7')
+        info_fa7 = obtener_info_diagrama(5, '7+')
+        self.assertTrue(info_fa7['disponible'])
+        self.assertIn('<svg', info_fa7['svg'])
+
+        # C7/9 (raiz 0, mod '7/9' -> normaliza a '9')
+        info_c9 = obtener_info_diagrama(0, '7/9')
+        self.assertTrue(info_c9['disponible'])
+        self.assertIn('<svg', info_c9['svg'])
+
+        # Lam4 (raiz 9, mod 'm4' -> sin diagrama específico pero mensaje seguro)
+        info_lam4 = obtener_info_diagrama(9, 'm4')
+        self.assertFalse(info_lam4['disponible'])
+        self.assertEqual(info_lam4['mensaje'], "Diagrama aún no disponible para este acorde.")
+
 
 
 

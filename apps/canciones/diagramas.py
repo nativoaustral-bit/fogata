@@ -169,7 +169,37 @@ def validar_digitacion_musical(
         if segunda not in pitches:
             return False, f"add9 requiere la novena/segunda ({segunda})."
 
-    # 10. Slash Chords (Criterio 3: la nota más grave que suena debe ser el bajo)
+    # 10. dim7 (disminuido completo: raíz, 3ª menor, 5ª disminuida, 7ª disminuida)
+    elif mod_norm == 'dim7':
+        quinta_disminuida = (pitch_raiz + 6) % 12
+        septima_disminuida = (pitch_raiz + 9) % 12
+        if tercera_menor not in pitches:
+            return False, f"dim7 requiere tercera menor ({tercera_menor})."
+        if quinta_disminuida not in pitches:
+            return False, f"dim7 requiere quinta disminuida ({quinta_disminuida})."
+        if septima_disminuida not in pitches:
+            return False, f"dim7 requiere séptima disminuida ({septima_disminuida})."
+
+    # 11. 7b9 (séptima dominante con novena menor)
+    elif mod_norm == '7b9':
+        novena_menor = (pitch_raiz + 1) % 12
+        if tercera_mayor not in pitches:
+            return False, f"7b9 requiere tercera mayor ({tercera_mayor})."
+        if septima_menor not in pitches:
+            return False, f"7b9 requiere séptima menor ({septima_menor})."
+        if novena_menor not in pitches:
+            return False, f"7b9 requiere novena menor ({novena_menor})."
+
+    # 12. 9 / 7/9 (séptima dominante con novena mayor)
+    elif mod_norm == '9':
+        if tercera_mayor not in pitches:
+            return False, f"9 requiere tercera mayor ({tercera_mayor})."
+        if septima_menor not in pitches:
+            return False, f"9 requiere séptima menor ({septima_menor})."
+        if segunda not in pitches:
+            return False, f"9 requiere novena mayor ({segunda})."
+
+    # 13. Slash Chords (Criterio 3: la nota más grave que suena debe ser el bajo)
     if bajo_pitch is not None:
         if bajo_real != bajo_pitch:
             return False, f"Slash chord exige bajo {bajo_pitch}, pero suena {bajo_real} en la cuerda más grave."
@@ -184,16 +214,24 @@ def normalizar_modificador(mod: str) -> str:
         return ''
     if m in ('min', 'm', 'minor'):
         return 'm'
-    if m in ('M7', 'maj7', 'Δ7', 'Δ'):
+    if m in ('M7', 'maj7', 'Δ7', 'Δ', '7+', '7M', 'maj'):
         return 'maj7'
+    if m in ('m7+', 'm7M', 'm(maj7)', 'm/maj7'):
+        return 'm(maj7)'
     if m in ('min7', 'm7'):
         return 'm7'
-    if m in ('sus', 'sus4', '7sus4'):
+    if m in ('sus', 'sus4', '7sus4', '(sus4)'):
         return 'sus4'
-    if m in ('sus2', '7sus2'):
+    if m in ('sus2', '7sus2', '(sus2)'):
         return 'sus2'
-    if m in ('add', 'add9', 'add2'):
+    if m in ('add', 'add9', 'add2', '(add9)'):
         return 'add9'
+    if m in ('dim', 'dim7', '°', '°7', 'o', 'o7'):
+        return 'dim7'
+    if m in ('7/9b', '7/b9', '7b9', '7-9', '7/9-', '7(b9)', '7(9b)'):
+        return '7b9'
+    if m in ('7/9', '7(9)', '9/7', '9'):
+        return '9'
     return m
 
 
@@ -363,6 +401,24 @@ BIBLIOTECA_ACORDES: Dict[Tuple[int, str, Optional[int]], DigitacionAcorde] = {
     (9, 'm', 7): DigitacionAcorde(trastes=[3, 0, 2, 2, 1, 0], dedos=[3, 0, 2, 4, 1, 0]),
     # D/A: 5ª cuerda al aire es A (9). 6ª cuerda muteada (-1).
     (2, '', 9): DigitacionAcorde(trastes=[-1, 0, 0, 2, 3, 2], dedos=[0, 0, 0, 1, 3, 2]),
+
+    # -------------------------------------------------------------------------
+    # DISMINUIDOS (dim7)
+    # -------------------------------------------------------------------------
+    # Bdim7 (11) - x2313x
+    (11, 'dim7', None): DigitacionAcorde(trastes=[-1, 2, 3, 1, 3, -1], dedos=[0, 2, 3, 1, 4, 0]),
+
+    # -------------------------------------------------------------------------
+    # SÉPTIMAS CON ALTERACIONES (7b9)
+    # -------------------------------------------------------------------------
+    # E7b9 / E7/9b (4) - 020101
+    (4, '7b9', None): DigitacionAcorde(trastes=[0, 2, 0, 1, 0, 1], dedos=[0, 2, 0, 1, 0, 1]),
+
+    # -------------------------------------------------------------------------
+    # NOVENAS DOMINANTES (9 / 7/9)
+    # -------------------------------------------------------------------------
+    # C9 / C7/9 (0) - x3233x
+    (0, '9', None): DigitacionAcorde(trastes=[-1, 3, 2, 3, 3, -1], dedos=[0, 2, 1, 3, 4, 0]),
 }
 
 

@@ -8,7 +8,7 @@ Fogata es una plataforma web y atril digital interactivo diseñado para músicos
 
 [![Django](https://img.shields.io/badge/Django-5.2%20LTS-092E20?style=flat-square&logo=django)](https://www.djangoproject.com/)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/Tests-230%20passed%20(100%25)-brightgreen?style=flat-square)](#-validación-rápida)
+[![Tests](https://img.shields.io/badge/Tests-233%20passed%20(100%25)-brightgreen?style=flat-square)](#-validación-rápida)
 [![Producción](https://img.shields.io/badge/Producción-fogata.humm.cl-success?style=flat-square)](https://fogata.humm.cl)
 
 ---
@@ -121,7 +121,7 @@ FOGATA/
 │   │   ├── forms.py           # Formulario de creación/edición con sanitización automática
 │   │   ├── models.py          # Modelo Cancion con contenido íntegro y tono base
 │   │   ├── parser.py          # Detección formal de acordes, compensación espacial y transposición
-│   │   ├── tests.py           # Suite exhaustiva de pruebas unitarias y musicales (76 tests)
+│   │   ├── tests.py           # Suite exhaustiva de pruebas unitarias y musicales (79 tests)
 │   │   └── views.py           # CRUD de repertorio, atril /tocar/ y edición rápida de acordes
 │   │
 │   ├── core/                  # Autenticación, perfiles, planes freemium, middleware y PWA
@@ -402,11 +402,11 @@ source .venv/bin/activate
 # 1. Comprobación de configuración Django
 python manage.py check
 
-# 2. Ejecutar la suite completa de pruebas unitarias e integración (230 tests)
+# 2. Ejecutar la suite completa de pruebas unitarias e integración (233 tests)
 python manage.py test
 
 # 3. Ejecutar pruebas de módulos específicos
-python manage.py test apps.canciones      # Motor musical, parser, diagramas (76 tests)
+python manage.py test apps.canciones      # Motor musical, parser, diagramas (79 tests)
 python manage.py test apps.entrenamiento  # Entrena tu oído, notas, acordes, Pro (21 tests)
 python manage.py test apps.pagos          # Pasarela Flow, webhooks, reconciliación (30 tests)
 python manage.py test apps.core           # Autenticación, planes, límites, login (37 tests)
